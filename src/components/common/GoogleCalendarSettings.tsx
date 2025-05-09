@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Info, Trash, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Info, Trash, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -22,7 +22,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import { getGlobalSettings, updateGlobalSettings } from '@/services/userSettings';
+import { getGlobalSettings } from '@/services/userSettings';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface GoogleCalendarSettings {
   defaultReminders: number[];
@@ -46,13 +48,14 @@ const defaultSettings: GoogleCalendarSettings = {
   notifyOnUpdates: false,
 };
 
-export default function GoogleCalendarSettings() {
+function GoogleCalendarSettingsComponent() {
   const { isAuthenticated, login, logout, userInfo, calendars, refreshCalendars } =
     useGoogleCalendar();
   const [settings, setSettings] = useState<GoogleCalendarSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [newReminder, setNewReminder] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Load settings on mount
   useEffect(() => {
@@ -62,6 +65,12 @@ export default function GoogleCalendarSettings() {
         const userSettings = await getGlobalSettings('calendar');
         if (userSettings?.calendar) {
           setSettings(userSettings.calendar);
+        }
+
+        // Get last sync info
+        const { data, error } = await supabase.rpc('get_last_calendar_sync_info');
+        if (data && !error) {
+          setLastSyncTime(data.last_sync_time);
         }
       } catch (error) {
         console.error('Error loading calendar settings:', error);
@@ -85,50 +94,37 @@ export default function GoogleCalendarSettings() {
     }
   }, [isAuthenticated, calendars.length, refreshCalendars]);
 
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
+  const handleSyncCalendars = async () => {
+    setIsSyncing(true);
+    setSyncError(null);
+
     try {
-      await updateGlobalSettings('calendar', settings);
+      const { data, error } = await supabase.rpc('sync_google_calendars');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
       toast({
-        title: 'Settings saved',
-        description: 'Your calendar settings have been updated successfully.',
+        title: 'Calendars synchronized',
+        description: 'Your calendars have been successfully synchronized.',
       });
+
+      // Update last sync time
+      setLastSyncTime(new Date().toISOString());
     } catch (error) {
-      console.error('Error saving calendar settings:', error);
+      console.error('Error syncing calendars:', error);
+      setSyncError(
+        typeof error === 'string' ? error : (error as Error).message || 'Unknown error occurred'
+      );
       toast({
-        title: 'Failed to save settings',
-        description: 'There was an error saving your calendar settings.',
+        title: 'Sync failed',
+        description: 'There was an error synchronizing your calendars.',
         variant: 'destructive',
       });
     } finally {
-      setIsSaving(false);
+      setIsSyncing(false);
     }
-  };
-
-  const handleAddReminder = () => {
-    const minutes = parseInt(newReminder, 10);
-    if (!isNaN(minutes) && minutes > 0) {
-      if (!settings.defaultReminders.includes(minutes)) {
-        setSettings({
-          ...settings,
-          defaultReminders: [...settings.defaultReminders, minutes].sort((a, b) => a - b),
-        });
-        setNewReminder('');
-      } else {
-        toast({
-          title: 'Duplicate reminder',
-          description: 'This reminder time already exists.',
-          variant: 'destructive',
-        });
-      }
-    }
-  };
-
-  const handleRemoveReminder = (minutes: number) => {
-    setSettings({
-      ...settings,
-      defaultReminders: settings.defaultReminders.filter(m => m !== minutes),
-    });
   };
 
   const formatReminderTime = (minutes: number) => {
@@ -145,6 +141,11 @@ export default function GoogleCalendarSettings() {
     }
   };
 
+  const formatDate = (isoString: string | null) => {
+    if (!isoString) return 'Never';
+    return new Date(isoString).toLocaleString();
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -153,7 +154,7 @@ export default function GoogleCalendarSettings() {
             <CardTitle className="flex items-center">
               <Calendar className="mr-2 h-5 w-5" /> Google Calendar Integration
             </CardTitle>
-            <CardDescription>Configure how your data syncs with Google Calendar</CardDescription>
+            <CardDescription>View and manage your Google Calendar connection</CardDescription>
           </div>
           <Badge variant={isAuthenticated ? 'default' : 'outline'} className="ml-2">
             {isAuthenticated ? (
@@ -183,6 +184,14 @@ export default function GoogleCalendarSettings() {
           </div>
         ) : (
           <>
+            {syncError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Sync Error</AlertTitle>
+                <AlertDescription>{syncError}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium mb-2">Connected Account</h3>
@@ -214,23 +223,45 @@ export default function GoogleCalendarSettings() {
 
               <Separator />
 
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium mb-2">Sync Status</h3>
+                <div className="bg-gray-50 rounded-md p-4 border">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Last synced: {formatDate(lastSyncTime)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Sync your calendars to update events and ensure everything is in sync
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleSyncCalendars}
+                      disabled={isLoading || isSyncing}
+                      className="bg-[#0485ea] hover:bg-[#0375d1]"
+                    >
+                      {isSyncing ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Refresh Connection
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               <div>
                 <h3 className="text-sm font-medium mb-2">Default Calendar</h3>
-                <Select
-                  value={settings.defaultCalendarId}
-                  onValueChange={value => setSettings({ ...settings, defaultCalendarId: value })}
-                  disabled={!isAuthenticated || isLoading}
-                >
+                <Select value={settings.defaultCalendarId} disabled={true}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a calendar" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {calendars.map(calendar => (
-                      <SelectItem key={calendar.id} value={calendar.id}>
-                        {calendar.summary}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
                 </Select>
                 <div className="flex mt-2">
                   <Button
@@ -257,28 +288,9 @@ export default function GoogleCalendarSettings() {
                     settings.defaultReminders.map(minutes => (
                       <Badge key={minutes} variant="secondary" className="flex items-center gap-1">
                         {formatReminderTime(minutes)}
-                        <button
-                          onClick={() => handleRemoveReminder(minutes)}
-                          className="ml-1 text-muted-foreground hover:text-foreground"
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </button>
                       </Badge>
                     ))
                   )}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Minutes before event"
-                    className="w-40"
-                    value={newReminder}
-                    onChange={e => setNewReminder(e.target.value)}
-                    min="1"
-                  />
-                  <Button variant="outline" size="sm" onClick={handleAddReminder}>
-                    Add Reminder
-                  </Button>
                 </div>
               </div>
 
@@ -294,13 +306,7 @@ export default function GoogleCalendarSettings() {
                       Add work orders to your calendar
                     </p>
                   </div>
-                  <Switch
-                    checked={settings.syncWorkOrders}
-                    onCheckedChange={checked =>
-                      setSettings({ ...settings, syncWorkOrders: checked })
-                    }
-                    disabled={!isAuthenticated || isLoading}
-                  />
+                  <Switch checked={settings.syncWorkOrders} disabled={true} />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -310,13 +316,7 @@ export default function GoogleCalendarSettings() {
                       Add project milestones to your calendar
                     </p>
                   </div>
-                  <Switch
-                    checked={settings.syncMilestones}
-                    onCheckedChange={checked =>
-                      setSettings({ ...settings, syncMilestones: checked })
-                    }
-                    disabled={!isAuthenticated || isLoading}
-                  />
+                  <Switch checked={settings.syncMilestones} disabled={true} />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -326,13 +326,7 @@ export default function GoogleCalendarSettings() {
                       Add your work time blocks to your calendar
                     </p>
                   </div>
-                  <Switch
-                    checked={settings.syncTimeEntries}
-                    onCheckedChange={checked =>
-                      setSettings({ ...settings, syncTimeEntries: checked })
-                    }
-                    disabled={!isAuthenticated || isLoading}
-                  />
+                  <Switch checked={settings.syncTimeEntries} disabled={true} />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -342,45 +336,7 @@ export default function GoogleCalendarSettings() {
                       Add contact interactions to your calendar
                     </p>
                   </div>
-                  <Switch
-                    checked={settings.syncContacts}
-                    onCheckedChange={checked => setSettings({ ...settings, syncContacts: checked })}
-                    disabled={!isAuthenticated || isLoading}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Send Notifications on Creation</p>
-                    <p className="text-sm text-muted-foreground">
-                      Send email notifications when calendar events are created
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifyOnCreation}
-                    onCheckedChange={checked =>
-                      setSettings({ ...settings, notifyOnCreation: checked })
-                    }
-                    disabled={!isAuthenticated || isLoading}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Send Notifications on Updates</p>
-                    <p className="text-sm text-muted-foreground">
-                      Send email notifications when calendar events are updated
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifyOnUpdates}
-                    onCheckedChange={checked =>
-                      setSettings({ ...settings, notifyOnUpdates: checked })
-                    }
-                    disabled={!isAuthenticated || isLoading}
-                  />
+                  <Switch checked={settings.syncContacts} disabled={true} />
                 </div>
               </div>
             </div>
@@ -388,15 +344,32 @@ export default function GoogleCalendarSettings() {
         )}
       </CardContent>
 
-      <CardFooter className="flex justify-end">
-        <Button
-          onClick={handleSaveSettings}
-          disabled={!isAuthenticated || isLoading || isSaving}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
-          {isSaving ? 'Saving...' : 'Save Settings'}
-        </Button>
+      <CardFooter className="flex justify-between">
+        <p className="text-xs text-muted-foreground">
+          Settings can only be modified by administrators
+        </p>
+        {isAuthenticated && (
+          <Button
+            onClick={handleSyncCalendars}
+            disabled={isLoading || isSyncing}
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
+          >
+            {isSyncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Connection
+              </>
+            )}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
 }
+
+export default GoogleCalendarSettingsComponent;

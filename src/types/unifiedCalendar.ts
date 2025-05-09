@@ -1,117 +1,257 @@
 /**
- * Unified Calendar Event Types
+ * Unified Calendar Types
  *
- * This file contains standardized interfaces for all calendar-related events.
- * These interfaces serve as the single source of truth for calendar event shapes
- * across the application.
+ * This file contains TypeScript interfaces for the unified calendar event model.
+ * These types are used throughout the application to standardize calendar operations.
  */
 
-// Valid entity types for calendar events
-export type CalendarEntityType =
-  | 'project_milestone'
-  | 'schedule_item'
+/**
+ * Entity types that can be synchronized with calendars
+ */
+export type EntityType =
   | 'work_order'
-  | 'contact_interaction'
-  | 'time_entry';
+  | 'project'
+  | 'ad_hoc'
+  | 'schedule_item'
+  | 'time_entry'
+  | 'project_milestone'
+  | 'contact_interaction';
 
-// Valid assignee types for calendar events
-export type CalendarAssigneeType = 'employee' | 'subcontractor' | 'vendor' | null;
+/**
+ * Types of assignees that can be added to calendar events
+ */
+export type AssigneeType = 'employee' | 'subcontractor' | 'customer' | 'vendor' | 'contact';
 
-// Base interface for all calendar events
+/**
+ * Base interface for calendar events
+ */
 export interface ICalendarEventBase {
-  // Core identification
-  id: string; // Unique identifier in our system
-  google_event_id: string | null; // Google Calendar's event ID (null if not synced)
+  id: string;
+  title: string;
+  description: string | null;
+  start_datetime: string;
+  end_datetime: string | null;
+  is_all_day: boolean;
+  location: string | null;
 
-  // Calendar integration
-  calendar_id: string; // Google Calendar ID where the event exists
-  sync_enabled: boolean; // Whether this event should sync with Google Calendar
-  last_synced_at: string | null; // ISO timestamp of last sync
+  // Entity and assignee information
+  assignee_type: AssigneeType | null;
+  assignee_id: string | null;
+  entity_type: EntityType;
+  entity_id: string;
 
-  // Core event data
-  title: string; // Event title/summary
-  description: string | null; // Event description
-  start_datetime: string; // ISO timestamp for start
-  end_datetime: string; // ISO timestamp for end
-  is_all_day: boolean; // Whether this is an all-day event
-  location: string | null; // Optional location text
-
-  // Assignee/attendee
-  assignee_type: CalendarAssigneeType;
-  assignee_id: string | null; // ID of the assigned person
-
-  // Entity relation (what this event represents)
-  entity_type: CalendarEntityType; // Type of entity this event is linked to
-  entity_id: string; // ID in the source entity table
+  // Calendar integration fields
+  sync_enabled: boolean;
+  calendar_id: string;
+  google_event_id: string | null;
+  last_synced_at: string | null;
+  etag?: string | null;
 
   // Metadata
-  created_at: string; // ISO timestamp
-  updated_at: string; // ISO timestamp
-  created_by: string | null; // User ID who created the event
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+
+  // Attendees for the event
+  attendees?: EventAttendee[];
+
+  // Extended properties
+  extended_properties?: Record<string, string>;
+
+  // Calendar-specific flags
+  notify_external_attendees?: boolean;
 }
 
-// Input for creating a new calendar event
-export type CreateCalendarEventInput = Omit<
-  ICalendarEventBase,
-  'id' | 'google_event_id' | 'last_synced_at' | 'created_at' | 'updated_at'
->;
+/**
+ * Interface for creating a new calendar event
+ */
+export interface CreateCalendarEventInput {
+  title: string;
+  description?: string | null;
+  start_datetime: string;
+  end_datetime?: string | null;
+  is_all_day?: boolean;
+  location?: string | null;
 
-// Input for updating an existing calendar event
-export type UpdateCalendarEventInput = Partial<
-  Omit<ICalendarEventBase, 'id' | 'created_at' | 'updated_at'>
->;
+  // Entity and assignee information
+  assignee_type?: AssigneeType | null;
+  assignee_id?: string | null;
+  entity_type: EntityType;
+  entity_id: string;
 
-// Extended interfaces for specific entity types
-export interface IProjectMilestoneEvent extends ICalendarEventBase {
-  entity_type: 'project_milestone';
-  project_id: string; // Associated project
-  // Milestone-specific fields
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
-  status?: 'not_started' | 'in_progress' | 'blocked' | 'completed';
+  // Calendar integration fields
+  sync_enabled?: boolean;
+  calendar_id?: string;
+
+  // Attendees to invite
+  attendees?: EventAttendee[];
+
+  // Notification preferences
+  notify_external_attendees?: boolean;
+
+  // Extended properties
+  extended_properties?: Record<string, string>;
 }
 
-export interface IScheduleItemEvent extends ICalendarEventBase {
-  entity_type: 'schedule_item';
-  project_id: string; // Associated project
+/**
+ * Interface for updating an existing calendar event
+ */
+export interface UpdateCalendarEventInput {
+  title?: string;
+  description?: string | null;
+  start_datetime?: string;
+  end_datetime?: string | null;
+  is_all_day?: boolean;
+  location?: string | null;
+
+  // Entity and assignee information
+  assignee_type?: AssigneeType | null;
+  assignee_id?: string | null;
+
+  // Calendar integration fields
+  sync_enabled?: boolean;
+  calendar_id?: string;
+
+  // Attendees to invite or update
+  attendees?: EventAttendee[];
+
+  // Notification preferences
+  notify_external_attendees?: boolean;
+
+  // Extended properties
+  extended_properties?: Record<string, string>;
 }
 
-export interface IWorkOrderEvent extends ICalendarEventBase {
-  entity_type: 'work_order';
-  project_id: string; // Associated project
-  work_order_number?: string; // Work order reference number
-  status?: string; // Current status
-}
-
-export interface IContactInteractionEvent extends ICalendarEventBase {
-  entity_type: 'contact_interaction';
-  contact_id: string; // Associated contact
-  interaction_type?: string; // Type of interaction (meeting, call, etc.)
-}
-
-export interface ITimeEntryEvent extends ICalendarEventBase {
-  entity_type: 'time_entry';
-  project_id: string; // Associated project
-  task_id?: string; // Associated task if applicable
-}
-
-// Response structure for calendar event operations
+/**
+ * Response from calendar operations
+ */
 export interface CalendarEventResponse {
   success: boolean;
   event?: ICalendarEventBase;
   google_event_id?: string;
+  etag?: string;
   error?: string;
+  multiDayExpanded?: boolean;
+  totalDays?: number;
 }
 
-// Google Calendar specific options that may be passed
+/**
+ * Google Calendar specific options
+ */
 export interface GoogleCalendarOptions {
   sendUpdates?: 'all' | 'externalOnly' | 'none';
-  sendNotifications?: boolean;
-  useDefaultReminders?: boolean;
-  reminders?: {
-    useDefault: boolean;
-    overrides?: Array<{
-      method: 'email' | 'popup';
-      minutes: number;
-    }>;
+  conferenceDataVersion?: number;
+  maxAttendees?: number;
+  supportAttachments?: boolean;
+  colorId?: string;
+}
+
+/**
+ * Attendee information for calendar events
+ */
+export interface EventAttendee {
+  id: string;
+  type: AssigneeType;
+  email?: string;
+  name?: string;
+  rate?: number;
+  response_status?: 'needsAction' | 'accepted' | 'declined' | 'tentative';
+  comment?: string;
+  is_organizer?: boolean;
+  is_optional?: boolean;
+  is_resource?: boolean;
+}
+
+/**
+ * Assignment information for tracking calendar assignments
+ */
+export interface CalendarAssignment {
+  id?: string;
+  entity_type: EntityType;
+  entity_id: string;
+  assignee_id: string;
+  calendar_id: string;
+  google_event_id: string;
+  etag: string;
+  start_date: string;
+  end_date: string | null;
+  rate_per_hour: number | null;
+  last_synced_at?: string;
+}
+
+/**
+ * Calendar settings for different entity types
+ */
+export interface CalendarSettings {
+  entity_type: EntityType;
+  calendar_id: string;
+  is_enabled: boolean;
+  default_timezone: string;
+  notify_external_attendees: boolean;
+}
+
+/**
+ * Calendar sync cursor for incremental synchronization
+ */
+export interface SyncCursor {
+  calendar_id: string;
+  next_sync_token: string | null;
+  last_sync_time: string | null;
+}
+
+/**
+ * Push notification channel for real-time updates
+ */
+export interface PushNotificationChannel {
+  id: string;
+  calendar_id: string;
+  resource_id: string;
+  expiration: string;
+  created_at: string;
+}
+
+/**
+ * Cost calculation result from calendar assignments
+ */
+export interface AssignmentCost {
+  entity_type: EntityType;
+  entity_id: string;
+  total_cost: number;
+  total_hours: number;
+  assignee_details: {
+    assignee_id: string;
+    assignee_name: string;
+    assignee_email: string;
+    rate_per_hour: number;
+    work_days: number;
+    total_hours: number;
+    cost: number;
+  }[];
+}
+
+/**
+ * Calendar event with daily expansion for multi-day events
+ */
+export interface CalendarDailyEvent extends ICalendarEventBase {
+  day_number: number;
+  total_days: number;
+  original_event_id?: string;
+}
+
+/**
+ * Calendar service authentication strategy
+ */
+export type CalendarAuthStrategy = 'oauth' | 'service_account';
+
+/**
+ * Two-way sync result
+ */
+export interface TwoWaySyncResult {
+  success: boolean;
+  changes: {
+    created: number;
+    updated: number;
+    deleted: number;
   };
+  next_sync_token?: string;
 }

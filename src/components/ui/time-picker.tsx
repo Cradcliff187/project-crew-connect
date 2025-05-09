@@ -1,79 +1,89 @@
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { Input } from './input';
+import { Label } from './label';
 
-interface TimePickerProps {
-  value?: { hour: number; minute: number };
-  onChange?: (value: { hour: number; minute: number }) => void;
-  className?: string;
+interface TimePickerDemoProps {
+  date: Date;
+  setDate: (date: Date) => void;
 }
 
-export function TimePicker({ value, onChange, className }: TimePickerProps) {
-  const [hour, setHour] = React.useState<number>(value?.hour ?? 0);
-  const [minute, setMinute] = React.useState<number>(value?.minute ?? 0);
+export function TimePickerDemo({ date, setDate }: TimePickerDemoProps) {
+  const minuteRef = React.useRef<HTMLInputElement>(null);
+  const hourRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
-    setHour(value?.hour ?? 0);
-    setMinute(value?.minute ?? 0);
-  }, [value]);
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const formatTime = (value: number) => {
+    return value.toString().padStart(2, '0');
+  };
 
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let newHour = parseInt(e.target.value, 10);
-    if (isNaN(newHour)) newHour = 0;
-    newHour = Math.max(0, Math.min(23, newHour)); // Clamp between 0 and 23
-    setHour(newHour);
-    if (onChange) {
-      onChange({ hour: newHour, minute });
+    const newHour = parseInt(e.target.value, 10);
+    if (isNaN(newHour)) return;
+
+    const newDate = new Date(date);
+    newDate.setHours(newHour);
+    setDate(newDate);
+
+    if (e.target.value.length === 2) {
+      minuteRef.current?.focus();
+      minuteRef.current?.select();
     }
   };
 
   const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let newMinute = parseInt(e.target.value, 10);
-    if (isNaN(newMinute)) newMinute = 0;
-    newMinute = Math.max(0, Math.min(59, newMinute)); // Clamp between 0 and 59
-    setMinute(newMinute);
-    if (onChange) {
-      onChange({ hour, minute: newMinute });
-    }
+    const newMinute = parseInt(e.target.value, 10);
+    if (isNaN(newMinute)) return;
+
+    const newDate = new Date(date);
+    newDate.setMinutes(newMinute);
+    setDate(newDate);
   };
 
-  // Format value with leading zero if needed
-  const formatValue = (val: number) => String(val).padStart(2, '0');
+  const handleWheel = (e: React.WheelEvent, type: 'hour' | 'minute') => {
+    e.preventDefault();
+
+    const delta = e.deltaY > 0 ? -1 : 1;
+    const newDate = new Date(date);
+
+    if (type === 'hour') {
+      const newHour = (hours + delta) % 24;
+      newDate.setHours(newHour < 0 ? 23 : newHour);
+    } else {
+      const newMinute = (minutes + delta) % 60;
+      newDate.setMinutes(newMinute < 0 ? 59 : newMinute);
+    }
+
+    setDate(newDate);
+  };
 
   return (
-    <div className={cn('flex items-center space-x-2', className)}>
-      <div>
-        <Label htmlFor="hour-input" className="text-xs sr-only">
-          Hour
-        </Label>
+    <div className="flex items-center space-x-2">
+      <div className="grid gap-1 text-center">
         <Input
-          id="hour-input"
-          type="number"
-          min="0"
-          max="23"
-          value={formatValue(hour)}
+          ref={hourRef}
+          type="text"
+          value={formatTime(hours)}
           onChange={handleHourChange}
-          className="w-[60px] text-center h-8 text-sm"
-          aria-label="Hour"
+          onWheel={e => handleWheel(e, 'hour')}
+          className="w-14 text-center"
+          maxLength={2}
         />
+        <Label className="text-xs">Hour</Label>
       </div>
-      <span className="text-muted-foreground">:</span>
-      <div>
-        <Label htmlFor="minute-input" className="text-xs sr-only">
-          Minute
-        </Label>
+      <div className="text-center">:</div>
+      <div className="grid gap-1 text-center">
         <Input
-          id="minute-input"
-          type="number"
-          min="0"
-          max="59"
-          step="1" // Allow single minute steps
-          value={formatValue(minute)}
+          ref={minuteRef}
+          type="text"
+          value={formatTime(minutes)}
           onChange={handleMinuteChange}
-          className="w-[60px] text-center h-8 text-sm"
-          aria-label="Minute"
+          onWheel={e => handleWheel(e, 'minute')}
+          className="w-14 text-center"
+          maxLength={2}
         />
+        <Label className="text-xs">Min</Label>
       </div>
     </div>
   );

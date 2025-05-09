@@ -7,7 +7,8 @@ const WorkOrderTableHeader = () => {
         <TableHead>WO Number</TableHead>
         <TableHead>PO Number</TableHead>
         <TableHead>Due Date</TableHead>
-        <TableHead>Title</TableHead>
+        <TableHead>Due Status</TableHead>
+        <TableHead>Cost</TableHead>
         <TableHead>Priority</TableHead>
         <TableHead>Status</TableHead>
         <TableHead className="text-right">Actions</TableHead>

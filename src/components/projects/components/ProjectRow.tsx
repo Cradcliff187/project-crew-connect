@@ -2,16 +2,19 @@ import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { Eye, Edit, Calendar, Clock, FileText, Archive } from 'lucide-react';
+import { Eye, Edit, Calendar, Clock, FileText, Archive, DollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Project } from '../ProjectsTable';
 import StatusBadge from '@/components/common/status/StatusBadge';
+import RSVPBadge from '@/components/common/status/RSVPBadge';
 import { mapStatusToStatusBadge } from '../ProjectsTable';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { RSVPStatus } from '@/components/common/status/RSVPBadge';
 
 interface ProjectRowProps {
   project: Project;
@@ -23,6 +26,9 @@ type ProjectRowDisplayData = Database['public']['Tables']['projects']['Row'] & {
   current_expenses?: number | null;
   total_budget?: number | null;
   progress?: number | null;
+  // New fields for calendar integration
+  calendar_status?: RSVPStatus | null;
+  total_assignment_cost?: number | null;
 };
 
 const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
@@ -89,6 +95,20 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
   const progressValue =
     project.progress ?? (budgetValue > 0 ? Math.round((spentValue / budgetValue) * 100) : 0);
 
+  // Mock RSVP status for demo purposes - replace with actual data in production
+  const calendarStatus =
+    project.calendar_status ||
+    ((Math.random() > 0.7
+      ? 'accepted'
+      : Math.random() > 0.5
+        ? 'tentative'
+        : Math.random() > 0.3
+          ? 'needsAction'
+          : 'declined') as RSVPStatus);
+
+  // Mock assignment cost - replace with actual data in production
+  const assignmentCost = project.total_assignment_cost ?? Math.round(Math.random() * 5000);
+
   return (
     <TableRow
       key={project.projectid}
@@ -107,7 +127,15 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
           of {formatCurrency(project.total_estimated_cost_budget ?? 0)}
         </div>
       </TableCell>
-      <TableCell className="text-right">{formatCurrency(budgetValue)}</TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <div className="font-medium">{formatCurrency(budgetValue)}</div>
+          <div className="flex items-center mt-1">
+            <DollarSign className="h-3 w-3 text-emerald-600 mr-1" />
+            <span className="text-xs text-emerald-600">{formatCurrency(assignmentCost)}</span>
+          </div>
+        </div>
+      </TableCell>
       <TableCell>
         <div className="flex items-center space-x-2">
           <Progress value={progressValue} className="h-2 w-[100px]" />
@@ -115,7 +143,19 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={mapStatusToStatusBadge(project.status)} />
+        <div className="flex flex-col gap-1.5">
+          <StatusBadge status={mapStatusToStatusBadge(project.status)} />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-block">
+                <RSVPBadge status={calendarStatus} size="sm" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Calendar RSVP Status</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </TableCell>
       <TableCell className="text-right" onClick={e => e.stopPropagation()}>
         <ActionMenu
