@@ -1,3 +1,7 @@
+// Import and activate the declaration merging from custom type files
+import './types/calendar';
+import './types/schedule';
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
