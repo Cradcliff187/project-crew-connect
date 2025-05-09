@@ -4,25 +4,17 @@
 // Import necessary modules
 const express = require('express');
 const dotenv = require('dotenv');
-
-// Load environment variables from .env file
-dotenv.config();
-
 const { google } = require('googleapis');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Client } = require('@googlemaps/google-maps-services-js');
 const { createClient } = require('@supabase/supabase-js');
 const session = require('express-session');
-const path = require('path');
-
-// Import route handlers
-const authApi = require('./server/auth-api');
 
 // Initialize Supabase Admin client
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL || 'https://dxmvqbeyhfnqczvlfnfn.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
 // --- Helper Modules ---
@@ -33,28 +25,28 @@ const sheetsHelper = require('./google-api-helpers/sheets'); // Import for poten
 const docsHelper = require('./google-api-helpers/docs'); // Import for potential future use
 // TODO: Import other helpers (Sheets, Docs)
 
+// Load environment variables from .env file
+dotenv.config();
+
 // --- DEBUGGING: Log loaded environment variables ---
 console.log('DEBUG: Loaded Env Vars:');
 console.log(`  GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_REDIRECT_URI: ${process.env.GOOGLE_REDIRECT_URI ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_MAPS_API_KEY: ${process.env.GOOGLE_MAPS_API_KEY ? 'Loaded' : 'MISSING'}`);
-console.log(`  SUPABASE_URL: ${process.env.SUPABASE_URL ? 'Loaded' : 'MISSING'}`);
-console.log(
-  `  SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Loaded' : 'MISSING'}`
-);
 console.log('----------------------------------------');
+// --- End Debugging ---
 
 // --- Configuration ---
 const PORT = process.env.SERVER_PORT || 8080; // Default to 8080 if not specified
 
-// Environment variables for Google OAuth
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET;
+// Constants
+const CLIENT_ID =
+  process.env.GOOGLE_CLIENT_ID ||
+  '1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com';
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
 const REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI ||
-  process.env.REDIRECT_URI ||
-  'http://localhost:8080/auth/google/callback';
+  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:8080/auth/google/callback';
 
 // --- Basic Server Setup ---
 const app = express();
@@ -1181,47 +1173,11 @@ app.get('/auth/clear', (req, res) => {
 
 // --- Start Server ---
 // Use port 3000 for the backend API server
-console.log(`Attempting to start server on port 3000...`);
-
-// Add global error handlers to prevent crashes
-process.on('uncaughtException', err => {
-  console.error('Uncaught Exception:', err);
-  // Keep the server running despite the error
+app.listen(3000, () => {
+  console.log(`Backend server listening on http://localhost:3000`); // Updated log message
+  if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !process.env.GOOGLE_MAPS_API_KEY) {
+    console.warn('!!! WARNING: One or more Google API credentials are missing in .env file.');
+  }
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Keep the server running despite the promise rejection
-});
-
-try {
-  const server = app.listen(3000, () => {
-    console.log(`Backend server listening on http://localhost:3000`); // Updated log message
-    if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !process.env.GOOGLE_MAPS_API_KEY) {
-      console.warn('!!! WARNING: One or more Google API credentials are missing in .env file.');
-    }
-  });
-
-  console.log(`Server started successfully`);
-
-  // Keep the process alive
-  setInterval(() => {
-    console.log('Server is still running... Press Ctrl+C to stop');
-  }, 60000); // Log every minute
-
-  // Clean shutdown
-  ['SIGINT', 'SIGTERM'].forEach(signal => {
-    process.on(signal, () => {
-      console.log(`Received ${signal}, shutting down gracefully`);
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
-  });
-} catch (error) {
-  console.error(`Failed to start server: ${error.message}`);
-}
-
-// Export for potential use with other tools
-module.exports = app;
+// module.exports = { app, oauth2Client }; // Comment out or remove exports if not needed for testing framework

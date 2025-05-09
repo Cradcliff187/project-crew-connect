@@ -1,42 +1,64 @@
-// Simple script to apply the migration to add source_item_id column
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 
-// Initialize Supabase client with your project URL and service role key
-const supabase = createClient(
-  'https://zrxezqllmpdlhiudutme.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY'
-);
+// Configuration
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ACCESS_TOKEN;
+const MIGRATION_FILE = path.resolve(__dirname, '../migrations/002_add_source_item_id.sql');
 
-// SQL for adding the column
-const migrationSql = `
--- Add the column to track source items if it doesn't exist
-ALTER TABLE IF EXISTS estimate_items ADD COLUMN IF NOT EXISTS source_item_id TEXT;
+// Validate configuration
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error(
+    'Error: SUPABASE_URL and SUPABASE_KEY (or SUPABASE_ACCESS_TOKEN) environment variables must be set.'
+  );
+  console.error('Set them before running this script:');
+  console.error('  export SUPABASE_URL=your_project_url');
+  console.error('  export SUPABASE_KEY=your_service_role_key');
+  process.exit(1);
+}
 
--- Add comment explaining the purpose
-COMMENT ON COLUMN IF EXISTS estimate_items.source_item_id IS 'References the original item ID this item was copied from, used for tracking history across revisions';
+// Initialize Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+  },
+});
 
--- Create an index to speed up lookups by source item
-CREATE INDEX IF NOT EXISTS idx_estimate_items_source_item_id ON estimate_items(source_item_id);
-`;
-
-async function applyMigration() {
+async function main() {
   try {
-    console.log('Applying migration to add source_item_id column...');
+    console.log('Starting migration...');
 
-    // Execute the migration SQL
-    const { data, error } = await supabase.rpc('pgmigration', { sql: migrationSql });
+    // Read the migration SQL file
+    const migrationSql = fs.readFileSync(MIGRATION_FILE, 'utf8');
+    console.log(`Loaded migration: ${MIGRATION_FILE}`);
+
+    // Execute the SQL
+    const { error } = await supabase.rpc('pgmigration', { sql: migrationSql });
 
     if (error) {
       console.error('Error applying migration:', error);
-      return;
+      process.exit(1);
     }
 
-    console.log('Migration successful!');
-    console.log('You can now use the source_item_id column in your code.');
+    console.log('Migration applied successfully!');
+
+    // Verify the changes by querying the table information
+    const { data, error: schemaError } = await supabase.rpc('pginfo', {
+      table_name: 'estimate_items',
+    });
+
+    if (schemaError) {
+      console.error('Error checking schema:', schemaError);
+    } else {
+      console.log('Current estimate_items table schema:');
+      console.log(JSON.stringify(data, null, 2));
+    }
   } catch (error) {
     console.error('Unexpected error:', error);
+    process.exit(1);
   }
 }
 
-// Run the migration
-applyMigration();
+// Execute the main function
+main();
