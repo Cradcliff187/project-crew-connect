@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { Check, X, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { ICalendarEventBase } from '@/types/unifiedCalendar';
+import { CalendarEventForm } from '@/components/common/CalendarEventForm';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ProjectMilestone } from './hooks/useMilestones';
+  ProjectMilestone,
+  MilestoneStatus,
+  MilestonePriority,
+  AssigneeType,
+} from './hooks/useMilestones';
 
 interface MilestoneFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingMilestone: ProjectMilestone | null;
-  onSave: (title: string, description: string, dueDate: Date | undefined) => Promise<boolean>;
+  onSave: (
+    title: string,
+    description: string,
+    dueDate: Date | undefined,
+    calendarSync: boolean,
+    additionalFields?: Partial<ProjectMilestone>
+  ) => Promise<boolean>;
   onCancel: () => void;
 }
 
@@ -30,99 +29,87 @@ const MilestoneFormDialog = ({
   onSave,
   onCancel,
 }: MilestoneFormDialogProps) => {
-  const [title, setTitle] = useState(editingMilestone?.title || '');
-  const [description, setDescription] = useState(editingMilestone?.description || '');
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    editingMilestone?.due_date ? new Date(editingMilestone.due_date) : undefined
-  );
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  // Convert legacy ProjectMilestone to unified ICalendarEventBase
+  const mapToCalendarEvent = (
+    milestone: ProjectMilestone | null
+  ): Partial<ICalendarEventBase> | undefined => {
+    if (!milestone) return undefined;
 
-  const handleSave = async () => {
-    if (!title.trim()) {
-      return;
-    }
+    // Create extended calendar event data with custom fields
+    const calendarData: Partial<ICalendarEventBase> & {
+      priority?: MilestonePriority;
+      status?: MilestoneStatus;
+    } = {
+      id: milestone.id,
+      title: milestone.title,
+      description: milestone.description || null,
+      // Use due_date as end_datetime and start_date as start_datetime
+      start_datetime: milestone.start_date || milestone.due_date || '',
+      end_datetime: milestone.due_date || '',
+      is_all_day: true, // Milestones are typically all-day events
+      assignee_type: milestone.assignee_type || null,
+      assignee_id: milestone.assignee_id || null,
+      entity_type: 'project_milestone',
+      entity_id: milestone.id,
+      sync_enabled: milestone.calendar_sync_enabled || false,
+      // Add milestone specific data to be saved later
+      priority: milestone.priority,
+      status: milestone.status,
+    };
 
-    const success = await onSave(title, description, dueDate);
-    if (success) {
-      resetForm();
-    }
+    return calendarData;
   };
 
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setDueDate(undefined);
+  // Convert unified ICalendarEventBase back to legacy ProjectMilestone format
+  const mapToMilestone = async (
+    eventData: Partial<ICalendarEventBase> & {
+      priority?: MilestonePriority;
+      status?: MilestoneStatus;
+    }
+  ): Promise<boolean> => {
+    // Extract the milestone-specific fields
+    const dueDate = eventData.end_datetime ? new Date(eventData.end_datetime) : undefined;
+    const startDate = eventData.start_datetime ? new Date(eventData.start_datetime) : undefined;
+
+    // Prepare additional fields
+    const additionalFields: Partial<ProjectMilestone> = {
+      start_date: startDate ? startDate.toISOString() : undefined,
+      status: eventData.status || 'not_started',
+      priority: eventData.priority || 'medium',
+      assignee_type: eventData.assignee_type as AssigneeType | undefined,
+      assignee_id: eventData.assignee_id,
+    };
+
+    return await onSave(
+      eventData.title || '',
+      eventData.description || '',
+      dueDate,
+      eventData.sync_enabled || false,
+      additionalFields
+    );
   };
+
+  // Extract calendar event data from the editing milestone
+  const calendarEventData = mapToCalendarEvent(editingMilestone);
+  const projectId = editingMilestone?.projectid;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{editingMilestone ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div>
-            <label htmlFor="title" className="text-sm font-medium block mb-1">
-              Title *
-            </label>
-            <Input
-              id="title"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Enter task title"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="description" className="text-sm font-medium block mb-1">
-              Description
-            </label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Enter task description"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium block mb-1">Due Date</label>
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {dueDate ? format(dueDate, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={dueDate}
-                  onSelect={date => {
-                    setDueDate(date);
-                    setDatePickerOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
-            <X className="h-4 w-4 mr-1" />
-            Cancel
-          </Button>
-          <Button onClick={handleSave} className="bg-[#0485ea] hover:bg-[#0375d1]">
-            <Check className="h-4 w-4 mr-1" />
-            {editingMilestone ? 'Update Task' : 'Add Task'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <CalendarEventForm
+      open={open}
+      onOpenChange={onOpenChange}
+      eventData={calendarEventData}
+      entityType="project_milestone"
+      entityId={editingMilestone?.id || ''}
+      projectId={projectId}
+      onSave={mapToMilestone}
+      onCancel={onCancel}
+      title={editingMilestone ? 'Edit Task' : 'Add New Task'}
+      description={
+        editingMilestone
+          ? 'Update the details for this task.'
+          : 'Fill in the details to create a new task for this project.'
+      }
+    />
   );
 };
 

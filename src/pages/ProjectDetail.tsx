@@ -4,27 +4,24 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { Loader2, ArrowLeft, FileText, BarChart3, Banknote, FileDown } from 'lucide-react';
+import {
+  Loader2,
+  ArrowLeft,
+  FileText,
+  BarChart3,
+  Banknote,
+  FileDown,
+  Edit,
+  Plus,
+  PlusCircle,
+  FilePlus,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
-
-import ProjectHeader from '@/components/projects/detail/ProjectHeader';
-import ProjectInfoCard from '@/components/projects/detail/ProjectInfoCard';
-import ProjectClientCard from '@/components/projects/detail/ProjectClientCard';
-import ProjectBudgetCard from '@/components/projects/detail/ProjectBudgetCard';
-import ProjectDescription from '@/components/projects/detail/ProjectDescription';
-import ProjectBudget from '@/components/projects/budget/ProjectBudget';
-import ProjectMilestones from '@/components/projects/detail/ProjectMilestones';
-import ProjectDocumentsList from '@/components/projects/detail/DocumentsList';
-import ProjectChangeOrdersList from '@/components/projects/detail/ChangeOrdersList';
-import FinancialSummaryTab from '@/components/projects/detail/tabs/FinancialSummaryTab';
-import ExpenseFormDialog from '@/components/projects/budget/ExpenseFormDialog';
-import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import {
   Dialog,
   DialogContent,
@@ -32,12 +29,32 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
+import ProjectHeader from '@/components/projects/detail/ProjectHeader';
+import ProjectInfoCard from '@/components/projects/detail/ProjectInfoCard';
+import ProjectClientCard from '@/components/projects/detail/ProjectClientCard';
+import ProjectBudgetCard from '@/components/projects/detail/ProjectBudgetCard';
+import ProjectDescription from '@/components/projects/detail/ProjectDescription';
+import ProjectBudget from '@/components/projects/budget/ProjectBudget';
+import ProjectMilestones from '@/components/projects/milestones/ProjectMilestones';
+import ProjectDocumentsList from '@/components/projects/detail/DocumentsList';
+import ProjectChangeOrdersList from '@/components/projects/detail/ChangeOrdersList';
+import FinancialSummaryTab from '@/components/projects/detail/tabs/FinancialSummaryTab';
+import ExpenseFormDialog from '@/components/projects/budget/ExpenseFormDialog';
+import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Discount } from '@/services/discountService';
 import FinancialSnapshotCard from '@/components/projects/detail/cards/FinancialSnapshotCard';
 import ProjectHealthCard from '@/components/projects/detail/cards/ProjectHealthCard';
 import UpcomingDatesCard from '@/components/projects/detail/cards/UpcomingDatesCard';
 import ProjectOverviewTab from '@/components/projects/detail/tabs/ProjectOverviewTab';
+import ProjectScheduleTab from '@/components/projects/schedule/ProjectScheduleTab';
 
 // Define type aliases using generated types
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -283,6 +300,8 @@ const ProjectDetail = () => {
       <div className="space-y-6">
         <ProjectHeader
           project={project}
+          customerName={customer?.customername || null}
+          customerId={customer?.customerid || null}
           onAddExpenseClick={handleAddExpenseClick}
           onAddChangeOrderClick={handleAddChangeOrderClick}
           onAddDocumentClick={handleAddDocumentClick}
@@ -345,7 +364,7 @@ const ProjectDetail = () => {
             </TabsContent>
 
             <TabsContent value="schedule" className="mt-0">
-              <ProjectMilestones projectId={project.projectid} />
+              <ProjectScheduleTab projectId={project.projectid} />
             </TabsContent>
 
             <TabsContent value="changes" className="mt-0">

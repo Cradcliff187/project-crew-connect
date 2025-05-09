@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import PageHeader from '@/components/layout/PageHeader';
 import { Textarea } from '@/components/ui/textarea';
+import GoogleCalendarSettings from '@/components/common/GoogleCalendarSettings';
 
 // Type definition for individual settings (adjust if needed)
 type SettingRow = {
@@ -201,6 +202,7 @@ const Settings = () => {
           <TabsList>
             <TabsTrigger value="email">Email Settings</TabsTrigger>
             <TabsTrigger value="labor">Labor Settings</TabsTrigger>
+            <TabsTrigger value="calendar">Google Calendar</TabsTrigger>
             <TabsTrigger value="company">Company Information</TabsTrigger>
           </TabsList>
 
@@ -402,6 +404,10 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="calendar" className="mt-6">
+            <GoogleCalendarSettings />
           </TabsContent>
         </Tabs>
       </div>

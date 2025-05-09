@@ -12,6 +12,8 @@ import {
   File,
   Check,
   RefreshCw,
+  CalendarPlus,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,6 +52,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Contact } from '@/pages/Contacts';
+import { Switch } from '@/components/ui/switch';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { toast } from '@/hooks/use-toast';
+import { createCalendarEvent } from '@/services/calendarService';
+import { CalendarIntegrationToggle } from '@/components/common/CalendarIntegrationToggle';
 
 const formSchema = z.object({
   interaction_type: z.string({
@@ -66,6 +73,8 @@ const formSchema = z.object({
   scheduled_date: z.date().optional(),
   scheduled_time: z.string().optional(),
   duration_minutes: z.number().optional(),
+  sync_to_calendar: z.boolean().default(false),
+  attendee_emails: z.string().optional(),
 });
 
 interface InteractionsSectionProps {
@@ -79,6 +88,8 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [interactionType, setInteractionType] = useState('NOTE');
+  const { isAuthenticated, login } = useGoogleCalendar();
+  const [calendarSyncing, setCalendarSyncing] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -91,6 +102,8 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
       scheduled_date: undefined,
       scheduled_time: '',
       duration_minutes: 0,
+      sync_to_calendar: false,
+      attendee_emails: contact?.email || '',
     },
   });
 
@@ -116,11 +129,104 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
     if (newType) {
       setInteractionType(newType);
       form.setValue('status', newType === 'TASK' ? 'PLANNED' : 'COMPLETED');
+
+      // Only suggest calendar sync for meetings by default
+      form.setValue('sync_to_calendar', newType === 'MEETING');
     }
   }, [form.watch('interaction_type')]);
 
+  // Add attendee email when contact changes or when initially loaded
+  useEffect(() => {
+    if (contact?.email) {
+      form.setValue('attendee_emails', contact.email);
+    }
+  }, [contact, form]);
+
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      let calendarEventId = null;
+
+      // Create calendar event if needed
+      if (
+        values.sync_to_calendar &&
+        values.scheduled_date &&
+        (values.interaction_type === 'MEETING' || values.interaction_type === 'TASK')
+      ) {
+        if (!isAuthenticated) {
+          const confirmed = window.confirm(
+            'You need to connect your Google Calendar first. Would you like to do that now?'
+          );
+          if (confirmed) {
+            await login();
+            toast({
+              title: 'Authentication required',
+              description: 'Please try again after connecting to Google Calendar',
+            });
+            return;
+          } else {
+            // Proceed without calendar sync
+            form.setValue('sync_to_calendar', false);
+          }
+        } else {
+          setCalendarSyncing(true);
+
+          // Parse time string
+          let hours = 9,
+            minutes = 0;
+          if (values.scheduled_time) {
+            const timeParts = values.scheduled_time.split(':');
+            if (timeParts.length === 2) {
+              hours = parseInt(timeParts[0], 10);
+              minutes = parseInt(timeParts[1], 10);
+            }
+          }
+
+          // Set start date with time
+          const startDate = new Date(values.scheduled_date);
+          startDate.setHours(hours, minutes, 0, 0);
+
+          // Calculate end date based on duration
+          const endDate = new Date(startDate);
+          endDate.setMinutes(endDate.getMinutes() + (values.duration_minutes || 60));
+
+          // Prepare attendees if any
+          const attendees = [];
+          if (values.attendee_emails) {
+            attendees.push(...values.attendee_emails.split(',').map(email => email.trim()));
+          }
+
+          try {
+            const calendarEvent = await createCalendarEvent({
+              title: values.subject,
+              description: values.notes || `Meeting with ${contact.name}`,
+              startTime: startDate.toISOString(),
+              endTime: endDate.toISOString(),
+              location: '',
+              entityType: 'contact_interaction',
+              entityId: contact.id,
+              attendees,
+              sendNotifications: true,
+            });
+
+            calendarEventId = calendarEvent.id;
+
+            toast({
+              title: 'Calendar event created',
+              description: 'The meeting has been added to your Google Calendar',
+            });
+          } catch (error) {
+            console.error('Failed to create calendar event:', error);
+            toast({
+              title: 'Calendar sync failed',
+              description: 'Unable to create Google Calendar event',
+              variant: 'destructive',
+            });
+          } finally {
+            setCalendarSyncing(false);
+          }
+        }
+      }
+
       const newInteraction = {
         contact_id: contact.id,
         interaction_type: values.interaction_type,
@@ -132,6 +238,8 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
         duration_minutes: values.duration_minutes,
         status: values.status,
         created_by: 'System',
+        calendar_event_id: calendarEventId,
+        calendar_sync_enabled: values.sync_to_calendar,
       };
 
       await addContactInteraction(newInteraction);
@@ -177,6 +285,93 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
         return 'bg-amber-100 text-amber-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const createCalendarEventForInteraction = async (interaction: ContactInteraction) => {
+    if (!isAuthenticated) {
+      const confirmed = window.confirm(
+        'You need to connect your Google Calendar first. Would you like to do that now?'
+      );
+      if (confirmed) {
+        await login();
+        toast({
+          title: 'Authentication required',
+          description: 'Please try again after connecting to Google Calendar',
+        });
+        return;
+      } else {
+        return;
+      }
+    }
+
+    if (!interaction.scheduled_date) {
+      toast({
+        title: 'Missing scheduled date',
+        description: 'This interaction needs a scheduled date before adding to calendar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCalendarSyncing(true);
+    try {
+      // Parse time string
+      let hours = 9,
+        minutes = 0;
+      if (interaction.scheduled_time) {
+        const timeParts = interaction.scheduled_time.split(':');
+        if (timeParts.length === 2) {
+          hours = parseInt(timeParts[0], 10);
+          minutes = parseInt(timeParts[1], 10);
+        }
+      }
+
+      // Set start date with time
+      const startDate = new Date(interaction.scheduled_date);
+      startDate.setHours(hours, minutes, 0, 0);
+
+      // Calculate end date based on duration
+      const endDate = new Date(startDate);
+      endDate.setMinutes(endDate.getMinutes() + (interaction.duration_minutes || 60));
+
+      // Prepare attendees if any
+      const attendees = [];
+      if (contact.email) {
+        attendees.push(contact.email);
+      }
+
+      const calendarEvent = await createCalendarEvent({
+        title: interaction.subject,
+        description: interaction.notes || `Meeting with ${contact.name}`,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        location: '',
+        entityType: 'contact_interaction',
+        entityId: contact.id,
+        attendees,
+        sendNotifications: true,
+      });
+
+      // Update the interaction with the calendar event ID
+      // This would require an additional API endpoint to update the interaction
+      // For now just show a success message
+      toast({
+        title: 'Calendar event created',
+        description: 'The interaction has been added to your Google Calendar',
+      });
+
+      // Refresh the list to show the updated status
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to create calendar event:', error);
+      toast({
+        title: 'Calendar sync failed',
+        description: 'Unable to create Google Calendar event',
+        variant: 'destructive',
+      });
+    } finally {
+      setCalendarSyncing(false);
     }
   };
 
@@ -246,6 +441,42 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                         {interaction.duration_minutes &&
                           ` (${interaction.duration_minutes} minutes)`}
                       </span>
+                    </div>
+                  )}
+
+                  {interaction.scheduled_date &&
+                    !interaction.calendar_event_id &&
+                    (interaction.interaction_type === 'MEETING' ||
+                      interaction.interaction_type === 'TASK') && (
+                      <div className="mt-2">
+                        <Button
+                          variant={isAuthenticated ? 'outline' : 'secondary'}
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => createCalendarEventForInteraction(interaction)}
+                          disabled={calendarSyncing || !isAuthenticated}
+                        >
+                          {isAuthenticated ? (
+                            <>
+                              <CalendarPlus className="h-3 w-3 mr-1" />
+                              Add to Calendar
+                            </>
+                          ) : (
+                            <>
+                              <Calendar className="h-3 w-3 mr-1" />
+                              <a href="/settings?tab=calendar" className="text-xs">
+                                Connect Calendar
+                              </a>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+
+                  {interaction.calendar_event_id && (
+                    <div className="flex items-center mt-2 text-xs text-green-600">
+                      <Check className="h-3 w-3 mr-1" />
+                      <span>Added to Google Calendar</span>
                     </div>
                   )}
                 </div>
@@ -371,81 +602,142 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
               </div>
 
               {(interactionType === 'MEETING' || interactionType === 'TASK') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="scheduled_date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Scheduled Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="scheduled_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Scheduled Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={'outline'}
+                                  className={cn(
+                                    'pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, 'PPP')
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <FormField
+                        control={form.control}
+                        name="scheduled_time"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time</FormLabel>
                             <FormControl>
-                              <Button
-                                variant={'outline'}
-                                className={cn(
-                                  'pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, 'PPP')
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                              <Input type="time" placeholder="15:00" {...field} />
                             </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="scheduled_time"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 3:00 PM" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="duration_minutes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration (min)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="60"
-                              {...field}
-                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="duration_minutes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration (min)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="60"
+                                {...field}
+                                onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
+
+                  <div className="space-y-4 border-t pt-4 mt-2">
+                    <FormField
+                      control={form.control}
+                      name="sync_to_calendar"
+                      render={({ field }) => (
+                        <FormControl>
+                          <CalendarIntegrationToggle
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={!form.watch('scheduled_date')}
+                            disabledReason="A scheduled date is required for calendar integration"
+                            description="Create a calendar event for this meeting"
+                            entityType="contact_interaction"
+                          />
+                        </FormControl>
+                      )}
+                    />
+
+                    {form.watch('sync_to_calendar') && (
+                      <FormField
+                        control={form.control}
+                        name="attendee_emails"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Attendee Emails</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="email@example.com, email2@example.com"
+                                {...field}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Separate multiple emails with commas
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {!isAuthenticated && form.watch('sync_to_calendar') && (
+                      <div className="text-sm rounded-md bg-blue-50 p-3 text-blue-700 mt-2">
+                        <p className="flex items-center">
+                          <Info className="h-4 w-4 mr-2" />
+                          You need to connect to Google Calendar first
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 text-xs"
+                          onClick={() => login()}
+                        >
+                          Connect to Google Calendar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               <FormField
@@ -470,8 +762,12 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                 <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]">
-                  Add Interaction
+                <Button
+                  type="submit"
+                  className="bg-[#0485ea] hover:bg-[#0375d1]"
+                  disabled={calendarSyncing}
+                >
+                  {calendarSyncing ? 'Creating event...' : 'Add Interaction'}
                 </Button>
               </DialogFooter>
             </form>

@@ -122,36 +122,6 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">{project.projectname}</h2>
-            <StatusBadge status={project.status || 'PENDING'} />
-          </div>
-          <p className="text-sm text-muted-foreground">ID: {project.projectid}</p>
-
-          {customerName && (
-            <div className="flex items-center gap-2 mt-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <span className="text-sm font-medium">{customerName}</span>
-                {customerId && (
-                  <span className="text-xs text-muted-foreground ml-2">({customerId})</span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <Button variant="outline" size="sm" onClick={onEditClick}>
-            <Pencil className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-        </div>
-      </div>
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left Column: Project Details */}

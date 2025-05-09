@@ -101,4 +101,16 @@
   .subtle-input {
     @apply bg-background/70 border-border/70 focus:border-primary/50 focus:ring-1 focus:ring-primary/30;
   }
+
+  /* Fix for dropdown selection in dialog components */
+  .assignee-selector-container {
+    @apply relative;
+    z-index: 100 !important;
+  }
+
+  /* Ensure command items are clickable */
+  [cmdk-item] {
+    cursor: pointer !important;
+    user-select: none;
+  }
 }

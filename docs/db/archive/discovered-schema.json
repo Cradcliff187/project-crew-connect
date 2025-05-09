@@ -1,0 +1,337 @@
+{
+  "tables": [
+    {
+      "name": "customers",
+      "columns": [
+        {
+          "name": "customerid",
+          "sample_values": ["CUS-100001", "CUS-100002", "CUS-100003"],
+          "possible_type": "date",
+          "possible_foreign_key": {
+            "possible_reference": "customer",
+            "pattern": "/^(.+)id$/i"
+          }
+        },
+        {
+          "name": "customername",
+          "sample_values": ["Oakridge Properties", "Westview Development", "Highland Construction"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "address",
+          "sample_values": ["123 Main Street", "456 Market Street", "789 Highland Ave"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "city",
+          "sample_values": ["San Francisco", "Los Angeles", "San Diego"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "state",
+          "sample_values": ["California", "California", "California"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "zip",
+          "sample_values": ["94105", "90001", "92101"],
+          "possible_type": "date",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "contactemail",
+          "sample_values": ["contact@oakridge.com", "info@westview.dev", "projects@highland.build"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "phone",
+          "sample_values": ["(555) 123-4567", "(555) 234-5678", "(555) 345-6789"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "createdon",
+          "sample_values": [],
+          "possible_type": "unknown",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "createdby",
+          "sample_values": ["system", "system", "system"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "status",
+          "sample_values": ["ACTIVE", "ACTIVE", "PROSPECT"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "created_at",
+          "sample_values": [
+            "2025-03-22T19:59:35.211194+00:00",
+            "2025-03-22T19:59:35.211194+00:00",
+            "2025-03-22T19:59:35.211194+00:00"
+          ],
+          "possible_type": "date",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "updated_at",
+          "sample_values": [
+            "2025-03-22T19:59:35.211194+00:00",
+            "2025-03-22T19:59:35.211194+00:00",
+            "2025-03-22T19:59:35.211194+00:00"
+          ],
+          "possible_type": "date",
+          "possible_foreign_key": null
+        }
+      ],
+      "row_count": 5,
+      "sample_data": [
+        {
+          "customerid": "CUS-100001",
+          "customername": "Oakridge Properties",
+          "address": "123 Main Street",
+          "city": "San Francisco",
+          "state": "California",
+          "zip": "94105",
+          "contactemail": "contact@oakridge.com",
+          "phone": "(555) 123-4567",
+          "createdon": null,
+          "createdby": "system",
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "customerid": "CUS-100002",
+          "customername": "Westview Development",
+          "address": "456 Market Street",
+          "city": "Los Angeles",
+          "state": "California",
+          "zip": "90001",
+          "contactemail": "info@westview.dev",
+          "phone": "(555) 234-5678",
+          "createdon": null,
+          "createdby": "system",
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "customerid": "CUS-100003",
+          "customername": "Highland Construction",
+          "address": "789 Highland Ave",
+          "city": "San Diego",
+          "state": "California",
+          "zip": "92101",
+          "contactemail": "projects@highland.build",
+          "phone": "(555) 345-6789",
+          "createdon": null,
+          "createdby": "system",
+          "status": "PROSPECT",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "customerid": "CUS-100004",
+          "customername": "Pacific Coast Investments",
+          "address": "555 Ocean Drive",
+          "city": "Monterey",
+          "state": "California",
+          "zip": "93940",
+          "contactemail": "info@pacificcoast.com",
+          "phone": "(555) 456-7890",
+          "createdon": null,
+          "createdby": "system",
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "customerid": "CUS-100005",
+          "customername": "Sierra Nevada Builders",
+          "address": "321 Mountain View",
+          "city": "Sacramento",
+          "state": "California",
+          "zip": "95814",
+          "contactemail": "contracts@sierrabuilders.com",
+          "phone": "(555) 567-8901",
+          "createdon": null,
+          "createdby": "system",
+          "status": "PROSPECT",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        }
+      ]
+    },
+    {
+      "name": "employees",
+      "columns": [
+        {
+          "name": "employee_id",
+          "sample_values": [
+            "87c41b6e-9c05-45a7-b8e2-749b834183bc",
+            "f2ce8446-9798-4844-bb33-6816b5517903",
+            "bc2aad1f-183e-4290-9e89-7799b5509989"
+          ],
+          "possible_type": "uuid",
+          "possible_foreign_key": {
+            "possible_reference": "employee",
+            "pattern": "/^(.+)_id$/i"
+          }
+        },
+        {
+          "name": "first_name",
+          "sample_values": ["John", "Jane", "John"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "last_name",
+          "sample_values": ["Doe", "Smith", "Smith"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "email",
+          "sample_values": ["john.doe@company.com", "jane.smith@company.com", "john.smith@akc.com"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "phone",
+          "sample_values": ["555-1111", "555-2222", "(555) 111-2233"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "role",
+          "sample_values": ["Project Manager", "Developer", "Project Manager"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "hourly_rate",
+          "sample_values": [50, 40, 85],
+          "possible_type": "number",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "status",
+          "sample_values": ["ACTIVE", "ACTIVE", "ACTIVE"],
+          "possible_type": "string",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "created_at",
+          "sample_values": [
+            "2025-03-17T20:30:58.529052+00:00",
+            "2025-03-17T20:30:58.529052+00:00",
+            "2025-03-22T19:59:35.211194+00:00"
+          ],
+          "possible_type": "date",
+          "possible_foreign_key": null
+        },
+        {
+          "name": "updated_at",
+          "sample_values": [
+            "2025-03-17T20:30:58.529052+00:00",
+            "2025-03-17T20:30:58.529052+00:00",
+            "2025-03-22T19:59:35.211194+00:00"
+          ],
+          "possible_type": "date",
+          "possible_foreign_key": null
+        }
+      ],
+      "row_count": 5,
+      "sample_data": [
+        {
+          "employee_id": "87c41b6e-9c05-45a7-b8e2-749b834183bc",
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@company.com",
+          "phone": "555-1111",
+          "role": "Project Manager",
+          "hourly_rate": 50,
+          "status": "ACTIVE",
+          "created_at": "2025-03-17T20:30:58.529052+00:00",
+          "updated_at": "2025-03-17T20:30:58.529052+00:00"
+        },
+        {
+          "employee_id": "f2ce8446-9798-4844-bb33-6816b5517903",
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "email": "jane.smith@company.com",
+          "phone": "555-2222",
+          "role": "Developer",
+          "hourly_rate": 40,
+          "status": "ACTIVE",
+          "created_at": "2025-03-17T20:30:58.529052+00:00",
+          "updated_at": "2025-03-17T20:30:58.529052+00:00"
+        },
+        {
+          "employee_id": "bc2aad1f-183e-4290-9e89-7799b5509989",
+          "first_name": "John",
+          "last_name": "Smith",
+          "email": "john.smith@akc.com",
+          "phone": "(555) 111-2233",
+          "role": "Project Manager",
+          "hourly_rate": 85,
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "employee_id": "aeadfeef-5846-4002-8ae3-f079d7d38a6f",
+          "first_name": "Maria",
+          "last_name": "Rodriguez",
+          "email": "maria.rodriguez@akc.com",
+          "phone": "(555) 222-3344",
+          "role": "Electrician",
+          "hourly_rate": 75,
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        },
+        {
+          "employee_id": "48f17673-3ae8-4941-967b-c05d0dedd370",
+          "first_name": "David",
+          "last_name": "Johnson",
+          "email": "david.johnson@akc.com",
+          "phone": "(555) 333-4455",
+          "role": "Carpenter",
+          "hourly_rate": 65,
+          "status": "ACTIVE",
+          "created_at": "2025-03-22T19:59:35.211194+00:00",
+          "updated_at": "2025-03-22T19:59:35.211194+00:00"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from_table": "customers",
+      "from_column": "customerid",
+      "to_table": "customer",
+      "to_column": "id",
+      "relationship_type": "many_to_one",
+      "confidence": "medium"
+    },
+    {
+      "from_table": "employees",
+      "from_column": "employee_id",
+      "to_table": "employee",
+      "to_column": "id",
+      "relationship_type": "many_to_one",
+      "confidence": "medium"
+    }
+  ]
+}

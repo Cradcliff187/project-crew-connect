@@ -1,0 +1,8 @@
+{
+  "name": "schema-checker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "check": "node check_calendar_schema.js"
+  }
+}

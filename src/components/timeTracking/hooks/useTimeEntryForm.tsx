@@ -17,6 +17,10 @@ const timeEntryFormSchema = z.object({
   notes: z.string().optional(),
   employeeId: z.string().optional(),
   hasReceipts: z.boolean().default(false),
+
+  // Calendar integration fields
+  calendar_sync_enabled: z.boolean().default(false),
+  calendar_event_id: z.string().optional(),
 });
 
 const defaultFormValues: TimeEntryFormValues = {
@@ -29,6 +33,7 @@ const defaultFormValues: TimeEntryFormValues = {
   notes: '',
   employeeId: '',
   hasReceipts: false,
+  calendar_sync_enabled: false,
 };
 
 export function useTimeEntryForm(onSuccess: () => void) {

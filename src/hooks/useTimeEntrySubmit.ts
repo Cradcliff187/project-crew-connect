@@ -3,9 +3,11 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
+import { useCalendarIntegration } from '@/hooks/useCalendarIntegration';
 
 export function useTimeEntrySubmit(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createEvent } = useCalendarIntegration();
 
   const submitTimeEntry = async (
     data: TimeEntryFormValues,
@@ -21,15 +23,19 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
 
     try {
       let employeeRate = null;
+      let employeeName = null;
       if (data.employeeId) {
         // Get employee rate if available
         const { data: empData } = await supabase
           .from('employees')
-          .select('hourly_rate')
+          .select('hourly_rate, first_name, last_name')
           .eq('employee_id', data.employeeId)
           .maybeSingle();
 
         employeeRate = empData?.hourly_rate;
+        if (empData?.first_name && empData?.last_name) {
+          employeeName = `${empData.first_name} ${empData.last_name}`;
+        }
       }
 
       // Calculate total cost
@@ -49,6 +55,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         total_cost: totalCost,
         notes: data.notes || null,
         has_receipts: selectedFiles.length > 0,
+        calendar_sync_enabled: data.calendar_sync_enabled || false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -67,6 +74,64 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
       }
 
       console.log('Time entry created successfully with ID:', insertedEntry.id);
+
+      // Handle Google Calendar integration if enabled
+      if (data.calendar_sync_enabled && insertedEntry) {
+        try {
+          // Get entity name (project or work order title)
+          let entityName = '';
+          if (data.entityType === 'project') {
+            const { data: projectData } = await supabase
+              .from('projects')
+              .select('projectname')
+              .eq('projectid', data.entityId)
+              .maybeSingle();
+            entityName = projectData?.projectname || 'Project';
+          } else if (data.entityType === 'work_order') {
+            const { data: workOrderData } = await supabase
+              .from('maintenance_work_orders')
+              .select('title')
+              .eq('work_order_id', data.entityId)
+              .maybeSingle();
+            entityName = workOrderData?.title || 'Work Order';
+          }
+
+          // Create a calendar event title
+          const eventTitle = employeeName
+            ? `${employeeName} - Work on ${entityName}`
+            : `Work on ${entityName}`;
+
+          const startDate = `${format(data.workDate, 'yyyy-MM-dd')}T${data.startTime}:00`;
+          const endDate = `${format(data.workDate, 'yyyy-MM-dd')}T${data.endTime}:00`;
+
+          // Create calendar event using our standardized hook
+          const calendarResult = await createEvent({
+            title: eventTitle,
+            description: data.notes || `Time tracking: ${data.hoursWorked} hours`,
+            startTime: startDate,
+            endTime: endDate,
+            entityType: 'time_entry',
+            entityId: insertedEntry.id,
+            attendees: employeeName ? [data.employeeId] : undefined,
+          });
+
+          // If successful, update the time entry with calendar event ID
+          if (calendarResult.success && calendarResult.eventId) {
+            await supabase
+              .from('time_entries')
+              .update({ calendar_event_id: calendarResult.eventId })
+              .eq('id', insertedEntry.id);
+          }
+        } catch (calendarError) {
+          console.error('Error creating calendar event:', calendarError);
+          // Don't fail the whole submission if calendar integration fails
+          toast({
+            title: 'Calendar sync issue',
+            description: 'Failed to sync with Google Calendar. Your time entry was saved.',
+            variant: 'destructive',
+          });
+        }
+      }
 
       // Upload receipts if provided
       if (selectedFiles.length > 0 && insertedEntry) {
