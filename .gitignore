@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+renewal-log.txt
+dev-output.log
 
 node_modules
 dist
@@ -26,6 +28,9 @@ dist-ssr
 # Server specific
 server/node_modules/
 server/.env
+
+# Environment variables
+.env
 
 # Cursor MCP configuration (contains sensitive credentials)
 .cursor/mcp.json
