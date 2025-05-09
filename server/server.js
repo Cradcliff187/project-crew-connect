@@ -4,6 +4,10 @@
 // Import necessary modules
 const express = require('express');
 const dotenv = require('dotenv');
+
+// Load environment variables from .env file immediately
+dotenv.config();
+
 const { google } = require('googleapis');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -25,15 +29,15 @@ const sheetsHelper = require('./google-api-helpers/sheets'); // Import for poten
 const docsHelper = require('./google-api-helpers/docs'); // Import for potential future use
 // TODO: Import other helpers (Sheets, Docs)
 
-// Load environment variables from .env file
-dotenv.config();
-
 // --- DEBUGGING: Log loaded environment variables ---
 console.log('DEBUG: Loaded Env Vars:');
 console.log(`  GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_REDIRECT_URI: ${process.env.GOOGLE_REDIRECT_URI ? 'Loaded' : 'MISSING'}`);
 console.log(`  GOOGLE_MAPS_API_KEY: ${process.env.GOOGLE_MAPS_API_KEY ? 'Loaded' : 'MISSING'}`);
+console.log(`  SUPABASE_URL: ${process.env.SUPABASE_URL ? 'Loaded' : 'MISSING'}`);
+console.log(`  SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? 'Loaded' : 'MISSING'}`);
+console.log(`  SUPABASE_SERVICE_KEY: ${process.env.SUPABASE_SERVICE_KEY ? 'Loaded' : 'MISSING'}`);
 console.log('----------------------------------------');
 // --- End Debugging ---
 
@@ -976,34 +980,6 @@ app.post('/api/organization-calendar/update', requireAuth, async (req, res) => {
       errorDetails: {
         type: 'update_organization_calendar_error',
       },
-    });
-  }
-});
-
-// Get user info for Google account
-app.get('/api/auth/status', requireAuth, async (req, res) => {
-  try {
-    // Get user information
-    const oauth2 = google.oauth2({
-      auth: req.googleClient,
-      version: 'v2',
-    });
-
-    const userInfoResponse = await oauth2.userinfo.get();
-
-    res.json({
-      authenticated: true,
-      userInfo: {
-        email: userInfoResponse.data.email,
-        name: userInfoResponse.data.name,
-        picture: userInfoResponse.data.picture,
-      },
-    });
-  } catch (error) {
-    console.error('Error getting auth status:', error);
-    res.json({
-      authenticated: false,
-      error: error.message,
     });
   }
 });
