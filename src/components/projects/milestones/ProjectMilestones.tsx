@@ -60,6 +60,7 @@ const ProjectMilestones = ({ projectId }: ProjectMilestonesProps) => {
     addScheduleItem,
     updateScheduleItem,
     deleteScheduleItem,
+    syncWithCalendar,
   } = useScheduleItems(projectId);
 
   const [statusFilter, setStatusFilter] = useState<MilestoneStatus | null>(null);
@@ -142,7 +143,9 @@ const ProjectMilestones = ({ projectId }: ProjectMilestonesProps) => {
         }
 
         if (success && savedItem && savedItem.send_invite && savedItem.assignee_id) {
-          console.log('TODO: Trigger backend calendar sync/invite for item:', savedItem.id);
+          if (!savedItem.google_event_id) {
+            await syncWithCalendar(savedItem.id);
+          }
           toast({ title: 'Calendar Sync', description: 'Sending calendar invite...' });
         }
 
@@ -152,7 +155,7 @@ const ProjectMilestones = ({ projectId }: ProjectMilestonesProps) => {
         return false;
       }
     },
-    [projectId, editingScheduleItem, addScheduleItem, updateScheduleItem, toast]
+    [projectId, editingScheduleItem, addScheduleItem, updateScheduleItem, syncWithCalendar, toast]
   );
 
   const handleSaveMilestone = async (

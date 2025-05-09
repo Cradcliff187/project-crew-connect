@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ScheduleItem } from '../ScheduleItemFormDialog'; // Import type from form
 import { useToast } from '@/hooks/use-toast';
 
+// API base URL for calling backend endpoints
+const API_BASE_URL = 'http://localhost:3000';
+
 export const useScheduleItems = (projectId: string) => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,6 +42,37 @@ export const useScheduleItems = (projectId: string) => {
     fetchScheduleItems();
   }, [fetchScheduleItems]);
 
+  // New function to sync a schedule item with Google Calendar
+  const syncWithCalendar = async (itemId: string): Promise<boolean> => {
+    try {
+      console.log(`Syncing schedule item ${itemId} with Google Calendar`);
+      const response = await fetch(`${API_BASE_URL}/api/schedule-items/${itemId}/sync-calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for auth
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sync with calendar');
+      }
+
+      console.log('Calendar sync result:', data);
+      return true;
+    } catch (err: any) {
+      console.error('Error syncing with calendar:', err);
+      toast({
+        title: 'Calendar Sync Issue',
+        description: err.message || 'Could not sync with Google Calendar.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const addScheduleItem = async (itemData: Partial<ScheduleItem>): Promise<ScheduleItem | null> => {
     setLoading(true);
     try {
@@ -56,6 +90,12 @@ export const useScheduleItems = (projectId: string) => {
       if (data) {
         setScheduleItems(prev => [...prev, data]);
         toast({ title: 'Success', description: 'Schedule item added.' });
+
+        // If calendar integration is enabled, sync with Google Calendar
+        if (data.calendar_integration_enabled && data.send_invite) {
+          await syncWithCalendar(data.id);
+        }
+
         return data;
       }
       return null;
@@ -96,6 +136,12 @@ export const useScheduleItems = (projectId: string) => {
           prev.map(item => (item.id === itemId ? { ...item, ...data } : item))
         );
         toast({ title: 'Success', description: 'Schedule item updated.' });
+
+        // If calendar integration is enabled, sync with Google Calendar
+        if (data.calendar_integration_enabled && data.send_invite) {
+          await syncWithCalendar(data.id);
+        }
+
         return data;
       }
       return null;
@@ -145,5 +191,6 @@ export const useScheduleItems = (projectId: string) => {
     addScheduleItem,
     updateScheduleItem,
     deleteScheduleItem,
+    syncWithCalendar, // Export the sync function
   };
 };
