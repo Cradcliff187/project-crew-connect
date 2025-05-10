@@ -58,8 +58,10 @@ const app = express();
 // Configure CORS for cross-origin requests
 app.use(
   cors({
-    origin: 'http://localhost:8080', // Frontend is running on port 8080
+    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
     credentials: true, // Allow credentials (cookies)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
