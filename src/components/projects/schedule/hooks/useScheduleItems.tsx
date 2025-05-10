@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduleItem } from '../ScheduleItemFormDialog'; // Import type from form
 import { useToast } from '@/hooks/use-toast';
+// Import the new type definition
+import { ScheduleItemRow } from '@/integrations/supabase/types/schedule';
+
+// API base URL for calling backend endpoints
+const API_BASE_URL = 'http://localhost:3000';
 
 export const useScheduleItems = (projectId: string) => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
@@ -14,6 +19,7 @@ export const useScheduleItems = (projectId: string) => {
     setLoading(true);
     setError(null);
     try {
+      // Use proper type assertion for Supabase response
       const { data, error } = await supabase
         .from('schedule_items')
         .select('*') // Select all columns for now
@@ -21,7 +27,25 @@ export const useScheduleItems = (projectId: string) => {
         .order('start_datetime', { ascending: true });
 
       if (error) throw error;
-      setScheduleItems(data || []);
+
+      // Transform the data to match the ScheduleItem interface if needed
+      const transformedItems: ScheduleItem[] = (data || []).map(item => ({
+        id: item.id,
+        project_id: item.project_id,
+        title: item.title,
+        description: item.description || '',
+        start_datetime: item.start_datetime,
+        end_datetime: item.end_datetime,
+        is_all_day: item.is_all_day || false,
+        assignee_type: item.assignee_type,
+        assignee_id: item.assignee_id,
+        calendar_integration_enabled: item.calendar_integration_enabled || false,
+        google_event_id: item.google_event_id,
+        send_invite: item.send_invite || false,
+        invite_status: item.invite_status,
+      }));
+
+      setScheduleItems(transformedItems);
     } catch (err: any) {
       console.error('Error fetching schedule items:', err);
       setError(err.message || 'Failed to fetch schedule items');
@@ -39,6 +63,37 @@ export const useScheduleItems = (projectId: string) => {
     fetchScheduleItems();
   }, [fetchScheduleItems]);
 
+  // New function to sync a schedule item with Google Calendar
+  const syncWithCalendar = async (itemId: string): Promise<boolean> => {
+    try {
+      console.log(`Syncing schedule item ${itemId} with Google Calendar`);
+      const response = await fetch(`${API_BASE_URL}/api/schedule-items/${itemId}/sync-calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for auth
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sync with calendar');
+      }
+
+      console.log('Calendar sync result:', data);
+      return true;
+    } catch (err: any) {
+      console.error('Error syncing with calendar:', err);
+      toast({
+        title: 'Calendar Sync Issue',
+        description: err.message || 'Could not sync with Google Calendar.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const addScheduleItem = async (itemData: Partial<ScheduleItem>): Promise<ScheduleItem | null> => {
     setLoading(true);
     try {
@@ -54,9 +109,32 @@ export const useScheduleItems = (projectId: string) => {
       if (error) throw error;
 
       if (data) {
-        setScheduleItems(prev => [...prev, data]);
+        // Transform the returned data to match ScheduleItem interface
+        const newItem: ScheduleItem = {
+          id: data.id,
+          project_id: data.project_id,
+          title: data.title,
+          description: data.description || '',
+          start_datetime: data.start_datetime,
+          end_datetime: data.end_datetime,
+          is_all_day: data.is_all_day || false,
+          assignee_type: data.assignee_type,
+          assignee_id: data.assignee_id,
+          calendar_integration_enabled: data.calendar_integration_enabled || false,
+          google_event_id: data.google_event_id,
+          send_invite: data.send_invite || false,
+          invite_status: data.invite_status,
+        };
+
+        setScheduleItems(prev => [...prev, newItem]);
         toast({ title: 'Success', description: 'Schedule item added.' });
-        return data;
+
+        // If calendar integration is enabled, sync with Google Calendar
+        if (newItem.calendar_integration_enabled && newItem.send_invite) {
+          await syncWithCalendar(newItem.id);
+        }
+
+        return newItem;
       }
       return null;
     } catch (err: any) {
@@ -92,11 +170,32 @@ export const useScheduleItems = (projectId: string) => {
       if (error) throw error;
 
       if (data) {
-        setScheduleItems(prev =>
-          prev.map(item => (item.id === itemId ? { ...item, ...data } : item))
-        );
+        // Transform the returned data to match ScheduleItem interface
+        const updatedItem: ScheduleItem = {
+          id: data.id,
+          project_id: data.project_id,
+          title: data.title,
+          description: data.description || '',
+          start_datetime: data.start_datetime,
+          end_datetime: data.end_datetime,
+          is_all_day: data.is_all_day || false,
+          assignee_type: data.assignee_type,
+          assignee_id: data.assignee_id,
+          calendar_integration_enabled: data.calendar_integration_enabled || false,
+          google_event_id: data.google_event_id,
+          send_invite: data.send_invite || false,
+          invite_status: data.invite_status,
+        };
+
+        setScheduleItems(prev => prev.map(item => (item.id === itemId ? updatedItem : item)));
         toast({ title: 'Success', description: 'Schedule item updated.' });
-        return data;
+
+        // If calendar integration is enabled, sync with Google Calendar
+        if (updatedItem.calendar_integration_enabled && updatedItem.send_invite) {
+          await syncWithCalendar(updatedItem.id);
+        }
+
+        return updatedItem;
       }
       return null;
     } catch (err: any) {
@@ -145,5 +244,6 @@ export const useScheduleItems = (projectId: string) => {
     addScheduleItem,
     updateScheduleItem,
     deleteScheduleItem,
+    syncWithCalendar, // Export the sync function
   };
 };
