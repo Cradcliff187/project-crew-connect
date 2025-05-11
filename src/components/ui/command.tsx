@@ -109,7 +109,17 @@ CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
 const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => {
+>(({ className, value, onSelect, onClick, ...rest }, ref) => {
+  const combinedClickHandler = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (typeof onClick === 'function') {
+      onClick(event);
+    }
+
+    if (typeof onSelect === 'function' && value !== undefined) {
+      onSelect(value);
+    }
+  };
+
   return (
     <CommandPrimitive.Item
       ref={ref}
@@ -117,7 +127,9 @@ const CommandItem = React.forwardRef<
         'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className
       )}
-      {...props}
+      {...rest}
+      value={value}
+      onClick={combinedClickHandler}
     />
   );
 });

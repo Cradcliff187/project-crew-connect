@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
+        rewrite: path => path,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);

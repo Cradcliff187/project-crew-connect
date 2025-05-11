@@ -10,8 +10,22 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Building2, HardHat, Check } from 'lucide-react';
+import { User, Building2, HardHat, Check, ChevronsUpDown, X } from 'lucide-react';
 import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 
 export interface Assignee {
   id: string;
@@ -20,11 +34,14 @@ export interface Assignee {
   type: AssigneeType;
 }
 
+// Updated to support multiple selections
 interface AssigneeSelectorProps {
-  value: { type?: string; id?: string } | null;
-  onChange: (value: { type: AssigneeType; id: string } | null) => void;
+  value: { type: AssigneeType; id: string }[] | null; // Changed to array for multi-select
+  onChange: (value: { type: AssigneeType; id: string }[] | null) => void;
   disabled?: boolean;
   allowedTypes?: AssigneeType[];
+  multiple?: boolean; // Add option to enable/disable multi-select
+  maxHeight?: number; // Allow customizing the max height
 }
 
 export function AssigneeSelector({
@@ -32,15 +49,21 @@ export function AssigneeSelector({
   onChange,
   disabled = false,
   allowedTypes,
+  multiple = false, // Default to single select for backward compatibility
+  maxHeight = 300,
 }: AssigneeSelectorProps) {
   const [employees, setEmployees] = useState<Assignee[]>([]);
   const [vendors, setVendors] = useState<Assignee[]>([]);
   const [subcontractors, setSubcontractors] = useState<Assignee[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<AssigneeType>(
-    (value?.type as AssigneeType) || 'employee'
+    value && value.length > 0 ? value[0].type : 'employee'
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  // Normalize value to always be an array
+  const selections = value || [];
 
   // Fetch employees, vendors, and subcontractors
   useEffect(() => {
@@ -113,24 +136,58 @@ export function AssigneeSelector({
     fetchData();
   }, []);
 
-  // Check if value matches an assignee
-  useEffect(() => {
-    if (value?.id && value?.type) {
-      setSelectedType(value.type as AssigneeType);
+  // Handle assignee selection with optimized state updates
+  const handleSelectAssignee = (assigneeId: string) => {
+    const assignee = getCurrentAssignees().find(a => a.id === assigneeId);
+    if (!assignee) {
+      return;
     }
-  }, [value]);
 
-  // Handle assignee selection
-  const handleSelectAssignee = (assignee: Assignee) => {
-    onChange({ type: assignee.type, id: assignee.id });
+    if (multiple) {
+      // For multi-select: toggle selection
+      const isAlreadySelected = selections.some(
+        s => s.id === assignee.id && s.type === assignee.type
+      );
+
+      if (isAlreadySelected) {
+        // Remove from selections - create new array without the matching item
+        const newSelections = selections.filter(
+          s => !(s.id === assignee.id && s.type === assignee.type)
+        );
+        onChange(newSelections.length > 0 ? newSelections : null);
+      } else {
+        // Add to selections - use concat for immutability
+        onChange([...selections, { type: assignee.type, id: assignee.id }]);
+      }
+      // Keep dropdown open for multi-select
+    } else {
+      // For single-select: replace selection and close
+      onChange([{ type: assignee.type, id: assignee.id }]);
+      setOpen(false);
+    }
   };
 
   // Handle tab change
   const handleTabChange = (type: string) => {
     setSelectedType(type as AssigneeType);
-    if (!value || value.type !== type) {
+    if (multiple) {
+      // In multi-select, keep selections from other types when changing tabs
+      return;
+    }
+
+    // In single-select, clear selection if tab changes
+    if (!selections.some(item => item.type === type)) {
       onChange(null);
     }
+  };
+
+  // Handle removing a selection (for multi-select) more efficiently
+  const handleRemoveSelection = (selectionToRemove: { type: AssigneeType; id: string }) => {
+    const newSelections = selections.filter(
+      s => !(s.id === selectionToRemove.id && s.type === selectionToRemove.type)
+    );
+    // If all selections are removed, set to null instead of empty array
+    onChange(newSelections.length > 0 ? newSelections : null);
   };
 
   // Get current assignee list based on selected type
@@ -153,19 +210,43 @@ export function AssigneeSelector({
     return currentList.filter(assignee => !allowedTypes || allowedTypes.includes(assignee.type));
   };
 
-  // Get assignee by type and id
-  const getAssignee = (type: string, id: string): Assignee | undefined => {
-    if (type === 'employee') return employees.find(e => e.id === id);
-    if (type === 'vendor') return vendors.find(v => v.id === id);
-    if (type === 'subcontractor') return subcontractors.find(s => s.id === id);
-    return undefined;
+  // Check if an assignee is selected
+  const isSelected = (assignee: Assignee) => {
+    return selections.some(s => s.id === assignee.id && s.type === assignee.type);
   };
 
-  // Get currently selected assignee
-  const selectedAssignee = value?.id && value?.type ? getAssignee(value.type, value.id) : undefined;
+  // Get all selected assignees with their details
+  const getSelectedAssignees = (): Assignee[] => {
+    const selected: Assignee[] = [];
 
-  // Let the Command component handle filtering based on CommandInput
-  const assigneesToList = getCurrentAssignees();
+    for (const selection of selections) {
+      let assignee: Assignee | undefined;
+
+      if (selection.type === 'employee') {
+        assignee = employees.find(e => e.id === selection.id);
+      } else if (selection.type === 'vendor') {
+        assignee = vendors.find(v => v.id === selection.id);
+      } else if (selection.type === 'subcontractor') {
+        assignee = subcontractors.find(s => s.id === selection.id);
+      }
+
+      if (assignee) {
+        selected.push(assignee);
+      }
+    }
+
+    return selected;
+  };
+
+  // Filter assignees based on search query
+  const filteredAssignees = getCurrentAssignees().filter(assignee =>
+    searchQuery
+      ? assignee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (assignee.email && assignee.email.toLowerCase().includes(searchQuery.toLowerCase()))
+      : true
+  );
+
+  const selectedAssigneesFromState = getSelectedAssignees();
 
   return (
     <div className="space-y-4">
@@ -199,51 +280,107 @@ export function AssigneeSelector({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : (
-            <Command key={selectedType}>
-              <CommandInput
-                placeholder={`Search ${selectedType}s...`}
-                onValueChange={setSearchQuery}
-              />
-              <CommandList>
-                <CommandEmpty>No {selectedType} found.</CommandEmpty>
-                <CommandGroup>
-                  {assigneesToList.map(assignee => {
-                    return (
-                      <CommandItem
-                        key={assignee.id}
-                        value={assignee.id}
-                        onSelect={() => {
-                          handleSelectAssignee(assignee);
-                        }}
-                        className="flex items-center cursor-pointer hover:bg-accent hover:text-accent-foreground select-none"
-                      >
-                        {/* Add appropriate icon based on type */}
-                        {assignee.type === 'employee' && <User className="h-4 w-4 mr-2 shrink-0" />}
-                        {assignee.type === 'vendor' && (
-                          <Building2 className="h-4 w-4 mr-2 shrink-0" />
-                        )}
-                        {assignee.type === 'subcontractor' && (
-                          <HardHat className="h-4 w-4 mr-2 shrink-0" />
-                        )}
-
-                        <div className="flex flex-col">
-                          <span className="font-medium">{assignee.name}</span>
-                          {assignee.email && (
-                            <span className="text-xs text-muted-foreground">{assignee.email}</span>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between h-auto min-h-[2.5rem]"
+                  onClick={() => !disabled && !loading && setOpen(!open)}
+                >
+                  <span className="flex flex-wrap items-center gap-1">
+                    {multiple && selections.length > 0 ? (
+                      selectedAssigneesFromState.map(assignee => (
+                        <Badge
+                          as="span"
+                          key={`${assignee.type}-${assignee.id}`}
+                          variant="secondary"
+                        >
+                          {assignee.type === 'employee' && <User className="h-3 w-3 mr-1" />}
+                          {assignee.type === 'vendor' && <Building2 className="h-3 w-3 mr-1" />}
+                          {assignee.type === 'subcontractor' && (
+                            <HardHat className="h-3 w-3 mr-1" />
                           )}
-                        </div>
-
-                        {value?.id === assignee.id && value?.type === assignee.type && (
-                          <span className="ml-auto">
-                            <Check className="h-4 w-4 text-primary" />
+                          <span className="truncate max-w-[100px]">{assignee.name}</span>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+                              if (
+                                (e as React.KeyboardEvent).key &&
+                                (e as React.KeyboardEvent).key !== 'Enter' &&
+                                (e as React.KeyboardEvent).key !== ' '
+                              ) {
+                                return;
+                              }
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleRemoveSelection({ type: assignee.type, id: assignee.id });
+                            }}
+                            onKeyDown={(e: React.KeyboardEvent) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleRemoveSelection({ type: assignee.type, id: assignee.id });
+                              }
+                            }}
+                            className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                            aria-label={`Remove ${assignee.name}`}
+                          >
+                            <X className="h-3 w-3" />
                           </span>
-                        )}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                        </Badge>
+                      ))
+                    ) : selections.length === 1 ? (
+                      selectedAssigneesFromState[0]?.name
+                    ) : (
+                      <span className="text-muted-foreground">Select assignee...</span>
+                    )}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput
+                    placeholder={`Search ${selectedType}s...`}
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                  />
+                  <CommandList style={{ maxHeight: `${maxHeight}px` }}>
+                    {filteredAssignees.length > 0 ? (
+                      filteredAssignees.map(assignee => (
+                        <div
+                          key={assignee.id}
+                          className="flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-accent text-popover-foreground data-[disabled]:opacity-50"
+                          onClick={() => {
+                            handleSelectAssignee(assignee.id);
+                          }}
+                        >
+                          <Checkbox
+                            checked={isSelected(assignee)}
+                            className="mr-2 pointer-events-none"
+                            aria-hidden="true"
+                            tabIndex={-1}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{assignee.name}</span>
+                            {assignee.email && (
+                              <span className="text-xs text-muted-foreground">
+                                {assignee.email}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <CommandEmpty>No {selectedType}s found.</CommandEmpty>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </Tabs>

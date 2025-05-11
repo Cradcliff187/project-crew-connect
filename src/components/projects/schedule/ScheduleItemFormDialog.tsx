@@ -21,10 +21,12 @@ import { Label } from '@/components/ui/label';
 import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones'; // Import AssigneeType
 
 // Define the type for the assignee value
-type AssigneeValue = {
-  type: 'employee' | 'subcontractor' | 'vendor';
-  id: string;
-} | null;
+type AssigneeValue =
+  | {
+      type: 'employee' | 'subcontractor' | 'vendor';
+      id: string;
+    }[]
+  | null;
 
 // Define ScheduleItem interface based on the new table
 export interface ScheduleItem {
@@ -81,12 +83,14 @@ const ScheduleItemFormDialog = ({
       ? editingItem.end_datetime.split('T')[1].substring(0, 5)
       : ''
   );
-  const [assignee, setAssignee] = useState<AssigneeValue>(
+  const [assignees, setAssignees] = useState<AssigneeValue>(
     editingItem?.assignee_id && editingItem?.assignee_type
-      ? {
-          type: editingItem.assignee_type as 'employee' | 'subcontractor',
-          id: editingItem.assignee_id,
-        }
+      ? [
+          {
+            type: editingItem.assignee_type as 'employee' | 'subcontractor',
+            id: editingItem.assignee_id,
+          },
+        ]
       : null
   );
   const [sendInvite, setSendInvite] = useState(editingItem?.send_invite || false);
@@ -110,12 +114,14 @@ const ScheduleItemFormDialog = ({
           ? editingItem.end_datetime.split('T')[1].substring(0, 5)
           : ''
       );
-      setAssignee(
+      setAssignees(
         editingItem?.assignee_id && editingItem?.assignee_type
-          ? {
-              type: editingItem.assignee_type as 'employee' | 'subcontractor',
-              id: editingItem.assignee_id,
-            }
+          ? [
+              {
+                type: editingItem.assignee_type as 'employee' | 'subcontractor',
+                id: editingItem.assignee_id,
+              },
+            ]
           : null
       );
       setSendInvite(editingItem?.send_invite || false);
@@ -172,14 +178,18 @@ const ScheduleItemFormDialog = ({
       });
       return;
     }
-    if (sendInvite && !assignee) {
+    if (sendInvite && (!assignees || assignees.length === 0)) {
       toast({
         title: 'Assignee Required for Invite',
-        description: 'Please select an assignee before enabling calendar invites.',
+        description: 'Please select at least one assignee before enabling calendar invites.',
         variant: 'destructive',
       });
       return;
     }
+
+    // For now, use the first assignee since the database schema doesn't support multiple
+    // In future we may want to update the schema or create multiple schedule items
+    const primaryAssignee = assignees && assignees.length > 0 ? assignees[0] : null;
 
     const itemData: Partial<ScheduleItem> = {
       ...(editingItem ? { id: editingItem.id } : {}), // Include ID if editing
@@ -189,11 +199,13 @@ const ScheduleItemFormDialog = ({
       start_datetime: startDate.toISOString(),
       end_datetime: endDate.toISOString(),
       assignee_type:
-        assignee?.type === 'employee' || assignee?.type === 'subcontractor' ? assignee.type : null,
-      assignee_id: assignee?.id || null,
-      send_invite: assignee ? sendInvite : false, // Only send invite if assignee exists
+        primaryAssignee?.type === 'employee' || primaryAssignee?.type === 'subcontractor'
+          ? primaryAssignee.type
+          : null,
+      assignee_id: primaryAssignee?.id || null,
+      send_invite: primaryAssignee ? sendInvite : false, // Only send invite if assignee exists
       // calendar_integration_enabled could be set based on send_invite or other logic
-      calendar_integration_enabled: assignee ? sendInvite : false,
+      calendar_integration_enabled: primaryAssignee ? sendInvite : false,
     };
 
     const success = await onSave(itemData);
@@ -212,23 +224,13 @@ const ScheduleItemFormDialog = ({
     setEndDate(undefined);
     setStartTime('');
     setEndTime('');
-    setAssignee(null);
+    setAssignees(null);
     setSendInvite(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Prevent closing on overlay click if needed: onInteractOutside={(e) => e.preventDefault()} */}
-      <DialogContent
-        className="max-w-2xl max-h-[90vh] overflow-y-auto p-6"
-        onPointerDownOutside={e => {
-          // Prevent the dialog from closing when clicking on dropdown options
-          const target = e.target as HTMLElement;
-          if (target.closest('[cmdk-list]') || target.closest('[cmdk-item]')) {
-            e.preventDefault();
-          }
-        }}
-      >
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>{editingItem ? 'Edit Schedule Item' : 'Add Schedule Item'}</DialogTitle>
           <DialogDescription>
@@ -316,25 +318,21 @@ const ScheduleItemFormDialog = ({
             </Label>
             <div className="assignee-selector-container">
               <AssigneeSelector
-                value={assignee}
+                value={assignees}
                 onChange={selected => {
-                  if (selected) {
-                    // Only accept employee or subcontractor assignees for schedule items
-                    if (selected.type === 'employee' || selected.type === 'subcontractor') {
-                      setAssignee({ type: selected.type, id: selected.id });
-
-                      // If send invite wasn't already enabled, auto-enable it when selecting an assignee
-                      if (!sendInvite) {
-                        setSendInvite(true);
-                      }
-                    }
-                  } else {
-                    setAssignee(null);
-                    // Disable send invite if no assignee
+                  setAssignees(selected);
+                  // Auto-enable send invite if assignees are selected
+                  if (selected && selected.length > 0 && !sendInvite) {
+                    setSendInvite(true);
+                  }
+                  // Disable send invite if no assignees
+                  if (!selected || selected.length === 0) {
                     setSendInvite(false);
                   }
                 }}
                 allowedTypes={['employee', 'subcontractor']}
+                multiple={true}
+                maxHeight={250}
               />
             </div>
           </div>
@@ -345,15 +343,17 @@ const ScheduleItemFormDialog = ({
               id="sendInvite"
               checked={sendInvite}
               onCheckedChange={checked => setSendInvite(Boolean(checked))}
-              disabled={!assignee} // Disable if no assignee selected
+              disabled={!assignees || assignees.length === 0} // Disable if no assignees selected
             />
             <Label
               htmlFor="sendInvite"
-              className={`text-sm font-medium ${!assignee ? 'text-muted-foreground' : ''}`}
+              className={`text-sm font-medium ${!assignees || assignees.length === 0 ? 'text-muted-foreground' : ''}`}
             >
               <Mail className="h-4 w-4 inline-block mr-1" />
-              Send Google Calendar invite to assignee
-              {!assignee && <span className="text-xs"> (Requires Assignee)</span>}
+              Send Google Calendar invite to assignee(s)
+              {(!assignees || assignees.length === 0) && (
+                <span className="text-xs"> (Requires Assignee)</span>
+              )}
             </Label>
           </div>
         </div>

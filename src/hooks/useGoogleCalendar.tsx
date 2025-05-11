@@ -34,6 +34,11 @@ export function useGoogleCalendar() {
         const response = await fetch('/api/auth/status', {
           credentials: 'include',
         });
+
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+
         const data = await response.json();
 
         setIsAuthenticated(data.authenticated);
@@ -54,6 +59,11 @@ export function useGoogleCalendar() {
       const response = await fetch('/api/auth/status', {
         credentials: 'include',
       });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
       const data = await response.json();
 
       setIsAuthenticated(data.authenticated);
