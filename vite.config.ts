@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '::',
     port: 8080,
+    historyApiFallback: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -26,12 +27,22 @@ export default defineConfig(({ mode }) => ({
           });
         },
       },
+      // Specific proxy for Google Calendar OAuth initiation
+      '/auth/google': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        // No rewrite, so /auth/google goes to http://localhost:3000/auth/google
+      },
+      // The generic /auth proxy remains commented out to allow Vite to handle /auth/callback for SPA routing
+      /*
       '/auth': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
         rewrite: path => path,
       },
+      */
     },
   },
   plugins: [

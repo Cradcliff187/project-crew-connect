@@ -100,7 +100,7 @@ const FinancialSummaryTab: React.FC<FinancialSummaryTabProps> = ({
   // Derived Values
   const originalContractValue = currentContractValue - totalCoRevenueImpact;
   const originalBudget = currentBudget - totalCoCostImpact;
-  const expectedRevenue = currentContractValue - totalDiscounts;
+  const expectedRevenue = Math.max(0, currentContractValue - totalDiscounts);
   const estimatedGrossProfit = currentContractValue - currentBudget;
   const expectedActualGrossProfit = expectedRevenue - actualExpenses;
   const expectedProfitVariance = expectedActualGrossProfit - estimatedGrossProfit;
@@ -423,9 +423,9 @@ const FinancialSummaryTab: React.FC<FinancialSummaryTabProps> = ({
                               {formatCurrency(discount.amount)}
                             </TableCell>
                             <TableCell className="px-1 py-1">
-                              <AlertDialogTrigger asChild>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -434,10 +434,10 @@ const FinancialSummaryTab: React.FC<FinancialSummaryTabProps> = ({
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Delete Discount</TooltipContent>
-                                </Tooltip>
-                              </AlertDialogTrigger>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete Discount</TooltipContent>
+                              </Tooltip>
                             </TableCell>
                           </TableRow>
                         ))}

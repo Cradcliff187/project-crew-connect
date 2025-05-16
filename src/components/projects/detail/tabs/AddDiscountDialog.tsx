@@ -55,7 +55,7 @@ const AddDiscountDialog: React.FC<AddDiscountDialogProps> = ({
   const form = useForm<DiscountFormValues>({
     resolver: zodResolver(discountSchema),
     defaultValues: {
-      amount: undefined,
+      amount: '',
       description: '',
     },
   });

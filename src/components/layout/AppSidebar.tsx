@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Site config
 const siteConfig = {
@@ -112,17 +113,14 @@ const mainNav = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { session, user, isLoading, signOut } = useAuth();
   const [mounted, setMounted] = React.useState(false);
   const [logoError, setLogoError] = React.useState(false);
-
-  // Mock session for now - in a real app, you'd use your authentication context
-  const session = null;
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Force a re-render by replacing the component with an entirely new version
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
@@ -141,7 +139,6 @@ export function AppSidebar() {
               />
             )}
           </div>
-          {/* Site name text removed */}
         </Link>
       </SidebarHeader>
       <SidebarSeparator />
@@ -169,7 +166,11 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarSeparator />
         <div className="p-3">
-          {mounted && session ? (
+          {isLoading ? (
+            <Button variant="secondary" disabled className="w-full">
+              Loading...
+            </Button>
+          ) : session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -178,17 +179,19 @@ export function AppSidebar() {
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={session?.user?.image ?? ''} />
-                      <AvatarFallback>{session?.user?.name?.[0]}</AvatarFallback>
+                      <AvatarImage src={user?.user_metadata?.avatar_url || ''} />
+                      <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="text-left">{session?.user?.name}</span>
+                    <span className="text-left">
+                      {user?.user_metadata?.full_name || user?.email}
+                    </span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" forceMount>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => console.log('Sign out')}>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

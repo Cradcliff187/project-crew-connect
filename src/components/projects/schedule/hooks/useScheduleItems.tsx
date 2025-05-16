@@ -4,6 +4,8 @@ import { ScheduleItem } from '../ScheduleItemFormDialog'; // Import type from fo
 import { useToast } from '@/hooks/use-toast';
 // Import the new type definition
 import { ScheduleItemRow } from '@/integrations/supabase/types/schedule';
+import { ensureSession } from '@/contexts/AuthContext'; // Import ensureSession
+import { useNavigate } from 'react-router-dom'; // Import for redirection
 
 // API base URL for calling backend endpoints
 const API_BASE_URL = 'http://localhost:3000';
@@ -13,9 +15,23 @@ export const useScheduleItems = (projectId: string) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate(); // For redirecting to login
 
   const fetchScheduleItems = useCallback(async () => {
     if (!projectId) return;
+
+    const currentSession = await ensureSession();
+    if (!currentSession) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Session not found. Redirecting to login.',
+        variant: 'destructive',
+      });
+      navigate('/login', { replace: true, state: { from: window.location.pathname } });
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -57,7 +73,7 @@ export const useScheduleItems = (projectId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [projectId, toast]);
+  }, [projectId, toast, navigate]);
 
   useEffect(() => {
     fetchScheduleItems();
@@ -95,6 +111,17 @@ export const useScheduleItems = (projectId: string) => {
   };
 
   const addScheduleItem = async (itemData: Partial<ScheduleItem>): Promise<ScheduleItem | null> => {
+    const currentSession = await ensureSession();
+    if (!currentSession) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Cannot add item. Session not found. Redirecting to login.',
+        variant: 'destructive',
+      });
+      navigate('/login', { replace: true, state: { from: window.location.pathname } });
+      return null;
+    }
+
     setLoading(true);
     try {
       // Ensure project_id is included
@@ -155,6 +182,17 @@ export const useScheduleItems = (projectId: string) => {
     itemId: string,
     updates: Partial<ScheduleItem>
   ): Promise<ScheduleItem | null> => {
+    const currentSession = await ensureSession();
+    if (!currentSession) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Cannot update item. Session not found. Redirecting to login.',
+        variant: 'destructive',
+      });
+      navigate('/login', { replace: true, state: { from: window.location.pathname } });
+      return null;
+    }
+
     setLoading(true);
     try {
       // Ensure updated_at is set automatically by trigger, remove from manual updates if present
@@ -213,6 +251,17 @@ export const useScheduleItems = (projectId: string) => {
   };
 
   const deleteScheduleItem = async (itemId: string): Promise<boolean> => {
+    const currentSession = await ensureSession();
+    if (!currentSession) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Cannot delete item. Session not found. Redirecting to login.',
+        variant: 'destructive',
+      });
+      navigate('/login', { replace: true, state: { from: window.location.pathname } });
+      return false;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from('schedule_items').delete().eq('id', itemId);

@@ -1,13 +1,17 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { signInWithGoogle } = useAuth();
 
-  const handleLogin = () => {
-    // Placeholder login functionality
-    navigate('/dashboard');
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      console.log('Sign-in process initiated...');
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
   return (
