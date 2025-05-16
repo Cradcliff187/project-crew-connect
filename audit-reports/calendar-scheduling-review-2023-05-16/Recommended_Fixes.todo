@@ -1,0 +1,64 @@
+# Calendar/Scheduling Full-Stack Audit — Recommended Fixes
+
+## Critical (High Priority)
+- [ ] Implement milestone calendar sync functionality (AKC-CAL-001)
+  - [ ] Create server endpoint /api/milestones/:id/sync-calendar
+  - [ ] Implement syncMilestoneToCalendar() in useMilestones hook
+  - [ ] Update MilestoneFormDialog to properly handle calendar integration
+  - [ ] Add UI feedback for successful sync
+
+- [ ] Fix calendar sync error handling (AKC-CAL-002)
+  - [ ] Standardize error format across all calendar operations
+  - [ ] Add retry logic with exponential backoff
+  - [ ] Implement user-friendly error messages in the UI
+  - [ ] Add last_sync_status tracking for better diagnostics
+
+- [ ] Complete Supabase RLS policies (AKC-CAL-003)
+  - [ ] Audit all calendar-related table RLS policies
+  - [ ] Implement proper row-level security for calendar_access table
+  - [ ] Fix project-based permissions for schedule_items table
+  - [ ] Document all RLS policies in security documentation
+
+## Important (Medium Priority)
+- [ ] Enhance calendar UI for better UX (AKC-CAL-004)
+  - [ ] Implement proper multi-day event rendering in ProjectCalendarView
+  - [ ] Add event details popup on click
+  - [ ] Improve calendar navigation and filtering
+  - [ ] Add drag-and-drop for moving events
+
+- [ ] Implement two-way Google Calendar sync (AKC-CAL-005)
+  - [ ] Create webhook endpoint for Google Calendar notifications
+  - [ ] Implement conflict resolution strategy
+  - [ ] Add background job for periodic sync checks
+  - [ ] Add sync status indicators in the UI
+
+- [ ] Add support for recurring events (AKC-CAL-006)
+  - [ ] Expand schedule_items schema to include recurrence pattern
+  - [ ] Add recurrence UI to ScheduleItemFormDialog
+  - [ ] Implement recurrence logic in Google Calendar sync
+  - [ ] Add expanded views for recurring events
+
+## Maintenance (Lower Priority)
+- [ ] Cleanup type system inconsistencies (AKC-CAL-007)
+  - [ ] Generate complete types from Supabase schema
+  - [ ] Replace custom interfaces with generated types
+  - [ ] Add strict type validation in API layers
+  - [ ] Document type system design
+
+- [ ] Increase test coverage for calendar features (AKC-CAL-008)
+  - [ ] Add unit tests for calendar and schedule hooks
+  - [ ] Create integration tests for Google Calendar sync
+  - [ ] Add E2E tests for key calendar user flows
+  - [ ] Set up CI pipeline for calendar-specific tests
+
+- [ ] Implement calendar settings UI (AKC-CAL-009)
+  - [ ] Design calendar permissions interface
+  - [ ] Create organization calendar management screens
+  - [ ] Add user preferences for calendar defaults
+  - [ ] Implement calendar sharing controls
+
+## Documentation Updates
+- [ ] Create calendar integration architecture documentation
+- [ ] Document calendar sync troubleshooting procedures
+- [ ] Update API documentation for calendar endpoints
+- [ ] Add user guide for calendar features

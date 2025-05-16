@@ -104,16 +104,16 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = memo(
             } else {
               const { data, error } = await supabase
                 .from('subcontractors')
-                .select('subid, subname, status')
-                .ilike('subname', `%${searchQuery}%`)
-                .order('subname', { ascending: true })
+                .select('subid, company_name, contact_name, status')
+                .or(`company_name.ilike.%${searchQuery}%,contact_name.ilike.%${searchQuery}%`)
+                .order('company_name', { ascending: true })
                 .limit(10);
 
               if (error) throw error;
 
               vendors = (data || []).map(item => ({
                 id: item.subid,
-                name: item.subname,
+                name: item.contact_name || item.company_name || 'Unnamed Subcontractor',
                 status: item.status,
               }));
             }
@@ -177,12 +177,12 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = memo(
           } else {
             const { data, error } = await supabase
               .from('subcontractors')
-              .select('subname')
+              .select('company_name, contact_name')
               .eq('subid', value)
               .maybeSingle();
 
             if (error) throw error;
-            vendorName = data?.subname || '';
+            vendorName = data?.contact_name || data?.company_name || '';
           }
 
           // Cache and set the vendor name
@@ -274,7 +274,7 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = memo(
                           {option.status && (
                             <span
                               className={`
-                            text-xs px-2 py-0.5 rounded 
+                            text-xs px-2 py-0.5 rounded
                             ${
                               option.status === 'ACTIVE'
                                 ? 'bg-green-100 text-green-800'

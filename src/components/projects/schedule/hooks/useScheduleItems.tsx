@@ -53,8 +53,8 @@ export const useScheduleItems = (projectId: string) => {
         start_datetime: item.start_datetime,
         end_datetime: item.end_datetime,
         is_all_day: item.is_all_day || false,
-        assignee_type: item.assignee_type,
-        assignee_id: item.assignee_id,
+        assignee_type: item.assignee_type as ScheduleItem['assignee_type'], // Cast to ensure compatibility
+        assignee_id: item.assignee_id, // Already a string (UUID)
         calendar_integration_enabled: item.calendar_integration_enabled || false,
         google_event_id: item.google_event_id,
         send_invite: item.send_invite || false,
@@ -83,18 +83,85 @@ export const useScheduleItems = (projectId: string) => {
   const syncWithCalendar = async (itemId: string): Promise<boolean> => {
     try {
       console.log(`Syncing schedule item ${itemId} with Google Calendar`);
-      const response = await fetch(`${API_BASE_URL}/api/schedule-items/${itemId}/sync-calendar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for auth
+
+      // Add timeout and retry logic
+      const fetchWithRetry = async (
+        url: string,
+        options: RequestInit,
+        retries = 2,
+        timeout = 15000
+      ): Promise<Response> => {
+        // Create an AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          return response;
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+          console.error(`Fetch attempt failed: ${error.message}`, error);
+
+          if (retries > 0) {
+            console.log(`Fetch attempt failed, retrying... (${retries} attempts left)`);
+            // Wait 1 second before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return fetchWithRetry(url, options, retries - 1, timeout);
+          }
+          throw error;
+        }
+      };
+
+      // First check Google authentication status
+      const authResponse = await fetch(`${API_BASE_URL}/api/auth/status`, {
+        credentials: 'include',
       });
 
-      const data = await response.json();
+      const authData = await authResponse.json();
+      if (!authData.authenticated) {
+        console.error('Not authenticated with Google. Please authenticate in Settings first.');
+        toast({
+          title: 'Google Authentication Required',
+          description:
+            'Please connect your Google account in Settings before using calendar features.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      const response = await fetchWithRetry(
+        `${API_BASE_URL}/api/schedule-items/${itemId}/sync-calendar`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Important for auth
+        }
+      );
+
+      // Check if the response can be parsed as JSON
+      let data;
+      try {
+        const textResponse = await response.text();
+        console.log('Raw response:', textResponse);
+
+        try {
+          data = JSON.parse(textResponse);
+        } catch (parseError) {
+          throw new Error(`Invalid server response: ${textResponse.substring(0, 100)}...`);
+        }
+      } catch (jsonError) {
+        console.error('Error parsing response:', jsonError);
+        throw new Error('Failed to parse server response');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sync with calendar');
+        throw new Error(data.error || data.details || 'Failed to sync with calendar');
       }
 
       console.log('Calendar sync result:', data);
@@ -103,7 +170,7 @@ export const useScheduleItems = (projectId: string) => {
       console.error('Error syncing with calendar:', err);
       toast({
         title: 'Calendar Sync Issue',
-        description: err.message || 'Could not sync with Google Calendar.',
+        description: err.message || 'Could not sync with Google Calendar. Please try again.',
         variant: 'destructive',
       });
       return false;
@@ -145,8 +212,8 @@ export const useScheduleItems = (projectId: string) => {
           start_datetime: data.start_datetime,
           end_datetime: data.end_datetime,
           is_all_day: data.is_all_day || false,
-          assignee_type: data.assignee_type,
-          assignee_id: data.assignee_id,
+          assignee_type: data.assignee_type as ScheduleItem['assignee_type'],
+          assignee_id: data.assignee_id, // UUID string
           calendar_integration_enabled: data.calendar_integration_enabled || false,
           google_event_id: data.google_event_id,
           send_invite: data.send_invite || false,
@@ -217,8 +284,8 @@ export const useScheduleItems = (projectId: string) => {
           start_datetime: data.start_datetime,
           end_datetime: data.end_datetime,
           is_all_day: data.is_all_day || false,
-          assignee_type: data.assignee_type,
-          assignee_id: data.assignee_id,
+          assignee_type: data.assignee_type as ScheduleItem['assignee_type'],
+          assignee_id: data.assignee_id, // UUID string
           calendar_integration_enabled: data.calendar_integration_enabled || false,
           google_event_id: data.google_event_id,
           send_invite: data.send_invite || false,

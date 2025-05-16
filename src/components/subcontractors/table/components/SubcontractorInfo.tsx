@@ -9,7 +9,6 @@ const SubcontractorInfo = ({ name, id }: SubcontractorInfoProps) => {
   return (
     <div className="flex flex-col">
       <span className="font-medium">{name}</span>
-      <span className="text-xs text-muted-foreground">{id}</span>
     </div>
   );
 };

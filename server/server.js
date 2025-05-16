@@ -15,11 +15,55 @@ const { Client } = require('@googlemaps/google-maps-services-js');
 const { createClient } = require('@supabase/supabase-js');
 const session = require('express-session');
 
+// Import undici for better fetch compatibility with Node.js
+const { fetch, Request, Response } = require('undici');
+// Optional: Import https-proxy-agent if you need to work through a proxy
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
 // Initialize Supabase Admin client
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || 'https://dxmvqbeyhfnqczvlfnfn.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
+const SUPABASE_URL_USED = process.env.SUPABASE_URL || 'https://dxmvqbeyhfnqczvlfnfn.supabase.co';
+const SUPABASE_KEY_USED = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const IS_SERVICE_KEY_PRESENT = !!process.env.SUPABASE_SERVICE_KEY;
+
+console.log(
+  `[Supabase Admin Init] URL: ${SUPABASE_URL_USED}, Service Key Present: ${IS_SERVICE_KEY_PRESENT}`
 );
+
+// Configure fetch with proper SSL/TLS handling for Node.js
+const nodeFetch = async (...args) => {
+  try {
+    // Add agent configuration to handle HTTPS/SSL issues
+    const [url, options = {}] = args;
+
+    // Merge in custom options for Node.js environment
+    // Remove the dispatcher configuration that's causing the error
+    const fetchOptions = {
+      ...options,
+      // Set appropriate timeout
+      timeout: 15000,
+    };
+
+    console.log(
+      `[Supabase Fetch] Making request to ${typeof url === 'string' ? url : 'URL object'}`
+    );
+    const response = await fetch(url, fetchOptions);
+    return response;
+  } catch (error) {
+    console.error(`[Supabase Fetch Error] ${error.name}: ${error.message}`, error);
+    // Re-throw for proper error handling
+    throw error;
+  }
+};
+
+const supabaseAdmin = createClient(SUPABASE_URL_USED, SUPABASE_KEY_USED, {
+  global: { fetch: nodeFetch }, // Use custom fetch with error handling
+  auth: {
+    // Recommended to persist session for admin client if you were to use it for auth, but generally not needed for service_role.
+    // persistSession: false,
+    autoRefreshToken: false, // Typically false for service_role clients as they don't refresh
+    detectSessionInUrl: false, // Not applicable for service_role
+  },
+});
 
 // --- Helper Modules ---
 const driveHelper = require('./google-api-helpers/drive');
@@ -991,74 +1035,266 @@ app.post('/api/organization-calendar/update', requireAuth, async (req, res) => {
 app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, res) => {
   const { itemId } = req.params;
   console.log(`[Calendar Sync] Received request for schedule item ID: ${itemId}`);
+  console.log(
+    `[Calendar Sync] Attempting to use Supabase Admin with URL: ${SUPABASE_URL_USED}, Service Key Present: ${IS_SERVICE_KEY_PRESENT}`
+  );
+
+  // Log Supabase schema tables to check if schedule_items exists
+  try {
+    console.log('[Calendar Sync] Checking Supabase schema for schedule_items table...');
+    const { data: tables, error: tablesError } = await supabaseAdmin
+      .from('pg_tables')
+      .select('tablename')
+      .eq('schemaname', 'public');
+
+    if (tablesError) {
+      console.error('[Calendar Sync] Error fetching tables:', tablesError);
+    } else {
+      console.log('[Calendar Sync] Available tables:', tables?.map(t => t.tablename).join(', '));
+      const hasScheduleItems = tables?.some(t => t.tablename === 'schedule_items');
+      console.log(
+        `[Calendar Sync] schedule_items table exists: ${hasScheduleItems ? 'YES' : 'NO'}`
+      );
+    }
+  } catch (schemaError) {
+    console.error('[Calendar Sync] Error checking schema:', schemaError);
+  }
 
   try {
+    // Verify Google authentication
+    if (!req.googleClient) {
+      console.error('[Calendar Sync] Google client not available in request');
+      return res.status(401).json({
+        success: false,
+        error: 'Google authentication required. Please connect your Google account in Settings.',
+      });
+    }
+
     // 1. Fetch the schedule item from Supabase
-    const { data: item, error: itemError } = await supabaseAdmin
-      .from('schedule_items')
-      .select('*')
-      .eq('id', itemId)
-      .single();
+    console.log(`[Calendar Sync] About to query schedule_items for id: ${itemId}`);
 
-    if (itemError) throw new Error(`Failed to fetch schedule item: ${itemError.message}`);
-    if (!item) throw new Error('Schedule item not found.');
+    // Add extra error handling around Supabase query
+    let item, itemError;
+    try {
+      const result = await supabaseAdmin
+        .from('schedule_items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
 
-    console.log(`[Calendar Sync] Found item: ${item.title}`);
+      item = result.data;
+      itemError = result.error;
+
+      // Log the entire query result for debugging
+      console.log(
+        `[Calendar Sync] Query result for item ${itemId}:`,
+        JSON.stringify(result, null, 2)
+      );
+    } catch (fetchError) {
+      console.error(`[Calendar Sync] Network error fetching item ${itemId}:`, fetchError);
+      return res.status(500).json({
+        success: false,
+        error: 'Network error while fetching schedule item',
+        details: fetchError.message,
+        stack: fetchError.stack,
+      });
+    }
+
+    if (itemError) {
+      console.error(
+        `[Calendar Sync] SUPABASE ITEM FETCH ERROR for ${itemId}:`,
+        JSON.stringify(itemError, null, 2)
+      );
+      return res.status(404).json({
+        success: false,
+        error: `Failed to fetch schedule item: ${itemError.message}`,
+        details: itemError,
+      });
+    }
+    if (!item) {
+      console.error(
+        `[Calendar Sync] Schedule item NOT FOUND in DB for id: ${itemId}. Query returned no data.`
+      );
+      return res.status(404).json({
+        success: false,
+        error: 'Schedule item not found.',
+      });
+    }
+
+    console.log(
+      `[Calendar Sync] Successfully fetched item: "${item.title}" (ID: ${item.id}), Assignee ID: ${item.assignee_id}, Assignee Type: ${item.assignee_type}`
+    );
 
     let assigneeEmail = null;
+    let assigneeFullName = null;
     let attendees = [];
 
-    // 2. Fetch assignee email if applicable
+    // 2. Fetch assignee email and name if applicable
     if (item.assignee_id && item.assignee_type) {
       console.log(
-        `[Calendar Sync] Fetching assignee (${item.assignee_type}) ID: ${item.assignee_id}`
+        `[Calendar Sync] Fetching details for assignee_type: "${item.assignee_type}", assignee_id: "${item.assignee_id}"`
       );
-      if (item.assignee_type === 'employee') {
-        const { data: emp, error: empError } = await supabaseAdmin
-          .from('employees')
-          .select('email')
-          .eq('employee_id', item.assignee_id)
-          .single();
-        if (empError) console.error(`Error fetching employee email: ${empError.message}`);
-        assigneeEmail = emp?.email;
-      } else if (item.assignee_type === 'subcontractor') {
-        const { data: sub, error: subError } = await supabaseAdmin
-          .from('subcontractors')
-          .select('contactemail') // Use contactemail
-          .eq('subid', item.assignee_id)
-          .single();
-        if (subError) console.error(`Error fetching subcontractor email: ${subError.message}`);
-        assigneeEmail = sub?.contactemail;
+      try {
+        if (item.assignee_type === 'employee') {
+          let emp, empError;
+          try {
+            const result = await supabaseAdmin
+              .from('employees')
+              .select('email, full_name, first_name, last_name')
+              .eq('employee_id', item.assignee_id)
+              .single();
+
+            emp = result.data;
+            empError = result.error;
+          } catch (fetchError) {
+            console.error(
+              `[Calendar Sync] Network error fetching employee ${item.assignee_id}:`,
+              fetchError
+            );
+            // Continue without failing - we'll create the event without the attendee
+            console.log(`[Calendar Sync] Continuing without employee email due to fetch error`);
+          }
+
+          if (empError) {
+            console.error(
+              `[Calendar Sync] Error fetching employee (ID: ${item.assignee_id}): ${empError.message}`
+            );
+          } else if (emp) {
+            assigneeEmail = emp.email;
+            assigneeFullName =
+              emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+            if (!assigneeEmail)
+              console.warn(
+                `[Calendar Sync] Employee ${item.assignee_id} found, but email is null/empty.`
+              );
+            else
+              console.log(`[Calendar Sync] Employee found: ${assigneeFullName} <${assigneeEmail}>`);
+          } else {
+            console.warn(`[Calendar Sync] Employee not found for ID: ${item.assignee_id}`);
+          }
+        } else if (item.assignee_type === 'subcontractor') {
+          let sub, subError;
+          try {
+            const result = await supabaseAdmin
+              .from('subcontractors')
+              .select('contactemail, contact_name, company_name')
+              .eq('subid', item.assignee_id)
+              .single();
+
+            sub = result.data;
+            subError = result.error;
+          } catch (fetchError) {
+            console.error(
+              `[Calendar Sync] Network error fetching subcontractor ${item.assignee_id}:`,
+              fetchError
+            );
+            // Continue without failing - we'll create the event without the attendee
+            console.log(
+              `[Calendar Sync] Continuing without subcontractor email due to fetch error`
+            );
+          }
+
+          if (subError) {
+            console.error(
+              `[Calendar Sync] Error fetching subcontractor (ID: ${item.assignee_id}): ${subError.message}`
+            );
+          } else if (sub) {
+            assigneeEmail = sub.contactemail;
+            assigneeFullName = sub.contact_name || sub.company_name;
+            if (!assigneeEmail)
+              console.warn(
+                `[Calendar Sync] Subcontractor ${item.assignee_id} found, but contactemail is null/empty.`
+              );
+            else
+              console.log(
+                `[Calendar Sync] Subcontractor found: ${assigneeFullName} <${assigneeEmail}>`
+              );
+          } else {
+            console.warn(`[Calendar Sync] Subcontractor not found for ID: ${item.assignee_id}`);
+          }
+        } else if (item.assignee_type === 'external_contact') {
+          let extContact, extContactError;
+          try {
+            const result = await supabaseAdmin
+              .from('external_contacts')
+              .select('email, full_name')
+              .eq('contact_id', item.assignee_id)
+              .single();
+
+            extContact = result.data;
+            extContactError = result.error;
+          } catch (fetchError) {
+            console.error(
+              `[Calendar Sync] Network error fetching external_contact ${item.assignee_id}:`,
+              fetchError
+            );
+            // Continue without failing - we'll create the event without the attendee
+            console.log(
+              `[Calendar Sync] Continuing without external contact email due to fetch error`
+            );
+          }
+
+          if (extContactError) {
+            console.error(
+              `[Calendar Sync] Error fetching external_contact (ID: ${item.assignee_id}): ${extContactError.message}`
+            );
+          } else if (extContact) {
+            assigneeEmail = extContact.email;
+            assigneeFullName = extContact.full_name;
+            if (!assigneeEmail)
+              console.warn(
+                `[Calendar Sync] External contact ${item.assignee_id} found, but email is null/empty.`
+              );
+            else
+              console.log(
+                `[Calendar Sync] External contact found: ${assigneeFullName} <${assigneeEmail}>`
+              );
+          } else {
+            console.warn(`[Calendar Sync] External contact not found for ID: ${item.assignee_id}`);
+          }
+        } else {
+          console.warn(
+            `[Calendar Sync] Unknown assignee_type: "${item.assignee_type}" for item ID: ${item.id}`
+          );
+        }
+      } catch (e) {
+        console.error(
+          `[Calendar Sync] Exception during assignee lookup for ${item.assignee_type} ID ${item.assignee_id}:`,
+          e.message
+        );
       }
 
       if (assigneeEmail) {
         attendees.push({ email: assigneeEmail });
-        console.log(`[Calendar Sync] Found assignee email: ${assigneeEmail}`);
       } else {
         console.warn(
-          `[Calendar Sync] Assignee email not found for ${item.assignee_type} ID: ${item.assignee_id}`
+          `[Calendar Sync] No valid assignee email resolved for item ${item.id}. Event will be created without this attendee if applicable.`
         );
       }
     } else {
-      console.log(`[Calendar Sync] No assignee for this item.`);
+      console.log(
+        `[Calendar Sync] No assignee details (assignee_id or assignee_type missing) for item: "${item.title}".`
+      );
     }
 
-    // 3. Determine Target Calendar ID (Placeholder - using primary for now)
-    // TODO: Implement logic to get shared project calendar ID based on item.project_id
+    // 3. Determine Target Calendar ID
+    // TODO: Implement dynamic logic for targetCalendarId based on item.project_id or other criteria.
     const targetCalendarId = 'primary';
-    console.log(`[Calendar Sync] Target Calendar ID: ${targetCalendarId}`);
+    console.log(`[Calendar Sync] Target Calendar ID: "${targetCalendarId}"`);
 
     // 4. Prepare Event Data
+    // Consider using assigneeFullName in title or description if available and appropriate.
+    // Example: const eventTitle = assigneeFullName ? \`\${item.title} (\${assigneeFullName})\` : item.title;
     const eventData = {
-      title: item.title,
+      title: item.title, // Consider enhancing with assigneeFullName
       description: item.description || '',
-      startTime: item.start_datetime, // Already ISO string
-      endTime: item.end_datetime, // Already ISO string
+      startTime: item.start_datetime,
+      endTime: item.end_datetime,
       attendees: attendees,
-      targetCalendarId: targetCalendarId,
-      entityType: 'schedule_item', // Link event back to schedule item
+      targetCalendarId: targetCalendarId, // This might be passed to calendarHelper or used by it
+      entityType: 'schedule_item',
       entityId: item.id,
-      sendNotifications: true, // Explicitly set to true if we have attendees
+      sendNotifications: attendees.length > 0, // Only send if there are actual attendees with emails
     };
 
     let googleEventId = item.google_event_id;
@@ -1067,61 +1303,120 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
 
     // 5. Call Calendar Helper (Create or Update)
     try {
+      if (!req.googleClient) {
+        throw new Error(
+          'Google client not available in request. requireAuth middleware might have failed or not run.'
+        );
+      }
+
+      // Check Google Auth Status
+      console.log('[Calendar Sync] Checking Google Auth status before calendar operation...');
+      const oauth2 = google.oauth2({
+        auth: req.googleClient,
+        version: 'v2',
+      });
+
+      try {
+        const userInfoResponse = await oauth2.userinfo.get();
+        console.log(
+          `[Calendar Sync] Google Auth verified for user: ${userInfoResponse.data.email}`
+        );
+      } catch (authError) {
+        console.error('[Calendar Sync] Google Auth verification failed:', authError.message);
+        throw new Error(`Google authentication failed: ${authError.message}`);
+      }
+
       if (googleEventId) {
-        console.log(`[Calendar Sync] Updating existing Google Event ID: ${googleEventId}`);
+        console.log(
+          `[Calendar Sync] Updating existing Google Event ID: ${googleEventId} for item "${item.title}"`
+        );
+        // Assuming calendarHelper.updateEvent can handle empty attendees array if needed.
         const updatedEvent = await calendarHelper.updateEvent(
           req.googleClient,
           googleEventId,
-          eventData,
-          targetCalendarId
+          eventData, // contains updated attendees list
+          targetCalendarId // calendarHelper might use eventData.targetCalendarId or this param
         );
-        console.log(`[Calendar Sync] Event updated successfully.`);
+        console.log(
+          `[Calendar Sync] Event updated successfully for item "${item.title}". Google Event ID: ${updatedEvent.id}`
+        );
       } else {
-        console.log(`[Calendar Sync] Creating new Google Event.`);
+        console.log(`[Calendar Sync] Creating new Google Event for item "${item.title}"`);
+        // Assuming calendarHelper.createEvent can handle empty attendees array.
         const createdEvent = await calendarHelper.createEvent(req.googleClient, eventData);
         googleEventId = createdEvent.id;
-        console.log(`[Calendar Sync] Event created successfully with ID: ${googleEventId}`);
+        console.log(
+          `[Calendar Sync] Event created successfully for item "${item.title}". Google Event ID: ${googleEventId}`
+        );
+        console.log(
+          '[Calendar Sync] Calendar event details:',
+          JSON.stringify(createdEvent, null, 2)
+        );
       }
     } catch (calendarError) {
-      console.error('[Calendar Sync] Google API Error:', calendarError.message);
+      console.error(
+        `[Calendar Sync] Google API Error for item "${item.title}":`,
+        calendarError.message,
+        calendarError.stack
+      );
       syncStatus = 'error';
       syncError = calendarError.message;
       // Don't re-throw, just record the error and proceed to update Supabase
     }
 
     // 6. Update Schedule Item in Supabase with sync status
-    const { error: updateError } = await supabaseAdmin
-      .from('schedule_items')
-      .update({
-        google_event_id: googleEventId, // Store the ID even if sync failed (allows retry/debug)
-        invite_status:
-          syncStatus === 'success'
-            ? attendees.length > 0
-              ? 'invite_sent'
-              : 'synced_no_invite'
-            : 'sync_error',
-        last_sync_error: syncError,
-        calendar_integration_enabled: true, // Mark as attempted/enabled
-      })
-      .eq('id', itemId);
+    console.log(
+      `[Calendar Sync] Updating schedule_item ${itemId} in Supabase. Status: ${syncStatus}, Google Event ID: ${googleEventId}, Error: ${syncError}`
+    );
 
-    if (updateError) {
-      // Log this critical error, as the state is now inconsistent
+    try {
+      const result = await supabaseAdmin
+        .from('schedule_items')
+        .update({
+          google_event_id: googleEventId,
+          invite_status:
+            syncStatus === 'success'
+              ? attendees.length > 0
+                ? 'invite_sent'
+                : 'synced_no_invite'
+              : 'sync_error',
+          last_sync_error: syncError,
+          calendar_integration_enabled: true,
+        })
+        .eq('id', itemId);
+
+      const updateError = result.error;
+
+      if (updateError) {
+        console.error(
+          `[Calendar Sync] CRITICAL: Failed to update schedule_item ${itemId} in Supabase after calendar sync attempt: ${updateError.message}`
+        );
+        // The client will still receive the status of the Google API operation.
+      } else {
+        console.log(
+          `[Calendar Sync] Successfully updated schedule_item ${itemId} in Supabase with sync status`
+        );
+      }
+    } catch (updateFetchError) {
       console.error(
-        `[Calendar Sync] CRITICAL: Failed to update schedule_item ${itemId} after calendar sync attempt: ${updateError.message}`
+        `[Calendar Sync] Network error updating schedule_item ${itemId} in Supabase:`,
+        updateFetchError.message
       );
-      // Still return the original sync status to the client
+      // Continue with the response - the Google Calendar operation was already completed
     }
 
     // 7. Return Response
     if (syncStatus === 'success') {
       res.json({ success: true, message: 'Calendar sync successful.', eventId: googleEventId });
     } else {
-      // Return a 500 but include details
       res.status(500).json({ success: false, error: 'Calendar sync failed.', details: syncError });
     }
   } catch (error) {
-    console.error(`[Calendar Sync] Error processing sync for item ${itemId}:`, error);
+    console.error(
+      `[Calendar Sync] Unhandled error processing sync for item ${itemId}:`,
+      error.message,
+      error.stack
+    );
     res.status(500).json({
       success: false,
       error: error.message || 'Internal server error during calendar sync.',

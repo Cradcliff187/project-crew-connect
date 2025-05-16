@@ -71,12 +71,26 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
     <>
       <FormField
         control={control}
-        name="subname"
+        name="company_name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Subcontractor Name *</FormLabel>
+            <FormLabel>Company Name *</FormLabel>
             <FormControl>
-              <Input placeholder="Enter subcontractor name" {...field} required />
+              <Input placeholder="Enter company name" {...field} required />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="contact_name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Contact Name</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter contact name" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -100,7 +114,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
 
         <FormField
           control={control}
-          name="phone"
+          name="phone_number"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Phone</FormLabel>

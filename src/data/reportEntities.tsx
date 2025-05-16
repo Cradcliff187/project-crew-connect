@@ -250,10 +250,16 @@ export const entityFields: Record<EntityType, FieldDefinition[]> = {
       description: 'Unique identifier for the subcontractor',
     },
     {
-      label: 'Name',
-      field: 'subname',
+      label: 'Company Name',
+      field: 'company_name',
       type: 'text',
       description: 'Business name of the subcontractor',
+    },
+    {
+      label: 'Contact Name',
+      field: 'contact_name',
+      type: 'text',
+      description: 'Primary contact person name',
     },
     {
       label: 'Email',
@@ -261,7 +267,12 @@ export const entityFields: Record<EntityType, FieldDefinition[]> = {
       type: 'text',
       description: 'Primary contact email address',
     },
-    { label: 'Phone', field: 'phone', type: 'text', description: 'Primary contact phone number' },
+    {
+      label: 'Phone',
+      field: 'phone_number',
+      type: 'text',
+      description: 'Primary contact phone number',
+    },
     {
       label: 'Status',
       field: 'status',

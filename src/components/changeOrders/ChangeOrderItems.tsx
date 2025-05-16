@@ -26,10 +26,11 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ChangeOrder, ChangeOrderItem } from '@/types/changeOrders';
 import { formatCurrency } from '@/lib/utils';
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 // Define types for fetched data
 type Vendor = { vendorid: string; vendorname: string };
-type Subcontractor = { subid: string; subname: string };
+type Subcontractor = { subid: string; company_name: string | null; contact_name?: string | null };
 
 interface ChangeOrderItemsProps {
   form: UseFormReturn<ChangeOrder>;
@@ -86,8 +87,8 @@ const ChangeOrderItems = ({ form }: ChangeOrderItemsProps) => {
     try {
       const { data, error } = await supabase
         .from('subcontractors')
-        .select('subid, subname')
-        .order('subname');
+        .select('subid, company_name, contact_name')
+        .order('company_name');
       if (error) throw error;
       setSubcontractors(data || []);
     } catch (error: any) {
@@ -280,7 +281,7 @@ const ChangeOrderItems = ({ form }: ChangeOrderItemsProps) => {
                                   <SelectItem value="none">None</SelectItem>
                                   {subcontractors.map(s => (
                                     <SelectItem key={s.subid} value={s.subid}>
-                                      {s.subname}
+                                      {s.company_name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

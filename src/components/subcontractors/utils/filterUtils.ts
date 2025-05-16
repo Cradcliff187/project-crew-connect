@@ -10,9 +10,10 @@ export const filterSubcontractors = (
   const query = searchQuery.toLowerCase();
   return subcontractors.filter(
     sub =>
-      (sub.subname?.toLowerCase() || '').includes(query) ||
+      (sub.company_name?.toLowerCase() || '').includes(query) ||
+      (sub.contact_name?.toLowerCase() || '').includes(query) ||
       (sub.contactemail?.toLowerCase() || '').includes(query) ||
-      (sub.phone?.toLowerCase() || '').includes(query) ||
+      (sub.phone_number?.toLowerCase() || '').includes(query) ||
       (sub.city && sub.state && `${sub.city}, ${sub.state}`.toLowerCase().includes(query))
   );
 };

@@ -46,6 +46,7 @@ import {
   expenseTypeRequiresVendor,
   expenseTypeAllowsSubcontractor,
 } from '@/constants/expenseTypes';
+import { getSubcontractorDisplayName } from '@/components/subcontractors/utils/displayName';
 
 // --- Define Budget Item Schema ---
 const budgetItemSchema = z.object({
@@ -485,7 +486,7 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
                                     <SelectItem value="none">No Subcontractor</SelectItem>
                                     {subcontractors.map(sub => (
                                       <SelectItem key={sub.subid} value={sub.subid}>
-                                        {sub.subname}
+                                        {getSubcontractorDisplayName(sub)}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>

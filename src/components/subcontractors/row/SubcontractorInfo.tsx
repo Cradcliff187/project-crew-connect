@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Star, FileCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDocumentCount } from '@/hooks/useDocumentCount';
+import { getSubcontractorDisplayName } from '../utils/displayName';
 
 interface SubcontractorInfoProps {
   subcontractor: Subcontractor;
@@ -64,13 +65,8 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
 
   return (
     <div className="flex flex-col">
-      <div className="font-medium text-[#0485ea]">
-        {subcontractor.subname || 'Unnamed Subcontractor'}
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
-        {renderComplianceIndicators()}
-      </div>
+      <div className="font-medium text-[#0485ea]">{getSubcontractorDisplayName(subcontractor)}</div>
+      <div className="flex items-center gap-2">{renderComplianceIndicators()}</div>
     </div>
   );
 };

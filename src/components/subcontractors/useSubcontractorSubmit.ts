@@ -13,9 +13,10 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
     try {
       // All data now goes into a single table
       const submissionData = {
-        subname: data.subname,
+        company_name: data.company_name,
+        contact_name: data.contact_name,
         contactemail: data.contactemail,
-        phone: data.phone,
+        phone_number: data.phone_number,
         address: data.address,
         city: data.city,
         state: data.state,

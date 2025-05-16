@@ -6,9 +6,15 @@ export interface Vendor {
   vendorname: string;
 }
 
+export interface VendorBasic {
+  vendorid: string;
+  vendorname: string;
+}
+
 export interface SubcontractorBasic {
   subid: string;
-  subname: string;
+  company_name: string;
+  contact_name?: string;
 }
 
 export interface VendorOptionsHookResult {
@@ -41,16 +47,25 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
       // Fetch subcontractors
       const { data: subcontractors, error: subError } = await supabase
         .from('subcontractors')
-        .select('subid, subname')
-        .order('subname');
+        .select('subid, company_name, contact_name')
+        .order('company_name', { ascending: true });
 
       if (subError) {
         console.error('Error fetching subcontractors:', subError);
         throw subError;
       }
 
-      setVendorOptions(vendors || []);
-      setSubcontractorOptions(subcontractors || []);
+      if (vendors) {
+        setVendorOptions(vendors);
+      }
+
+      if (subcontractors) {
+        const subs = subcontractors.map(sub => ({
+          subid: sub.subid,
+          company_name: sub.company_name || sub.contact_name || 'Unnamed Subcontractor',
+        }));
+        setSubcontractorOptions(subs);
+      }
     } catch (error) {
       console.error('Error fetching vendors/subcontractors:', error);
     } finally {

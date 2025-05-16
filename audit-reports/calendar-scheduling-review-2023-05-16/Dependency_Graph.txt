@@ -1,0 +1,78 @@
++-----------------------------------------------+
+| User Interface Components                     |
++-----------------------------------------------+
+| ProjectScheduleTab.tsx                        |
+|   ├── ViewMode Toggle (list/calendar)         |
+|   ├── ProjectMilestones.tsx                   |
+|   └── ProjectCalendarView.tsx                 |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| Form Components & Dialogs                     |
++-----------------------------------------------+
+| MilestoneFormDialog.tsx                       |
+|   └── calendar_sync_enabled toggle            |
+|                                               |
+| ScheduleItemFormDialog.tsx                    |
+|   ├── DatePicker                              |
+|   ├── AssigneeSelector                        |
+|   └── calendar_integration_enabled toggle     |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| Custom Hooks                                  |
++-----------------------------------------------+
+| useMilestones.tsx                             |
+|   ├── CRUD for project_milestones             |
+|   └── toggleMilestoneComplete()               |
+|                                               |
+| useScheduleItems.tsx                          |
+|   ├── CRUD for schedule_items                 |
+|   └── syncWithCalendar()                      |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| Database Access (Supabase)                    |
++-----------------------------------------------+
+| supabase.from('project_milestones')           |
+|   Data structure in useMilestones.tsx         |
+|                                               |
+| supabase.from('schedule_items')               |
+|   Data structure in schedules.ts              |
+|                                               |
+| supabase.from('organization_calendar')        |
+|   Data structure in calendar.ts               |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| API Endpoints (Node.js Server)                |
++-----------------------------------------------+
+| /api/schedule-items/:id/sync-calendar         |
+|                                               |
+| /api/calendar/events                          |
+|                                               |
+| /api/calendar/milestones/:milestoneId         |
+| (incomplete implementation)                   |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| Google API Helpers                            |
++-----------------------------------------------+
+| calendar.js                                   |
+|   ├── listEvents()                            |
+|   ├── createEvent()                           |
+|   ├── updateEvent()                           |
+|   └── deleteEvent()                           |
++-----------------------------------------------+
+                   |
+                   V
++-----------------------------------------------+
+| External Services                             |
++-----------------------------------------------+
+| Google Calendar API (v3)                      |
++-----------------------------------------------+

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageHeader from '@/components/common/layout/PageHeader';
 import { Subcontractor } from '../utils/types';
+import { getSubcontractorDisplayName } from '../utils/displayName';
 
 interface SubcontractorDetailHeaderProps {
   subcontractor: Subcontractor | null;
@@ -42,7 +43,7 @@ const SubcontractorDetailHeader = ({
 
   return (
     <PageHeader
-      title={subcontractor.subname || 'Subcontractor Detail'}
+      title={getSubcontractorDisplayName(subcontractor)}
       backLink="/subcontractors"
       backText="Back to Subcontractors"
       actions={headerActions}

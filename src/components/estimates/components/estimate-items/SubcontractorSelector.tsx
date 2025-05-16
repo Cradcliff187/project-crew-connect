@@ -8,7 +8,7 @@ import VendorSearchCombobox from './VendorSearchCombobox';
 
 interface SubcontractorSelectorProps {
   index: number;
-  subcontractors: { subid: string; subname: string }[];
+  subcontractors: { subid: string; company_name: string | null; contact_name?: string | null }[];
   loading: boolean;
 }
 

@@ -1,24 +1,29 @@
 {
-  "name": "server",
+  "name": "crm-live-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Backend server for CRM Live Google integration",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@googlemaps/google-maps-services-js": "^3.4.1",
-    "@types/google.maps": "^3.58.1",
-    "@types/lodash.debounce": "^4.0.9",
-    "body-parser": "^2.2.0",
+    "@googlemaps/google-maps-services-js": "^3.3.16",
+    "@supabase/supabase-js": "^2.39.3",
+    "body-parser": "^1.20.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "express-session": "^1.18.1",
-    "googleapis": "^148.0.0",
-    "lodash.debounce": "^4.0.8"
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "googleapis": "^118.0.0",
+    "https-proxy-agent": "^7.0.6",
+    "node-fetch": "^3.3.2",
+    "undici": "^5.29.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }

@@ -10,8 +10,8 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Building2, HardHat, Check, ChevronsUpDown, X } from 'lucide-react';
-import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones';
+import { User, Building2, HardHat, Check, ChevronsUpDown, X, Users } from 'lucide-react';
+import { Assignee, AssigneeId, CoreAssigneeType, AssigneeSelectionValue } from '@/types/assignees';
 import {
   Select,
   SelectContent,
@@ -27,69 +27,62 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 
-export interface Assignee {
-  id: string;
-  name: string;
-  email?: string | null;
-  type: AssigneeType;
-}
-
-// Updated to support multiple selections
 interface AssigneeSelectorProps {
-  value: { type: AssigneeType; id: string }[] | null; // Changed to array for multi-select
-  onChange: (value: { type: AssigneeType; id: string }[] | null) => void;
+  value: AssigneeSelectionValue[] | null;
+  onChange: (value: AssigneeSelectionValue[] | null) => void;
   disabled?: boolean;
-  allowedTypes?: AssigneeType[];
-  multiple?: boolean; // Add option to enable/disable multi-select
-  maxHeight?: number; // Allow customizing the max height
+  allowedTypes?: CoreAssigneeType[];
+  multiple?: boolean;
+  maxHeight?: number;
 }
 
 export function AssigneeSelector({
   value,
   onChange,
   disabled = false,
-  allowedTypes,
-  multiple = false, // Default to single select for backward compatibility
+  allowedTypes = ['employee', 'subcontractor', 'external_contact'],
+  multiple = false,
   maxHeight = 300,
 }: AssigneeSelectorProps) {
   const [employees, setEmployees] = useState<Assignee[]>([]);
   const [vendors, setVendors] = useState<Assignee[]>([]);
   const [subcontractors, setSubcontractors] = useState<Assignee[]>([]);
+  const [externalContacts, setExternalContacts] = useState<Assignee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<AssigneeType>(
-    value && value.length > 0 ? value[0].type : 'employee'
+  const [selectedType, setSelectedType] = useState<CoreAssigneeType>(
+    value && value.length > 0
+      ? value[0].type
+      : allowedTypes.includes('employee')
+        ? 'employee'
+        : allowedTypes[0]!
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
 
-  // Normalize value to always be an array
   const selections = value || [];
 
-  // Fetch employees, vendors, and subcontractors
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch employees
-        const { data: employeesData, error: employeesError } = await supabase
-          .from('employees')
-          .select('employee_id, first_name, last_name, email')
-          .order('last_name');
-
-        if (employeesError) throw employeesError;
-
-        if (employeesData) {
-          setEmployees(
-            employeesData.map(emp => ({
-              id: emp.employee_id,
-              name: `${emp.first_name} ${emp.last_name}`,
-              email: emp.email,
-              type: 'employee' as AssigneeType,
-            }))
-          );
+        if (!allowedTypes || allowedTypes.includes('employee')) {
+          const { data: employeesData, error: employeesError } = await supabase
+            .from('employees')
+            .select('employee_id, first_name, last_name, email, full_name')
+            .order('last_name');
+          if (employeesError) throw employeesError;
+          if (employeesData) {
+            setEmployees(
+              employeesData.map(emp => ({
+                id: emp.employee_id as AssigneeId,
+                name: emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+                email: emp.email,
+                type: 'employee' as CoreAssigneeType,
+              }))
+            );
+          }
         }
 
-        // Fetch vendors
         const { data: vendorsData, error: vendorsError } = await supabase
           .from('vendors')
           .select('vendorid, vendorname, email')
@@ -103,28 +96,45 @@ export function AssigneeSelector({
               id: vendor.vendorid,
               name: vendor.vendorname || 'Unnamed Vendor',
               email: vendor.email,
-              type: 'vendor' as AssigneeType,
+              type: 'vendor' as CoreAssigneeType,
             }))
           );
         }
 
-        // Fetch subcontractors
-        const { data: subcontractorsData, error: subcontractorsError } = await supabase
-          .from('subcontractors')
-          .select('subid, subname, contactemail')
-          .order('subname');
+        if (!allowedTypes || allowedTypes.includes('subcontractor')) {
+          const { data: subcontractorsData, error: subcontractorsError } = await supabase
+            .from('subcontractors')
+            .select('subid, company_name, contact_name, contactemail')
+            .order('company_name');
+          if (subcontractorsError) throw subcontractorsError;
+          if (subcontractorsData) {
+            setSubcontractors(
+              subcontractorsData.map(sub => ({
+                id: sub.subid as AssigneeId,
+                name: sub.contact_name || sub.company_name || 'Unnamed Subcontractor',
+                email: sub.contactemail,
+                type: 'subcontractor' as CoreAssigneeType,
+              }))
+            );
+          }
+        }
 
-        if (subcontractorsError) throw subcontractorsError;
-
-        if (subcontractorsData) {
-          setSubcontractors(
-            subcontractorsData.map(sub => ({
-              id: sub.subid,
-              name: sub.subname || 'Unnamed Subcontractor',
-              email: sub.contactemail,
-              type: 'subcontractor' as AssigneeType,
-            }))
-          );
+        if (!allowedTypes || allowedTypes.includes('external_contact')) {
+          const { data: externalContactsData, error: externalContactsError } = await supabase
+            .from('external_contacts')
+            .select('contact_id, full_name, email')
+            .order('full_name');
+          if (externalContactsError) throw externalContactsError;
+          if (externalContactsData) {
+            setExternalContacts(
+              externalContactsData.map(contact => ({
+                id: contact.contact_id as AssigneeId,
+                name: contact.full_name || 'Unnamed Contact',
+                email: contact.email,
+                type: 'external_contact' as CoreAssigneeType,
+              }))
+            );
+          }
         }
       } catch (error) {
         console.error('Error fetching assignees:', error);
@@ -136,61 +146,49 @@ export function AssigneeSelector({
     fetchData();
   }, []);
 
-  // Handle assignee selection with optimized state updates
-  const handleSelectAssignee = (assigneeId: string) => {
+  const handleSelectAssignee = (assigneeId: AssigneeId) => {
     const assignee = getCurrentAssignees().find(a => a.id === assigneeId);
     if (!assignee) {
       return;
     }
 
     if (multiple) {
-      // For multi-select: toggle selection
       const isAlreadySelected = selections.some(
         s => s.id === assignee.id && s.type === assignee.type
       );
 
       if (isAlreadySelected) {
-        // Remove from selections - create new array without the matching item
         const newSelections = selections.filter(
           s => !(s.id === assignee.id && s.type === assignee.type)
         );
         onChange(newSelections.length > 0 ? newSelections : null);
       } else {
-        // Add to selections - use concat for immutability
-        onChange([...selections, { type: assignee.type, id: assignee.id }]);
+        onChange([...selections, { type: assignee.type, id: assignee.id as AssigneeId }]);
       }
-      // Keep dropdown open for multi-select
     } else {
-      // For single-select: replace selection and close
-      onChange([{ type: assignee.type, id: assignee.id }]);
+      onChange([{ type: assignee.type, id: assignee.id as AssigneeId }]);
       setOpen(false);
     }
   };
 
-  // Handle tab change
   const handleTabChange = (type: string) => {
-    setSelectedType(type as AssigneeType);
+    setSelectedType(type as CoreAssigneeType);
     if (multiple) {
-      // In multi-select, keep selections from other types when changing tabs
       return;
     }
 
-    // In single-select, clear selection if tab changes
     if (!selections.some(item => item.type === type)) {
       onChange(null);
     }
   };
 
-  // Handle removing a selection (for multi-select) more efficiently
-  const handleRemoveSelection = (selectionToRemove: { type: AssigneeType; id: string }) => {
+  const handleRemoveSelection = (selectionToRemove: AssigneeSelectionValue) => {
     const newSelections = selections.filter(
       s => !(s.id === selectionToRemove.id && s.type === selectionToRemove.type)
     );
-    // If all selections are removed, set to null instead of empty array
     onChange(newSelections.length > 0 ? newSelections : null);
   };
 
-  // Get current assignee list based on selected type
   const getCurrentAssignees = () => {
     let currentList: Assignee[];
     switch (selectedType) {
@@ -203,19 +201,23 @@ export function AssigneeSelector({
       case 'subcontractor':
         currentList = subcontractors;
         break;
+      case 'external_contact':
+        currentList = externalContacts;
+        break;
       default:
-        currentList = employees;
+        currentList = allowedTypes.includes('employee')
+          ? employees
+          : allowedTypes.includes('subcontractor')
+            ? subcontractors
+            : externalContacts;
     }
-    // Apply filtering after the switch statement
     return currentList.filter(assignee => !allowedTypes || allowedTypes.includes(assignee.type));
   };
 
-  // Check if an assignee is selected
   const isSelected = (assignee: Assignee) => {
     return selections.some(s => s.id === assignee.id && s.type === assignee.type);
   };
 
-  // Get all selected assignees with their details
   const getSelectedAssignees = (): Assignee[] => {
     const selected: Assignee[] = [];
 
@@ -228,6 +230,8 @@ export function AssigneeSelector({
         assignee = vendors.find(v => v.id === selection.id);
       } else if (selection.type === 'subcontractor') {
         assignee = subcontractors.find(s => s.id === selection.id);
+      } else if (selection.type === 'external_contact') {
+        assignee = externalContacts.find(ec => ec.id === selection.id);
       }
 
       if (assignee) {
@@ -238,7 +242,6 @@ export function AssigneeSelector({
     return selected;
   };
 
-  // Filter assignees based on search query
   const filteredAssignees = getCurrentAssignees().filter(assignee =>
     searchQuery
       ? assignee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -268,6 +271,12 @@ export function AssigneeSelector({
             <TabsTrigger value="subcontractor" className="flex items-center flex-1">
               <HardHat className="h-4 w-4 mr-2" />
               Subcontractors
+            </TabsTrigger>
+          )}
+          {(!allowedTypes || allowedTypes.includes('external_contact')) && (
+            <TabsTrigger value="external_contact" className="flex items-center flex-1">
+              <Users className="h-4 w-4 mr-2" />
+              External Contacts
             </TabsTrigger>
           )}
         </TabsList>
@@ -302,6 +311,9 @@ export function AssigneeSelector({
                           {assignee.type === 'subcontractor' && (
                             <HardHat className="h-3 w-3 mr-1" />
                           )}
+                          {assignee.type === 'external_contact' && (
+                            <Users className="h-3 w-3 mr-1" />
+                          )}
                           <span className="truncate max-w-[100px]">{assignee.name}</span>
                           <span
                             role="button"
@@ -316,13 +328,19 @@ export function AssigneeSelector({
                               }
                               e.stopPropagation();
                               e.preventDefault();
-                              handleRemoveSelection({ type: assignee.type, id: assignee.id });
+                              handleRemoveSelection({
+                                type: assignee.type as CoreAssigneeType,
+                                id: assignee.id as AssigneeId,
+                              });
                             }}
                             onKeyDown={(e: React.KeyboardEvent) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                handleRemoveSelection({ type: assignee.type, id: assignee.id });
+                                handleRemoveSelection({
+                                  type: assignee.type as CoreAssigneeType,
+                                  id: assignee.id as AssigneeId,
+                                });
                               }
                             }}
                             className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
@@ -355,7 +373,7 @@ export function AssigneeSelector({
                           key={assignee.id}
                           className="flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-accent text-popover-foreground data-[disabled]:opacity-50"
                           onClick={() => {
-                            handleSelectAssignee(assignee.id);
+                            handleSelectAssignee(assignee.id as AssigneeId);
                           }}
                         >
                           <Checkbox

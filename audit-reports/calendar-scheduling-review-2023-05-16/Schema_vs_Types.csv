@@ -1,0 +1,38 @@
+Table,Column,DB Type,Front-End Interface,FE Type,Status,Notes
+schedule_items,id,uuid,ScheduleItem.id,string,Match,
+schedule_items,project_id,uuid,ScheduleItem.project_id,string,Match,
+schedule_items,title,text,ScheduleItem.title,string,Match,
+schedule_items,description,text,ScheduleItem.description,string|null,Match,
+schedule_items,start_datetime,timestamp,ScheduleItem.start_datetime,string,Type Conversion,Date in UI converted to ISO string
+schedule_items,end_datetime,timestamp,ScheduleItem.end_datetime,string,Type Conversion,Date in UI converted to ISO string
+schedule_items,is_all_day,boolean,ScheduleItem.is_all_day,boolean,Match,
+schedule_items,assignee_type,text,ScheduleItem.assignee_type,CoreAssigneeType,Mismatch,DB allows any text but FE restricts to enum
+schedule_items,assignee_id,uuid,ScheduleItem.assignee_id,AssigneeId,Match,Both string-based UUIDs
+schedule_items,linked_milestone_id,uuid,ScheduleItem.linked_milestone_id,string,Match,
+schedule_items,calendar_integration_enabled,boolean,ScheduleItem.calendar_integration_enabled,boolean,Match,
+schedule_items,google_event_id,text,ScheduleItem.google_event_id,string|null,Match,
+schedule_items,send_invite,boolean,ScheduleItem.send_invite,boolean,Match,
+schedule_items,invite_status,text,ScheduleItem.invite_status,string|null,Mismatch,No enum validation on possible status values
+schedule_items,last_sync_error,text,(missing),n/a,Missing,Field exists in DB but not used in front-end
+project_milestones,id,uuid,ProjectMilestone.id,string,Match,
+project_milestones,projectid,uuid,ProjectMilestone.projectid,string,Match,
+project_milestones,title,text,ProjectMilestone.title,string,Match,
+project_milestones,description,text,ProjectMilestone.description,string|null,Match,
+project_milestones,due_date,timestamp,ProjectMilestone.due_date,string|null,Type Conversion,Date in UI converted to ISO string
+project_milestones,start_date,timestamp,ProjectMilestone.start_date,string|null,Type Conversion,Date in UI converted to ISO string
+project_milestones,is_completed,boolean,ProjectMilestone.is_completed,boolean,Match,
+project_milestones,status,text,ProjectMilestone.status,MilestoneStatus,Mismatch,DB allows any text but FE uses specific enum
+project_milestones,priority,text,ProjectMilestone.priority,MilestonePriority,Mismatch,DB allows any text but FE uses specific enum
+project_milestones,estimated_hours,numeric,ProjectMilestone.estimated_hours,number|null,Match,
+project_milestones,calendar_sync_enabled,boolean,ProjectMilestone.calendar_sync_enabled,boolean,Incomplete,FE field exists but no implementation
+project_milestones,calendar_event_id,text,ProjectMilestone.calendar_event_id,string|null,Incomplete,FE field exists but no implementation
+project_milestones,assignee_type,text,ProjectMilestone.assignee_type,AssigneeType,Mismatch,DB allows any text but FE uses specific enum
+project_milestones,assignee_id,uuid,ProjectMilestone.assignee_id,string,Match,
+organization_calendar,id,uuid,OrganizationCalendarRow.id,string,Match,
+organization_calendar,google_calendar_id,text,OrganizationCalendarRow.google_calendar_id,string|null,Match,
+organization_calendar,is_enabled,boolean,OrganizationCalendarRow.is_enabled,boolean,Match,
+organization_calendar,name,text,OrganizationCalendarRow.name,string,Match,
+calendar_access,id,uuid,CalendarAccessRow.id,string,Match,
+calendar_access,calendar_id,uuid,CalendarAccessRow.calendar_id,string,Match,
+calendar_access,employee_id,uuid,CalendarAccessRow.employee_id,string,Match,
+calendar_access,access_level,text,CalendarAccessRow.access_level,CalendarAccessLevel,Mismatch,DB allows any text but FE uses specific enum

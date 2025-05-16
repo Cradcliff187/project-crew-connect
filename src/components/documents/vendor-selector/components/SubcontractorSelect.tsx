@@ -10,6 +10,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { DocumentUploadFormValues } from '../../schemas/documentSchema';
 import { SubcontractorBasic } from '../hooks/useVendorOptions';
+import { getSubcontractorDisplayName } from '@/components/subcontractors/utils/displayName';
 
 interface SubcontractorSelectProps {
   control: Control<DocumentUploadFormValues>;
@@ -50,7 +51,7 @@ const SubcontractorSelect: React.FC<SubcontractorSelectProps> = ({
             <SelectContent>
               {subcontractors.map(sub => (
                 <SelectItem key={sub.subid} value={sub.subid}>
-                  {sub.subname}
+                  {getSubcontractorDisplayName(sub as any)}
                 </SelectItem>
               ))}
             </SelectContent>

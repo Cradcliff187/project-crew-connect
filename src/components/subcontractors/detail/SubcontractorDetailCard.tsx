@@ -19,10 +19,12 @@ const SubcontractorDetailCard: React.FC<SubcontractorDetailCardProps> = ({ subco
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Removed Subcontractor ID display
         <div>
           <p className="text-sm font-medium">Subcontractor ID</p>
           <p>{subcontractor.subid}</p>
         </div>
+        */}
 
         {subcontractor.tax_id && (
           <div>

@@ -1,9 +1,10 @@
 // Define subcontractor form data type
 export interface SubcontractorFormData {
   subid?: string;
-  subname: string;
+  company_name: string;
+  contact_name?: string;
   contactemail: string;
-  phone: string;
+  phone_number: string;
   address: string;
   city: string;
   state: string;

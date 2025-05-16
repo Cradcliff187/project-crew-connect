@@ -37,7 +37,10 @@ const SubcontractorTableRow = ({
       className="cursor-pointer hover:bg-primary/5 transition-colors"
     >
       <TableCell>
-        <SubcontractorInfo name={subcontractor.subname} id={subcontractor.subid} />
+        <SubcontractorInfo
+          name={subcontractor.company_name || subcontractor.contact_name || 'Unnamed Sub'}
+          id={subcontractor.subid}
+        />
       </TableCell>
       <TableCell>
         <SpecialtiesBadges
@@ -47,7 +50,10 @@ const SubcontractorTableRow = ({
         />
       </TableCell>
       <TableCell>
-        <SubcontractorContact email={subcontractor.contactemail} phone={subcontractor.phone} />
+        <SubcontractorContact
+          email={subcontractor.contactemail}
+          phone={subcontractor.phone_number}
+        />
       </TableCell>
       <TableCell>
         <SubcontractorLocation city={subcontractor.city} state={subcontractor.state} />

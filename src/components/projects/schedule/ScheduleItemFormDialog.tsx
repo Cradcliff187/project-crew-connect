@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X, Calendar, UserCircle, Mail, Clock } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import {
@@ -14,19 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useToast } from '@/hooks/use-toast';
-import { AssigneeSelector, Assignee } from '@/components/common/AssigneeSelector';
+import { AssigneeSelector } from '@/components/common/AssigneeSelector';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones'; // Import AssigneeType
-
-// Define the type for the assignee value
-type AssigneeValue =
-  | {
-      type: 'employee' | 'subcontractor' | 'vendor';
-      id: string;
-    }[]
-  | null;
+import { AssigneeId, CoreAssigneeType, AssigneeSelectionValue } from '@/types/assignees';
 
 // Define ScheduleItem interface based on the new table
 export interface ScheduleItem {
@@ -37,8 +29,8 @@ export interface ScheduleItem {
   start_datetime: string; // ISO string
   end_datetime: string; // ISO string
   is_all_day?: boolean;
-  assignee_type?: 'employee' | 'subcontractor' | null;
-  assignee_id?: string | null; // TEXT type to handle UUID or subid
+  assignee_type?: CoreAssigneeType | null; // Use CoreAssigneeType
+  assignee_id?: AssigneeId | null; // Use AssigneeId (string UUID)
   linked_milestone_id?: string | null;
   calendar_integration_enabled?: boolean;
   google_event_id?: string | null;
@@ -83,12 +75,12 @@ const ScheduleItemFormDialog = ({
       ? editingItem.end_datetime.split('T')[1].substring(0, 5)
       : ''
   );
-  const [assignees, setAssignees] = useState<AssigneeValue>(
+  const [assignees, setAssignees] = useState<AssigneeSelectionValue[] | null>(
     editingItem?.assignee_id && editingItem?.assignee_type
       ? [
           {
-            type: editingItem.assignee_type as 'employee' | 'subcontractor',
-            id: editingItem.assignee_id,
+            type: editingItem.assignee_type as CoreAssigneeType,
+            id: editingItem.assignee_id as AssigneeId,
           },
         ]
       : null
@@ -118,8 +110,8 @@ const ScheduleItemFormDialog = ({
         editingItem?.assignee_id && editingItem?.assignee_type
           ? [
               {
-                type: editingItem.assignee_type as 'employee' | 'subcontractor',
-                id: editingItem.assignee_id,
+                type: editingItem.assignee_type as CoreAssigneeType,
+                id: editingItem.assignee_id as AssigneeId,
               },
             ]
           : null
@@ -198,13 +190,9 @@ const ScheduleItemFormDialog = ({
       description: description || null,
       start_datetime: startDate.toISOString(),
       end_datetime: endDate.toISOString(),
-      assignee_type:
-        primaryAssignee?.type === 'employee' || primaryAssignee?.type === 'subcontractor'
-          ? primaryAssignee.type
-          : null,
+      assignee_type: primaryAssignee?.type || null,
       assignee_id: primaryAssignee?.id || null,
-      send_invite: primaryAssignee ? sendInvite : false, // Only send invite if assignee exists
-      // calendar_integration_enabled could be set based on send_invite or other logic
+      send_invite: primaryAssignee ? sendInvite : false,
       calendar_integration_enabled: primaryAssignee ? sendInvite : false,
     };
 
@@ -321,16 +309,14 @@ const ScheduleItemFormDialog = ({
                 value={assignees}
                 onChange={selected => {
                   setAssignees(selected);
-                  // Auto-enable send invite if assignees are selected
                   if (selected && selected.length > 0 && !sendInvite) {
                     setSendInvite(true);
                   }
-                  // Disable send invite if no assignees
                   if (!selected || selected.length === 0) {
                     setSendInvite(false);
                   }
                 }}
-                allowedTypes={['employee', 'subcontractor']}
+                allowedTypes={['employee', 'subcontractor', 'external_contact']}
                 multiple={true}
                 maxHeight={250}
               />

@@ -17,10 +17,10 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {subcontractor.subname && (
+        {(subcontractor.company_name || subcontractor.contact_name) && (
           <div>
-            <p className="text-sm font-medium">Contact Name</p>
-            <p>{subcontractor.subname}</p>
+            <p className="text-sm font-medium">Name</p>
+            <p>{subcontractor.contact_name || subcontractor.company_name}</p>
           </div>
         )}
 
@@ -39,13 +39,13 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
           </div>
         )}
 
-        {subcontractor.phone && (
+        {subcontractor.phone_number && (
           <div>
             <p className="text-sm font-medium">Phone</p>
             <p className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              <a href={`tel:${subcontractor.phone}`} className="hover:text-primary">
-                {subcontractor.phone}
+              <a href={`tel:${subcontractor.phone_number}`} className="hover:text-primary">
+                {subcontractor.phone_number}
               </a>
             </p>
           </div>
@@ -69,7 +69,7 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
         )}
 
         {!subcontractor.contactemail &&
-          !subcontractor.phone &&
+          !subcontractor.phone_number &&
           !subcontractor.address &&
           !subcontractor.city &&
           !subcontractor.state &&
