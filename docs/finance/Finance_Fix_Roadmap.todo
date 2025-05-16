@@ -1,0 +1,66 @@
+# Finance Ecosystem Fix Roadmap
+
+## Security Enhancements
+- FIN-001: Create organization_id column for all financial tables @high @security
+- FIN-002: Implement RLS policies for estimates table @high @security
+- FIN-003: Implement RLS policies for projects table @high @security
+- FIN-004: Implement RLS policies for budget items table @high @security
+- FIN-005: Implement RLS policies for change orders table @high @security
+- FIN-006: Move sensitive financial calculations to server-side @medium @security
+- FIN-007: Add role-based permissions for financial operations @medium @security
+- FIN-008: Implement audit logging for all financial changes @medium @security
+
+## Calculation Standardization
+- FIN-101: Create shared financial calculation utility module @high @calculation
+- FIN-102: Standardize markup calculation across all components @high @calculation
+- FIN-103: Implement consistent handling of null/zero/negative values @medium @calculation
+- FIN-104: Add validation for financial inputs @medium @calculation
+- FIN-105: Create unit tests for all financial calculations @high @testing
+- FIN-106: Standardize gross margin calculation across components @medium @calculation
+- FIN-107: Fix inconsistent budget variance calculations @medium @calculation
+- FIN-108: Document all financial formulas in central location @low @documentation
+
+## Data Model Improvements
+- FIN-201: Improve estimate-to-project conversion to maintain revision history @medium @data-model
+- FIN-202: Add constraints to ensure financial data consistency @high @data-model
+- FIN-203: Implement proper transaction handling for financial operations @high @data-model
+- FIN-204: Normalize financial field naming conventions @medium @data-model
+- FIN-205: Create foreign key constraints for financial relationships @medium @data-model
+- FIN-206: Standardize timestamp fields for all financial tables @low @data-model
+- FIN-207: Implement soft delete for financial records @low @data-model
+
+## User Experience Enhancements
+- FIN-301: Improve financial summary cards with consistent layout @medium @ui
+- FIN-302: Add clear indicators for budget variances @high @ui
+- FIN-303: Create tooltips explaining financial terms and calculations @medium @ui
+- FIN-304: Standardize financial terminology across all UI components @medium @ui
+- FIN-305: Implement better error messages for financial validation issues @low @ui
+- FIN-306: Add filtering capabilities to financial reports @medium @ui
+- FIN-307: Create comprehensive financial dashboard @low @ui
+
+## Workflow Improvements
+- FIN-401: Implement proper change order approval workflow @high @workflow
+- FIN-402: Create validation step before estimate-to-project conversion @medium @workflow
+- FIN-403: Add mechanism to update project budget post-conversion @medium @workflow
+- FIN-404: Implement budget forecasting tools @low @workflow
+- FIN-405: Create export capabilities for financial data @low @workflow
+- FIN-406: Implement "What-if" scenario planning for budgets @low @workflow
+- FIN-407: Add historical tracking of budget changes @medium @workflow
+
+## Testing & Documentation
+- FIN-501: Create integration tests for estimate-to-project conversion @high @testing
+- FIN-502: Implement regression tests for financial calculations @high @testing
+- FIN-503: Add tests for change order financial impact @medium @testing
+- FIN-504: Create documentation for financial component relationships @medium @documentation
+- FIN-505: Document financial security model @high @documentation
+- FIN-506: Create financial data dictionary @medium @documentation
+- FIN-507: Develop user guide for financial operations @low @documentation
+
+## Priority Quick Wins (Next Sprint)
+- FIN-001: Create organization_id column for all financial tables @high @security
+- FIN-002: Implement RLS policies for estimates table @high @security
+- FIN-101: Create shared financial calculation utility module @high @calculation
+- FIN-102: Standardize markup calculation across all components @high @calculation
+- FIN-105: Create unit tests for all financial calculations @high @testing
+- FIN-302: Add clear indicators for budget variances @high @ui
+- FIN-401: Implement proper change order approval workflow @high @workflow
