@@ -1,0 +1,72 @@
+Frontend Entity,Frontend Type File,DB Table,DB Column,Type Match,Notes
+Customer,src/types/customer.ts,customers,customerid,✅,
+Customer,src/types/customer.ts,customers,customername,✅,
+Customer,src/types/customer.ts,customers,address,✅,
+Customer,src/types/customer.ts,customers,city,✅,
+Customer,src/types/customer.ts,customers,state,✅,
+Customer,src/types/customer.ts,customers,zip,✅,
+Customer,src/types/customer.ts,customers,contactemail,✅,
+Customer,src/types/customer.ts,customers,phone,✅,
+Customer,src/types/customer.ts,customers,status,✅,
+Employee,src/types/employee.ts,employees,employee_id,✅,
+Employee,src/types/employee.ts,employees,first_name,✅,
+Employee,src/types/employee.ts,employees,last_name,✅,
+Employee,src/types/employee.ts,employees,email,✅,
+Employee,src/types/employee.ts,employees,phone,✅,
+Employee,src/types/employee.ts,employees,role,✅,
+Employee,src/types/employee.ts,employees,hourly_rate,✅,
+Employee,src/types/employee.ts,employees,status,✅,
+Project,src/types/project.ts,projects,project_id,✅,Inferred table
+Project,src/types/project.ts,projects,title,✅,Inferred table
+Project,src/types/project.ts,projects,customer_id,✅,Foreign key
+Project,src/types/project.ts,projects,status,✅,
+Project,src/types/project.ts,projects,start_date,✅,
+Project,src/types/project.ts,projects,end_date,✅,
+WorkOrder,src/types/workOrder.ts,work_orders,workorder_id,✅,Inferred table
+WorkOrder,src/types/workOrder.ts,work_orders,project_id,✅,Foreign key
+WorkOrder,src/types/workOrder.ts,work_orders,title,✅,
+WorkOrder,src/types/workOrder.ts,work_orders,description,✅,
+WorkOrder,src/types/workOrder.ts,work_orders,status,✅,
+WorkOrder,src/types/workOrder.ts,work_orders,assigned_to,✅,Foreign key
+Estimate,src/types/estimate.ts,estimates,estimate_id,✅,Inferred table
+Estimate,src/types/estimate.ts,estimates,customer_id,✅,Foreign key
+Estimate,src/types/estimate.ts,estimates,title,✅,
+Estimate,src/types/estimate.ts,estimates,total_amount,✅,
+Estimate,src/types/estimate.ts,estimates,status,✅,
+Document,src/components/documents/schemas/documentSchema.ts,documents,document_id,✅,Inferred table
+Document,src/components/documents/schemas/documentSchema.ts,documents,filename,✅,
+Document,src/components/documents/schemas/documentSchema.ts,documents,file_type,✅,
+Document,src/components/documents/schemas/documentSchema.ts,documents,entity_type,✅,Polymorphic relationship
+Document,src/components/documents/schemas/documentSchema.ts,documents,entity_id,✅,Polymorphic relationship
+TimeEntry,src/types/timeEntry.ts,time_entries,time_entry_id,✅,Inferred table
+TimeEntry,src/types/timeEntry.ts,time_entries,employee_id,✅,Foreign key
+TimeEntry,src/types/timeEntry.ts,time_entries,work_order_id,❌,Possible missing in DB schema
+TimeEntry,src/types/timeEntry.ts,time_entries,hours,✅,
+TimeEntry,src/types/timeEntry.ts,time_entries,date,✅,
+Vendor,src/types/vendor.ts,vendors,vendor_id,✅,Inferred table
+Vendor,src/types/vendor.ts,vendors,name,✅,
+Vendor,src/types/vendor.ts,vendors,contact_name,✅,
+Vendor,src/types/vendor.ts,vendors,email,✅,
+Vendor,src/types/vendor.ts,vendors,phone,✅,
+Subcontractor,src/types/subcontractor.ts,subcontractors,subcontractor_id,✅,Inferred table
+Subcontractor,src/types/subcontractor.ts,subcontractors,name,✅,
+Subcontractor,src/types/subcontractor.ts,subcontractors,contact_name,✅,
+Subcontractor,src/types/subcontractor.ts,subcontractors,email,✅,
+Subcontractor,src/types/subcontractor.ts,subcontractors,phone,✅,
+Contact,src/types/contact.ts,contacts,contact_id,✅,Inferred table
+Contact,src/types/contact.ts,contacts,first_name,✅,
+Contact,src/types/contact.ts,contacts,last_name,✅,
+Contact,src/types/contact.ts,contacts,email,✅,
+Contact,src/types/contact.ts,contacts,phone,✅,
+Contact,src/types/contact.ts,contacts,company,✅,
+User,src/types/user.ts,auth.users,id,✅,Supabase auth table
+User,src/types/user.ts,auth.users,email,✅,Supabase auth table
+User,src/types/user.ts,profiles,user_id,✅,Inferred joined table
+User,src/types/user.ts,profiles,full_name,✅,Inferred joined table
+User,src/types/user.ts,profiles,avatar_url,✅,Inferred joined table
+Status,src/types/status.ts,status_history,status_id,✅,Inferred table
+Status,src/types/status.ts,status_history,entity_type,✅,Polymorphic relationship
+Status,src/types/status.ts,status_history,entity_id,✅,Polymorphic relationship
+Status,src/types/status.ts,status_history,status_value,✅,
+Status,src/types/status.ts,status_history,created_by,✅,Foreign key
+Status,src/types/status.ts,status_history,created_at,✅,
