@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { EstimateItem } from '../types/estimateTypes';
+import { calcMarkup } from '@/utils/finance';
 
 interface EstimateLineItemsProps {
   items: EstimateItem[];
@@ -30,8 +31,8 @@ const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({ items, showFinanc
   const totalMarkup = showFinancials
     ? items.reduce((sum, item) => {
         const cost = (item.cost || 0) * (item.quantity || 1);
-        const markup = item.markup_amount || (cost * (item.markup_percentage || 0)) / 100 || 0;
-        return sum + markup;
+        const { markupAmt } = calcMarkup(cost, item.markup_percentage || 0);
+        return sum + markupAmt;
       }, 0)
     : 0;
 

@@ -1,0 +1,46 @@
+## Finance Quick-Wins Bundle Results
+
+### 1. Repository-wide discovery
+- No existing centralized finance utility was found
+- Multiple implementations of markup calculations were identified across the codebase
+- Some components were already using variance indicators but not in a standardized way
+
+### 2. Created new standardized finance utilities
+- Created `src/utils/finance.ts` with `calcMarkup` and `calcTotals` functions
+- Added proper error handling for negative numbers and divide-by-zero cases
+- Implemented consistent 2-decimal place rounding
+
+### 3. Created standardized VarianceBadge component
+- Created `src/components/ui/finance/VarianceBadge.tsx`
+- Supports both compact and full display modes
+- Includes tooltips with calculation explanation
+- Color-coded: green for under budget (positive variance), red for over budget (negative variance)
+
+### 4. Unit tests for finance utility
+- Created `src/utils/__tests__/finance.test.ts`
+- Test coverage for all key scenarios including:
+  - Positive markup calculations
+  - Zero cost handling
+  - Negative input clamping
+  - Decimal rounding edge cases
+  - Multiple items in `calcTotals`
+  - Empty array handling
+
+### 5. Refactored components
+- Updated `src/components/estimates/utils/estimateCalculations.ts` to use `calcMarkup`
+- Updated `src/components/estimates/detail/EstimateLineItems.tsx` to use `calcMarkup`
+- Updated `src/components/projects/budget/components/BudgetItemsTable.tsx` to use `VarianceBadge`
+
+### 6. Additional improvements
+- Added test environment with Vitest setup for modern testing
+- Standardized variance calculation definition across the codebase
+
+### Verification
+- All tests are passing
+- No duplicate utilities found
+- All calculations maintain consistent behavior
+
+### TODOs discovered (outside scope):
+- Several more components could be refactored to use these utilities
+- Consider adding additional documentation about finance calculations in the codebase
+- A future task could be to further consolidate financial calculation logic

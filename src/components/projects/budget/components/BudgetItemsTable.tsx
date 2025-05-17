@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Database } from '@/integrations/supabase/types';
+import { VarianceBadge } from '@/components/ui/finance/VarianceBadge';
 
 // Update type definition to match ProjectBudget.tsx
 type BudgetItemWithDetails = Database['public']['Tables']['project_budget_items']['Row'] & {
@@ -104,10 +105,12 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
                 <TableCell className="text-right">{formatCurrency(totalEstCost)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(totalEstSellingPrice)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(actualCost)}</TableCell>
-                <TableCell
-                  className={`text-right ${costVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
-                >
-                  {formatCurrency(costVariance)}
+                <TableCell className="text-right">
+                  <VarianceBadge
+                    variance={costVariance}
+                    tooltipDescription="Variance = Estimated Cost - Actual Cost"
+                    compact
+                  />
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end space-x-1">
@@ -145,10 +148,11 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
             <TableCell className="text-right">{formatCurrency(totalBaseCost)}</TableCell>
             <TableCell className="text-right">{formatCurrency(totalSellingPrice)}</TableCell>
             <TableCell className="text-right">{formatCurrency(totalActualCost)}</TableCell>
-            <TableCell
-              className={`text-right ${totalCostVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
-            >
-              {formatCurrency(totalCostVariance)}
+            <TableCell className="text-right">
+              <VarianceBadge
+                variance={totalCostVariance}
+                tooltipDescription="Total Variance = Total Estimated Cost - Total Actual Cost"
+              />
             </TableCell>
             <TableCell />
           </TableRow>

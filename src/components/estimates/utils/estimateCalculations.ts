@@ -100,14 +100,17 @@ export const calculateTotalCost = (items: any[]): number => {
 /**
  * Calculate total markup for all items
  */
+import { calcMarkup } from '@/utils/finance';
+
 export const calculateTotalMarkup = (items: any[]): number => {
   return items.reduce((sum, item) => {
     const cost = parseFloat(item.cost) || 0;
     const quantity = parseFloat(item.quantity) || 1;
     const markupPercentage = parseFloat(item.markup_percentage) || 0;
     const totalCost = cost * quantity;
-    const markup = totalCost * (markupPercentage / 100);
-    return sum + markup;
+
+    const { markupAmt } = calcMarkup(totalCost, markupPercentage);
+    return sum + markupAmt;
   }, 0);
 };
 
