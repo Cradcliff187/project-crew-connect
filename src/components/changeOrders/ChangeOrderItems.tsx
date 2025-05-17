@@ -26,6 +26,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ChangeOrder, ChangeOrderItem } from '@/types/changeOrders';
 import { formatCurrency } from '@/lib/utils';
+import { calcMarkup } from '@/utils/finance';
 import { PlusCircle, Trash2 } from 'lucide-react';
 
 // Define types for fetched data
@@ -145,14 +146,14 @@ const ChangeOrderItems = ({ form }: ChangeOrderItemsProps) => {
 
     form.setValue(`items.${index}.${field}`, updatedValue);
 
-    const markup_amount = cost * (markup_percentage / 100);
-    const unit_price = cost + markup_amount;
+    const { markupAmt, finalPrice } = calcMarkup(cost, markup_percentage);
+    const unit_price = finalPrice;
     const total_price = quantity * unit_price;
     const total_cost = quantity * cost;
     const gross_margin = total_price - total_cost;
     const gross_margin_percentage = total_price > 0 ? (gross_margin / total_price) * 100 : 0;
 
-    form.setValue(`items.${index}.markup_amount`, parseFloat(markup_amount.toFixed(2)));
+    form.setValue(`items.${index}.markup_amount`, parseFloat(markupAmt.toFixed(2)));
     form.setValue(`items.${index}.unit_price`, parseFloat(unit_price.toFixed(2)));
     form.setValue(`items.${index}.total_price`, parseFloat(total_price.toFixed(2)));
     form.setValue(`items.${index}.gross_margin`, parseFloat(gross_margin.toFixed(2)));

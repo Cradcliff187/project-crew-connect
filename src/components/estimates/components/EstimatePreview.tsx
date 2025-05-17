@@ -15,6 +15,7 @@ import { calculateEstimateTotals } from '../utils/estimateCalculations';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
+import { calcMarkup } from '@/utils/finance';
 
 interface EstimateFormValues {
   items: any[];
@@ -345,8 +346,8 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                       formData.items.map((item, index) => {
                         const cost = parseFloat(item.cost || '0') || 0;
                         const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
-                        const markup = cost * (markupPercentage / 100);
-                        const unitPrice = cost + markup;
+                        const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
+                        const unitPrice = finalPrice;
                         const quantity = parseFloat(item.quantity || '1') || 1;
                         const totalPrice = unitPrice * quantity;
 
@@ -481,8 +482,8 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                         formData.items.map((item, index) => {
                           const cost = parseFloat(item.cost || '0') || 0;
                           const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
-                          const markup = cost * (markupPercentage / 100);
-                          const unitPrice = cost + markup;
+                          const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
+                          const unitPrice = finalPrice;
                           const quantity = parseFloat(item.quantity || '1') || 1;
                           const totalPrice = unitPrice * quantity;
 
@@ -653,8 +654,8 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                         formData.items.map((item, index) => {
                           const cost = parseFloat(item.cost || '0') || 0;
                           const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
-                          const markup = cost * (markupPercentage / 100);
-                          const unitPrice = cost + markup;
+                          const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
+                          const unitPrice = finalPrice;
                           const quantity = parseFloat(item.quantity || '1') || 1;
                           const totalPrice = unitPrice * quantity;
 
@@ -806,8 +807,8 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                   formData.items.map((item, index) => {
                     const cost = parseFloat(item.cost || '0') || 0;
                     const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
-                    const markup = cost * (markupPercentage / 100);
-                    const unitPrice = cost + markup;
+                    const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
+                    const unitPrice = finalPrice;
                     const quantity = parseFloat(item.quantity || '1') || 1;
                     const totalPrice = unitPrice * quantity;
 

@@ -52,6 +52,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { calcMarkup } from '@/utils/finance';
 
 // Debug flag - set to false to disable console logs
 const DEBUG = false;
@@ -129,10 +130,10 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
         const markupPercentage = Number(item.markup_percentage) || 0;
 
         const itemCost = quantity * unitCost;
-        const itemPrice = itemCost * (1 + markupPercentage / 100);
+        const { finalPrice } = calcMarkup(itemCost, markupPercentage);
 
         return {
-          subtotal: acc.subtotal + itemPrice,
+          subtotal: acc.subtotal + finalPrice,
           totalCost: acc.totalCost + itemCost,
         };
       },
@@ -171,18 +172,17 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
       const cost = Number(form.getValues(`${name}.${index}.cost`)) || 0;
       const markupPercentage = Number(form.getValues(`${name}.${index}.markup_percentage`)) || 0;
 
-      const markupAmount = cost * (markupPercentage / 100);
-      const unitPrice = cost + markupAmount;
+      const { finalPrice } = calcMarkup(cost, markupPercentage);
 
       // Format to 2 decimal places for consistency
-      form.setValue(`${name}.${index}.unit_price`, unitPrice.toFixed(2), {
+      form.setValue(`${name}.${index}.unit_price`, finalPrice.toFixed(2), {
         shouldValidate: false,
         shouldDirty: true,
       });
 
       // Also update total price immediately after unit price changes
       const quantity = Number(form.getValues(`${name}.${index}.quantity`)) || 0;
-      const totalPrice = quantity * unitPrice;
+      const totalPrice = quantity * finalPrice;
       form.setValue(`${name}.${index}.total_price`, totalPrice.toFixed(2), {
         shouldValidate: false,
         shouldDirty: true,

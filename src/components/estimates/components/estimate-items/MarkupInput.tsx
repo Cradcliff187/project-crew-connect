@@ -3,6 +3,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import { calcMarkup } from '@/utils/finance';
 
 interface MarkupInputProps {
   index: number;
@@ -14,10 +15,9 @@ const MarkupInput: React.FC<MarkupInputProps> = ({ index }) => {
   const updatePrice = (cost: string, markupPercentage: string) => {
     const costValue = parseFloat(cost) || 0;
     const markupPercent = parseFloat(markupPercentage) || 0;
-    const markupAmount = costValue * (markupPercent / 100);
-    const unitPrice = costValue + markupAmount;
+    const { finalPrice } = calcMarkup(costValue, markupPercent);
 
-    form.setValue(`items.${index}.unit_price`, unitPrice.toString(), {
+    form.setValue(`items.${index}.unit_price`, finalPrice.toString(), {
       shouldDirty: true,
       shouldValidate: false,
     });

@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { calcMarkup } from '@/utils/finance';
 import { ChangeOrder, ChangeOrderEntityType, ChangeOrderStatus } from '@/types/changeOrders';
 import ChangeOrderBasicInfo from './ChangeOrderBasicInfo';
 import ChangeOrderItems from './ChangeOrderItems';
@@ -142,8 +143,10 @@ const ChangeOrderDialog = ({
           const cost = item.cost || 0;
           const quantity = item.quantity || 0;
           const markup_percentage = item.markup_percentage || 0;
-          const markup_amount = cost * (markup_percentage / 100);
-          const unit_price = cost + markup_amount; // Selling Price per unit
+
+          // Calculate markup and price using the standard utility
+          const { markupAmt, finalPrice } = calcMarkup(cost, markup_percentage);
+          const unit_price = finalPrice; // Selling Price per unit
           const total_price = quantity * unit_price; // Total Selling Price
           const total_cost = quantity * cost;
           const gross_margin = total_price - total_cost;
@@ -155,7 +158,7 @@ const ChangeOrderDialog = ({
             // Overwrite calculated values
             unit_price: parseFloat(unit_price.toFixed(2)),
             total_price: parseFloat(total_price.toFixed(2)),
-            markup_amount: parseFloat(markup_amount.toFixed(2)),
+            markup_amount: parseFloat(markupAmt.toFixed(2)),
             gross_margin: parseFloat(gross_margin.toFixed(2)),
             gross_margin_percentage: parseFloat(gross_margin_percentage.toFixed(2)),
             // Ensure required/defaulted values are correct

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { calcMarkup } from '@/utils/finance';
 
 // Interface for items being processed, extending the named EstimateItem type
 // interface ProcessingItem extends EstimateItem {
@@ -192,12 +193,14 @@ export const useEstimateSubmit = () => {
         // Now we can assume dbItem fields exist based on EstimateItem type
         const cost = parseFloat(dbItem.cost) || 0; // Removed ?? fallback, relying on cast
         const markup_percentage = parseFloat(dbItem.markup_percentage) || 0; // Removed ?? fallback
-        const markup_amount = cost * (markup_percentage / 100);
-        const unit_price = cost + markup_amount; // unit_price still seems calculated, not directly from item?
+
+        // Use the standardized calcMarkup utility
+        const { markupAmt, finalPrice } = calcMarkup(cost, markup_percentage);
+        const unit_price = finalPrice;
         const quantity = parseFloat(dbItem.quantity) || 1; // Removed ?? fallback
         const total_price = unit_price * quantity;
-        const gross_margin = markup_amount * quantity;
-        const gross_margin_percentage = cost > 0 ? (markup_amount / cost) * 100 : 0;
+        const gross_margin = markupAmt * quantity;
+        const gross_margin_percentage = cost > 0 ? (markupAmt / cost) * 100 : 0;
 
         return {
           estimate_id: estimateId,
@@ -206,7 +209,7 @@ export const useEstimateSubmit = () => {
           item_type: dbItem.item_type,
           cost: cost,
           markup_percentage: markup_percentage,
-          markup_amount: markup_amount,
+          markup_amount: markupAmt,
           unit_price: unit_price,
           quantity: quantity,
           total_price: total_price,

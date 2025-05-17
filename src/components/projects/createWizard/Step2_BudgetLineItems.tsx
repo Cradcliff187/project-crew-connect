@@ -47,6 +47,7 @@ import {
   expenseTypeAllowsSubcontractor,
 } from '@/constants/expenseTypes';
 import { getSubcontractorDisplayName } from '@/components/subcontractors/utils/displayName';
+import { calcMarkup } from '@/utils/finance';
 
 // --- Define Budget Item Schema ---
 const budgetItemSchema = z.object({
@@ -190,9 +191,9 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
       const cost = Number(form.getValues(`budgetItems.${index}.cost`)) || 0;
       const markupPercentage =
         Number(form.getValues(`budgetItems.${index}.markup_percentage`)) || 0;
-      const markupAmount = cost * (markupPercentage / 100);
-      const unitPrice = cost + markupAmount;
-      form.setValue(`budgetItems.${index}.unit_price`, parseFloat(unitPrice.toFixed(2)));
+
+      const { finalPrice } = calcMarkup(cost, markupPercentage);
+      form.setValue(`budgetItems.${index}.unit_price`, parseFloat(finalPrice.toFixed(2)));
       calculateItemTotals(index); // Recalculate total after price update
     },
     [form, calculateItemTotals]

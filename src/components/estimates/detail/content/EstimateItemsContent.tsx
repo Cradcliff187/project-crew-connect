@@ -1,5 +1,6 @@
 import React from 'react';
 import EstimateItems from '../../EstimateItems';
+import { calcMarkup } from '@/utils/finance';
 
 interface EstimateItemsContentProps {
   items: {
@@ -34,7 +35,8 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
   const totalMarkup = items.reduce((sum, item) => {
     const itemCost = (item.cost || 0) * item.quantity;
     const markupPercentage = item.markup_percentage || 0;
-    return sum + (itemCost * markupPercentage) / 100;
+    const { markupAmt } = calcMarkup(itemCost, markupPercentage);
+    return sum + markupAmt;
   }, 0);
   const totalMargin = subtotal - totalCost;
   const marginPercentage = subtotal > 0 ? (totalMargin / subtotal) * 100 : 0;

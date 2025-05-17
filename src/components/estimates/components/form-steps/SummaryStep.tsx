@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/lib/utils';
+import { calcMarkup } from '@/utils/finance';
 
 const SummaryStep = memo(() => {
   const form = useFormContext<EstimateFormValues>();
@@ -160,12 +161,13 @@ const SummaryStep = memo(() => {
               <tbody>
                 {items.map((item, index) => {
                   const cost = parseFloat(item.cost) || 0;
-                  const markup = cost * (parseFloat(item.markup_percentage) / 100);
-                  const price = cost + markup;
+                  const markupPercentage = parseFloat(item.markup_percentage) || 0;
+                  const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
+                  const price = finalPrice;
                   const quantity = parseFloat(item.quantity) || 1;
                   const totalPrice = price * quantity;
-                  const margin = markup * quantity;
-                  const marginPercentage = price > 0 ? (markup / price) * 100 : 0;
+                  const margin = markupAmt * quantity;
+                  const marginPercentage = price > 0 ? (markupAmt / price) * 100 : 0;
 
                   return (
                     <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
@@ -201,7 +203,7 @@ const SummaryStep = memo(() => {
                       </td>
                       <td className="py-3 text-right text-sm">{formatCurrency(cost * quantity)}</td>
                       <td className="py-3 text-right text-sm">
-                        {formatCurrency(markup * quantity)}
+                        {formatCurrency(markupAmt * quantity)}
                       </td>
                       <td className="py-3 text-right text-sm">
                         {parseFloat(item.markup_percentage).toFixed(1)}%

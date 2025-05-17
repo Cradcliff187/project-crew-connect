@@ -53,6 +53,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { calcMarkup } from '@/utils/finance';
 
 // Function to generate UUID (use browser crypto if available)
 const generateUUID = () => {
@@ -206,11 +207,10 @@ const EstimateItemFields = memo(() => {
       const cost = Number(form.getValues(`items.${index}.cost`)) || 0;
       const markupPercentage = Number(form.getValues(`items.${index}.markup_percentage`)) || 0;
 
-      const markupAmount = cost * (markupPercentage / 100);
-      const unitPrice = cost + markupAmount;
+      const { markupAmt, finalPrice } = calcMarkup(cost, markupPercentage);
 
       // Format to 2 decimal places for consistency
-      form.setValue(`items.${index}.unit_price`, unitPrice.toFixed(2));
+      form.setValue(`items.${index}.unit_price`, finalPrice.toFixed(2));
 
       // Now recalculate all values for consistency
       recalculateItemValues(index);

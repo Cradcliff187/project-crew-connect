@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { FormItem, FormLabel } from '@/components/ui/form';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import { calcMarkup } from '@/utils/finance';
 
 interface PriceDisplayProps {
   index: number;
@@ -23,10 +24,9 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({ index, price }) => {
   useEffect(() => {
     const cost = parseFloat(form.getValues(`items.${index}.cost`) || '0');
     const markupPercentage = parseFloat(form.getValues(`items.${index}.markup_percentage`) || '0');
-    const markupAmount = cost * (markupPercentage / 100);
-    const calculatedPrice = cost + markupAmount;
+    const { finalPrice } = calcMarkup(cost, markupPercentage);
 
-    updateUnitPrice(index, calculatedPrice);
+    updateUnitPrice(index, finalPrice);
   }, [form, index]);
 
   return (

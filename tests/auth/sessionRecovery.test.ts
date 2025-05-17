@@ -49,15 +49,9 @@ vi.mock('@/contexts/AuthContext', async (importOriginal) => {
   };
 });
 
-// Re-import after mocks for AuthProvider specifically, if needed for TestWrapper
-// This can get tricky; ensure mocks are set before AuthProvider is first imported by TestWrapper.
-// It might be cleaner to construct the AuthProvider manually in tests that need it.
-import { AuthProvider, useRequireAuth } from '@/contexts/AuthContext';
-
-
 const TestWrapper: React.FC<{ children: ReactNode; initialEntries?: string[] }> = ({ children, initialEntries = ['/protected'] }) => (
   <MemoryRouter initialEntries={initialEntries}>
-    <AuthProvider> { /* This AuthProvider is the original one */}
+    <AuthProvider>
       <Routes>
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/protected" element={<>{children}</>} />

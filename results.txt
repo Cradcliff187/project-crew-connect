@@ -27,20 +27,43 @@
   - Empty array handling
 
 ### 5. Refactored components
-- Updated `src/components/estimates/utils/estimateCalculations.ts` to use `calcMarkup`
-- Updated `src/components/estimates/detail/EstimateLineItems.tsx` to use `calcMarkup`
-- Updated `src/components/projects/budget/components/BudgetItemsTable.tsx` to use `VarianceBadge`
+Files updated to use the new finance utilities:
+
+1. Estimates Components:
+   - src/components/estimates/utils/estimateCalculations.ts
+   - src/components/estimates/detail/EstimateLineItems.tsx
+   - src/components/estimates/components/EstimatePreview.tsx
+   - src/components/estimates/components/EstimateItemFields.tsx
+   - src/components/estimates/components/form-steps/SummaryStep.tsx
+   - src/components/estimates/components/estimate-items/CostInput.tsx
+   - src/components/estimates/components/estimate-items/PriceDisplay.tsx
+   - src/components/estimates/components/estimate-items/MarkupInput.tsx
+   - src/components/estimates/detail/content/EstimateItemsContent.tsx
+   - src/components/estimates/detail/editors/EstimateLineItemsEditor.tsx
+   - src/components/estimates/hooks/useEstimateSubmit.ts
+
+2. Change Orders:
+   - src/components/changeOrders/ChangeOrderItems.tsx
+   - src/components/changeOrders/ChangeOrderDialog.tsx
+
+3. Projects & Wizards:
+   - src/components/projects/budget/components/BudgetItemsTable.tsx (added VarianceBadge)
+   - src/components/projects/createWizard/Step2_BudgetLineItems.tsx
 
 ### 6. Additional improvements
 - Added test environment with Vitest setup for modern testing
 - Standardized variance calculation definition across the codebase
+- Verified code compiles with `tsc --noEmit`
+- All tests passing with `npx vitest run`
 
 ### Verification
 - All tests are passing
 - No duplicate utilities found
 - All calculations maintain consistent behavior
+- All TypeScript type checks passing
 
 ### TODOs discovered (outside scope):
-- Several more components could be refactored to use these utilities
-- Consider adding additional documentation about finance calculations in the codebase
-- A future task could be to further consolidate financial calculation logic
+- Consider expanding VarianceBadge usage to more budget/financial components
+- Document finance calculation standards in the codebase
+- Review database schema for consistency with front-end calculations
+- Consider additional financial utility functions for other common calculations
