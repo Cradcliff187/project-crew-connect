@@ -2737,6 +2737,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      schedule_items: {
+        Row: {
+          assignee_id: string | null;
+          assignee_type: string | null;
+          calendar_integration_enabled: boolean | null;
+          created_at: string | null;
+          description: string | null;
+          end_datetime: string;
+          google_event_id: string | null;
+          id: string;
+          invite_status: string | null;
+          is_all_day: boolean | null;
+          is_completed: boolean | null;
+          last_sync_error: string | null;
+          linked_milestone_id: string | null;
+          object_type: string | null;
+          project_id: string;
+          recurrence: Json | null;
+          send_invite: boolean | null;
+          start_datetime: string;
+          title: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          assignee_id?: string | null;
+          assignee_type?: string | null;
+          calendar_integration_enabled?: boolean | null;
+          created_at?: string | null;
+          description?: string | null;
+          end_datetime: string;
+          google_event_id?: string | null;
+          id?: string;
+          invite_status?: string | null;
+          is_all_day?: boolean | null;
+          is_completed?: boolean | null;
+          last_sync_error?: string | null;
+          linked_milestone_id?: string | null;
+          object_type?: string | null;
+          project_id: string;
+          recurrence?: Json | null;
+          send_invite?: boolean | null;
+          start_datetime: string;
+          title: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          assignee_id?: string | null;
+          assignee_type?: string | null;
+          calendar_integration_enabled?: boolean | null;
+          created_at?: string | null;
+          description?: string | null;
+          end_datetime?: string;
+          google_event_id?: string | null;
+          id?: string;
+          invite_status?: string | null;
+          is_all_day?: boolean | null;
+          is_completed?: boolean | null;
+          last_sync_error?: string | null;
+          linked_milestone_id?: string | null;
+          object_type?: string | null;
+          project_id?: string;
+          recurrence?: Json | null;
+          send_invite?: boolean | null;
+          start_datetime?: string;
+          title?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_milestone';
+            columns: ['linked_milestone_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_milestones';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_project';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
+      };
     };
     Views: {
       change_orders_with_items: {

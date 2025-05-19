@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ScheduleItem } from '../ScheduleItemFormDialog'; // Import type from form
+import { ScheduleItem, RecurrencePattern, ScheduleObjectType } from '@/types/schedule'; // Import from our types file
 import { useToast } from '@/hooks/use-toast';
-// Import the new type definition
-import { ScheduleItemRow } from '@/integrations/supabase/types/schedule';
-import { ensureSession } from '@/contexts/AuthContext'; // Import ensureSession
-import { useNavigate } from 'react-router-dom'; // Import for redirection
+import { ensureSession } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // API base URL for calling backend endpoints
 const API_BASE_URL = 'http://localhost:3000';
@@ -15,7 +13,7 @@ export const useScheduleItems = (projectId: string) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate(); // For redirecting to login
+  const navigate = useNavigate();
 
   const fetchScheduleItems = useCallback(async () => {
     if (!projectId) return;
@@ -35,8 +33,8 @@ export const useScheduleItems = (projectId: string) => {
     setLoading(true);
     setError(null);
     try {
-      // Use proper type assertion for Supabase response
-      const { data, error } = await supabase
+      // Use type assertion to work around type issues
+      const { data, error } = await (supabase as any)
         .from('schedule_items')
         .select('*') // Select all columns for now
         .eq('project_id', projectId)
@@ -44,8 +42,8 @@ export const useScheduleItems = (projectId: string) => {
 
       if (error) throw error;
 
-      // Transform the data to match the ScheduleItem interface if needed
-      const transformedItems: ScheduleItem[] = (data || []).map(item => ({
+      // Transform the data to match the ScheduleItem interface
+      const transformedItems: ScheduleItem[] = (data || []).map((item: any) => ({
         id: item.id,
         project_id: item.project_id,
         title: item.title,
@@ -59,6 +57,10 @@ export const useScheduleItems = (projectId: string) => {
         google_event_id: item.google_event_id,
         send_invite: item.send_invite || false,
         invite_status: item.invite_status,
+        is_completed: item.is_completed || false,
+        recurrence: item.recurrence,
+        object_type: item.object_type,
+        last_sync_error: item.last_sync_error,
       }));
 
       setScheduleItems(transformedItems);
@@ -127,7 +129,8 @@ export const useScheduleItems = (projectId: string) => {
       // Ensure project_id is included
       const dataToInsert = { ...itemData, project_id: projectId };
 
-      const { data, error } = await supabase
+      // Use type assertion to work around type issues
+      const { data, error } = await (supabase as any)
         .from('schedule_items')
         .insert(dataToInsert)
         .select()
@@ -151,6 +154,10 @@ export const useScheduleItems = (projectId: string) => {
           google_event_id: data.google_event_id,
           send_invite: data.send_invite || false,
           invite_status: data.invite_status,
+          is_completed: data.is_completed || false,
+          recurrence: data.recurrence,
+          object_type: data.object_type,
+          last_sync_error: data.last_sync_error,
         };
 
         setScheduleItems(prev => [...prev, newItem]);
@@ -198,7 +205,8 @@ export const useScheduleItems = (projectId: string) => {
       // Ensure updated_at is set automatically by trigger, remove from manual updates if present
       const { updated_at, created_at, ...restUpdates } = updates;
 
-      const { data, error } = await supabase
+      // Use type assertion to work around type issues
+      const { data, error } = await (supabase as any)
         .from('schedule_items')
         .update(restUpdates)
         .eq('id', itemId)
@@ -223,6 +231,10 @@ export const useScheduleItems = (projectId: string) => {
           google_event_id: data.google_event_id,
           send_invite: data.send_invite || false,
           invite_status: data.invite_status,
+          is_completed: data.is_completed || false,
+          recurrence: data.recurrence,
+          object_type: data.object_type,
+          last_sync_error: data.last_sync_error,
         };
 
         setScheduleItems(prev => prev.map(item => (item.id === itemId ? updatedItem : item)));
@@ -264,7 +276,8 @@ export const useScheduleItems = (projectId: string) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('schedule_items').delete().eq('id', itemId);
+      // Use type assertion to work around type issues
+      const { error } = await (supabase as any).from('schedule_items').delete().eq('id', itemId);
 
       if (error) throw error;
 

@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones'; // Import AssigneeType
+import { ScheduleItem } from '@/types/schedule'; // Import from our types file
 
 // Define the type for the assignee value
 type AssigneeValue =
@@ -28,30 +29,10 @@ type AssigneeValue =
     }[]
   | null;
 
-// Define ScheduleItem interface based on the new table
-export interface ScheduleItem {
-  id: string;
-  project_id: string;
-  title: string;
-  description?: string | null;
-  start_datetime: string; // ISO string
-  end_datetime: string; // ISO string
-  is_all_day?: boolean;
-  assignee_type?: 'employee' | 'subcontractor' | null;
-  assignee_id?: string | null; // TEXT type to handle UUID or subid
-  linked_milestone_id?: string | null;
-  calendar_integration_enabled?: boolean;
-  google_event_id?: string | null;
-  send_invite?: boolean;
-  invite_status?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
 interface ScheduleItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingItem: ScheduleItem | null; // Changed from editingMilestone
+  editingItem: ScheduleItem | null;
   projectId: string; // Need project ID to associate the item
   onSave: (itemData: Partial<ScheduleItem>) => Promise<boolean>; // Pass the whole object
   onCancel: () => void;
