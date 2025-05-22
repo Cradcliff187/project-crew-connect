@@ -1,3 +1,7 @@
+// We're now using the generated types from supabase that include schedule_items
+// This file is kept for backward compatibility but can be deprecated
+
+// Export type aliases for the schedule items
 import { Database } from '../types';
 
 /**
@@ -87,7 +91,6 @@ declare module '../types' {
   }
 }
 
-// Export type aliases for the schedule items
 export type ScheduleItemRow = Database['public']['Tables']['schedule_items']['Row'];
 export type ScheduleItemInsert = Database['public']['Tables']['schedule_items']['Insert'];
 export type ScheduleItemUpdate = Database['public']['Tables']['schedule_items']['Update'];

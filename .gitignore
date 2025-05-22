@@ -1,4 +1,6 @@
-# Logs
+###############################################################################
+#  General logs
+###############################################################################
 logs
 *.log
 npm-debug.log*
@@ -9,12 +11,41 @@ lerna-debug.log*
 renewal-log.txt
 dev-output.log
 
+###############################################################################
+#  Dependencies & build output
+###############################################################################
 node_modules
+server/node_modules/
 dist
 dist-ssr
-*.local
 
-# Editor directories and files
+###############################################################################
+#  Environment / local settings
+###############################################################################
+*.local                 # catches *.local files
+.env                    # root env file
+.env.*                  # .env.local, .env.backup, etc.
+server/.env
+server/.env.*
+
+###############################################################################
+#  Secrets and credentials
+###############################################################################
+credentials/            # service-account JSON and any other secrets
+**/credentials/         # Ensure credentials in any subdirectory are ignored
+*.pem                   # Private keys
+*.key                   # Private keys
+*.pfx                   # Certificates
+*.p12                   # Certificates
+*.secret                # Any files explicitly marked as secrets
+.cursor/mcp.json        # Cursor MCP config (contains creds)
+**/google-auth*.json    # Google auth files regardless of location
+*serviceAccount*.json   # Service account JSONs
+*service-account*.json  # Common naming pattern for service accounts
+
+###############################################################################
+#  Editor / IDE stuff
+###############################################################################
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -25,12 +56,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Server specific
-server/node_modules/
-server/.env
-
-# Environment variables
-.env
-
-# Cursor MCP configuration (contains sensitive credentials)
-.cursor/mcp.json
+# Temporary files
+*.tmp
+*.bak
