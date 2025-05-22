@@ -151,11 +151,30 @@ After implementing the fixes, we tested the calendar sync functionality with pro
 
 4. **Google Calendar Integration**:
 
-   - From our test script, we successfully verified the Google Calendar integration:
-   - We identified two events in the calendar:
-     - "Test 1 Scheduled in G-Cal" (manually created)
-     - "5.22 Test 1" (created by our integration)
-   - Both events were visible in the calendar with the correct IDs
+   - Using service account authentication, we successfully verified both events in the AKC Projects calendar:
+
+   ```json
+   [
+     {
+       "id": "2f97m2e709cnh1jsjmol2okfnb",
+       "summary": "Test 1 Scheduled in G-Cal",
+       "start": {
+         "dateTime": "2025-05-22T13:30:00-04:00",
+         "timeZone": "America/New_York"
+       }
+     },
+     {
+       "id": "pn3vqvg4o73rqn59ada0e4rf2o",
+       "summary": "5.22 Test 1",
+       "start": {
+         "dateTime": "2025-05-22T14:00:00-04:00",
+         "timeZone": "America/New_York"
+       }
+     }
+   ]
+   ```
+
+   - This confirms both the manually created "Test 1 Scheduled in G-Cal" event and our synced "5.22 Test 1" event with ID `pn3vqvg4o73rqn59ada0e4rf2o` exist in the calendar
 
 5. **Implementation Notes**:
    - Fixed the database write-back issue by properly updating the `moddatetime()` trigger function
