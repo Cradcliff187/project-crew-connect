@@ -19,10 +19,10 @@
 
 ## Error Stack Trace
 
-From analyzing the server code, the error is occurring at this specific point in `server/server.js`:
+From analyzing the server code, the error is occurring when the server tries to communicate with Supabase:
 
 ```javascript
-// 1. Fetch the schedule item from Supabase
+// In /api/schedule-items/{id}/sync-calendar endpoint
 const { data: item, error: itemError } = await supabaseAdmin
   .from('schedule_items')
   .select('*')
@@ -30,87 +30,72 @@ const { data: item, error: itemError } = await supabaseAdmin
   .single();
 
 if (itemError) {
-  console.error('[Calendar Sync] Supabase error fetching schedule item:', itemError); // Log the full error object
+  console.error('[Calendar Sync] Supabase error fetching schedule item:', itemError);
   throw new Error(`Failed to fetch schedule item. DB Error: ${itemError.message}`);
 }
 ```
 
-The error message `TypeError: fetch failed` indicates that the fetch operation to the Supabase API is failing.
+The error message `TypeError: fetch failed` indicates a network-level failure when attempting to connect to the Supabase API.
 
-## Suspected Causes (Ranked by Likelihood)
+## Root Causes Identified
 
-1. **Supabase Connection Configuration (Most Likely)**
+After thorough investigation, we identified the following issues:
 
-   - The error "fetch failed" suggests a network-level failure when connecting to Supabase
-   - There appears to be a mismatch between environment variables in `env-template.txt` and `server-env.txt`
-   - The Supabase client may not be properly initialized with the correct credentials
+### Primary Issue: Environment Variable Inconsistency
 
-2. **Authentication Issues**
+1. **Incorrect environment variable naming**: The server was using `SUPABASE_SERVICE_KEY` but the actual environment variable should be `SUPABASE_SERVICE_ROLE_KEY`.
 
-   - The endpoint requires authentication (`requireAuth` middleware)
-   - The error could be due to missing or expired authentication tokens
+   ```javascript
+   // Before:
+   const supabaseAdmin = createClient(
+     process.env.SUPABASE_URL,
+     process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
+   );
 
-3. **Network/Firewall Issues**
+   // After:
+   const supabaseAdmin = createClient(
+     process.env.SUPABASE_URL,
+     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+   );
+   ```
 
-   - There might be network restrictions preventing the server from connecting to Supabase
+2. **Inconsistent environment variable loading**: The server was using `dotenv.config()` without specifying the path, which sometimes fails to locate the .env file correctly in the project structure.
 
-4. **Schedule Item Data Structure Problems**
+   ```javascript
+   // Before:
+   dotenv.config();
 
-   - If the database schema has changed but the code hasn't been updated
+   // After:
+   dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+   ```
 
-5. **Missing Environment Variables**
-   - Required environment variables for Supabase or Google Calendar API might be missing
+### Secondary Issues
 
-## Most Likely Root Cause
+1. **Google service account authentication**: The server wasn't properly utilizing the Google service account credentials for background operations, falling back to user OAuth tokens which may expire.
 
-The primary issue appears to be a **Supabase connection configuration problem**. The error message "TypeError: fetch failed" indicates that the server can't establish a connection to the Supabase API.
+2. **Error handling**: Insufficient error handling when database queries failed, especially for network-level errors.
 
-Specific contributing factors:
+3. **Duplicate code**: Multiple implementations of calendar-related functionality across the codebase with inconsistent approaches.
 
-1. **Environment Variables Mismatch**:
+## Validation
 
-   - `env-template.txt` references `SUPABASE_SERVICE_ROLE_KEY`
-   - `server-env.txt` uses `SUPABASE_SERVICE_KEY` (different naming)
+After fixing the environment variable naming and improving error handling, we verified that:
 
-2. **Supabase Client Initialization**:
+1. The Supabase connection can be established properly
+2. The server can fetch schedule items from the database
+3. The calendar sync endpoint can communicate with both Supabase and Google Calendar API
 
-   - Examining the code in `server.js`, the supabaseAdmin client is initialized, but there may be issues with how it's configured
-   - The error occurs at the very first database query, indicating the connection itself is failing
+## Recommended Actions
 
-3. **Cross-Origin Issues**:
-   - There might be CORS-related issues when the server tries to communicate with Supabase
+1. ✅ **Fix environment variable naming**: Use `SUPABASE_SERVICE_ROLE_KEY` consistently
+2. ✅ **Improve environment variable loading**: Specify the path to .env file explicitly
+3. ✅ **Implement service account auth**: Use service account for background calendar operations
+4. ✅ **Enhance error handling**: Add better error checks and reporting for database operations
+5. 🔄 **Consolidate calendar helpers**: Merge duplicate calendar implementations (Phase 2)
+6. 🔄 **Add unit tests**: Create tests for calendar sync functionality (Phase 2)
 
-## Next Steps for Investigation
+## Conclusion
 
-1. Verify that the Supabase project exists and is accessible
-2. Check that environment variables match between configuration files and actual environment
-3. Examine how the Supabase client is initialized in the server code
-4. Test a simple Supabase query directly to isolate if the issue is specific to the schedule items table
-5. Check for any network restrictions or proxies that might be blocking connections
+The primary cause of the sync failure was an environment variable naming mismatch, combined with inconsistent loading of the .env file. This caused the Supabase client to fail when attempting to connect to the database API.
 
-## High-Level Solution Approach
-
-1. **Fix Supabase Connection Issues**:
-
-   - Ensure environment variables are consistently named and properly set
-   - Verify Supabase project exists and is correctly configured
-   - Check that service role key has necessary permissions
-
-2. **Improve Error Handling**:
-
-   - Add better error handling in the sync endpoint to provide more detailed error messages
-   - Implement retry logic for transient connection issues
-
-3. **Standardize Calendar Integration**:
-
-   - Consolidate the duplicate calendar implementations (frontend calendarService.ts and server-side code)
-   - Create a unified approach to Google Calendar integration
-
-4. **Add Logging and Monitoring**:
-
-   - Implement detailed logging for calendar sync operations
-   - Add monitoring to detect failures in real-time
-
-5. **Update Documentation**:
-   - Document the correct environment variables required for both frontend and server
-   - Create a troubleshooting guide for calendar integration issues
+The fix was simple but required careful attention to the environment variable naming conventions and how they're loaded in different parts of the application.
