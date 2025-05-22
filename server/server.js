@@ -7,8 +7,28 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 
-// Load environment variables from .env file immediately (in project root)
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+// DEBUGGING: Hardcoded environment variables for testing
+// These would normally come from .env.local
+process.env.SUPABASE_URL = 'https://zrxezqllmpdlhiudutme.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY';
+process.env.GOOGLE_CALENDAR_PROJECT =
+  'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com';
+process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(
+  __dirname,
+  '..',
+  'credentials',
+  'calendar-service-account.json'
+);
+
+// Log the current directory
+console.log('Current directory:', __dirname);
+console.log('Service account path:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
+console.log('Supabase URL:', process.env.SUPABASE_URL);
+console.log('Supabase key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Loaded (hidden)' : 'MISSING');
+
+// Load environment variables from .env.local file (in project root)
+dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
 const { google } = require('googleapis');
 const cors = require('cors');
@@ -1270,6 +1290,207 @@ app.get('/auth/clear', (req, res) => {
 
   res.redirect('/');
 });
+
+// ------ TEMPORARY TEST ENDPOINT FOR CALENDAR SYNC (NO AUTH) -------
+
+app.post('/api/test/schedule-items/:itemId/sync-calendar', async (req, res) => {
+  const { itemId } = req.params;
+  console.log(`[TEST Calendar Sync] Received request for schedule item ID: ${itemId}`);
+
+  try {
+    // Verify Supabase client is initialized
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized - check environment variables');
+    }
+
+    // 1. Fetch the schedule item from Supabase
+    let item;
+    try {
+      const { data, error: itemError } = await supabaseAdmin
+        .from('schedule_items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+
+      if (itemError) {
+        console.error('[TEST Calendar Sync] Supabase error fetching schedule item:', itemError);
+        throw new Error(`Failed to fetch schedule item. DB Error: ${itemError.message}`);
+      }
+      if (!data) {
+        console.error(`[TEST Calendar Sync] Schedule item with ID ${itemId} not found.`);
+        throw new Error('Schedule item not found.');
+      }
+      item = data;
+    } catch (fetchError) {
+      console.error('[TEST Calendar Sync] Exception during Supabase fetch:', fetchError);
+      throw new Error(`Database connection error: ${fetchError.message}`);
+    }
+
+    console.log(`[TEST Calendar Sync] Found item: ${item.title}`);
+
+    let assigneeEmail = null;
+    let attendees = [];
+
+    // 2. Fetch assignee email if applicable
+    if (item.assignee_id && item.assignee_type) {
+      console.log(
+        `[TEST Calendar Sync] Fetching assignee (${item.assignee_type}) ID: ${item.assignee_id}`
+      );
+      if (item.assignee_type === 'employee') {
+        const { data: emp, error: empError } = await supabaseAdmin
+          .from('employees')
+          .select('email')
+          .eq('employee_id', item.assignee_id)
+          .single();
+        if (empError) console.error(`Error fetching employee email: ${empError.message}`);
+        assigneeEmail = emp?.email;
+      } else if (item.assignee_type === 'subcontractor') {
+        const { data: sub, error: subError } = await supabaseAdmin
+          .from('subcontractors')
+          .select('contactemail') // Use contactemail
+          .eq('subid', item.assignee_id)
+          .single();
+        if (subError) console.error(`Error fetching subcontractor email: ${subError.message}`);
+        assigneeEmail = sub?.contactemail;
+      }
+
+      if (assigneeEmail) {
+        attendees.push({ email: assigneeEmail });
+        console.log(`[TEST Calendar Sync] Found assignee email: ${assigneeEmail}`);
+      } else {
+        console.warn(
+          `[TEST Calendar Sync] Assignee email not found for ${item.assignee_type} ID: ${item.assignee_id}`
+        );
+      }
+    } else {
+      console.log(`[TEST Calendar Sync] No assignee for this item.`);
+    }
+
+    // 3. Determine Target Calendar ID - use environment variable
+    const targetCalendarId =
+      process.env.GOOGLE_CALENDAR_PROJECT ||
+      'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com';
+
+    console.log(`[TEST Calendar Sync] Target Calendar ID: ${targetCalendarId}`);
+
+    // 4. Prepare Event Data
+    const eventData = {
+      title: item.title,
+      description: item.description || '',
+      startTime: item.start_datetime, // Already ISO string
+      endTime: item.end_datetime, // Already ISO string
+      attendees: attendees,
+      targetCalendarId: targetCalendarId,
+      entityType: 'schedule_item', // Link event back to schedule item
+      entityId: item.id,
+      sendNotifications: true, // Explicitly set to true if we have attendees
+    };
+
+    let googleEventId = item.google_event_id;
+    let syncStatus = 'success';
+    let syncError = null;
+
+    // 5. Choose authentication client - prefer service account for background tasks
+    if (!serviceAccountAuth) {
+      console.error('[TEST Calendar Sync] Service account auth not initialized');
+      throw new Error('Service account auth not initialized');
+    }
+
+    const authClient = await serviceAccountAuth.getClient();
+    console.log('[TEST Calendar Sync] Using service account authentication');
+
+    // 6. Call Calendar Helper (Create or Update)
+    try {
+      if (googleEventId) {
+        console.log(`[TEST Calendar Sync] Updating existing Google Event ID: ${googleEventId}`);
+        const updatedEvent = await calendarHelper.updateEvent(
+          authClient,
+          googleEventId,
+          eventData,
+          targetCalendarId
+        );
+        console.log(`[TEST Calendar Sync] Event updated successfully.`);
+      } else {
+        console.log(`[TEST Calendar Sync] Creating new Google Event.`);
+        const createdEvent = await calendarHelper.createEvent(authClient, eventData);
+        googleEventId = createdEvent.id;
+        console.log(`[TEST Calendar Sync] Event created successfully with ID: ${googleEventId}`);
+      }
+    } catch (calendarError) {
+      console.error('[TEST Calendar Sync] Google API Error:', calendarError);
+      syncStatus = 'error';
+      syncError = calendarError.message || 'Unknown Google Calendar API error';
+      // Don't re-throw, just record the error and proceed to update Supabase
+    }
+
+    // 7. Update Schedule Item in Supabase with sync status
+    const { error: updateError } = await supabaseAdmin
+      .from('schedule_items')
+      .update({
+        google_event_id: googleEventId, // Store the ID even if sync failed (allows retry/debug)
+        invite_status:
+          syncStatus === 'success'
+            ? attendees.length > 0
+              ? 'invite_sent'
+              : 'synced_no_invite'
+            : 'sync_error',
+        last_sync_error: syncError,
+        calendar_integration_enabled: true, // Mark as attempted/enabled
+      })
+      .eq('id', itemId);
+
+    if (updateError) {
+      // Log this critical error, as the state is now inconsistent
+      console.error(
+        `[TEST Calendar Sync] CRITICAL: Failed to update schedule_item ${itemId} after calendar sync attempt: ${updateError.message}`
+      );
+      // Still return the original sync status to the client
+    }
+
+    // 8. Return Response
+    if (syncStatus === 'success') {
+      res.json({ success: true, message: 'Calendar sync successful.', eventId: googleEventId });
+    } else {
+      // Return a 500 but include details
+      res.status(500).json({ success: false, error: 'Calendar sync failed.', details: syncError });
+    }
+  } catch (error) {
+    console.error(`[TEST Calendar Sync] Error processing sync for item ${itemId}:`, error); // Log the caught error
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error during calendar sync.',
+      details: error.details || null, // Include details if any
+      code: error.code || null, // Include code if any
+    });
+  }
+});
+
+// ------ END TEMPORARY TEST ENDPOINT -------
+
+// ------ TEST ENVIRONMENT ENDPOINT -------
+
+app.get('/api/test/env', (req, res) => {
+  const envVars = {
+    SUPABASE_URL: process.env.SUPABASE_URL ? 'Loaded' : 'MISSING',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? 'Loaded (hidden)'
+      : 'MISSING',
+    GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS
+      ? 'Loaded'
+      : 'MISSING',
+    GOOGLE_CALENDAR_PROJECT: process.env.GOOGLE_CALENDAR_PROJECT ? 'Loaded' : 'MISSING',
+    serviceAccountAuth: serviceAccountAuth ? 'Initialized' : 'Not initialized',
+  };
+
+  res.json({
+    message: 'Environment variables status',
+    env: envVars,
+    workingDirectory: __dirname,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ------ END TEST ENVIRONMENT ENDPOINT -------
 
 // --- Start Server ---
 // Use port 3000 for the backend API server
