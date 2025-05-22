@@ -4,9 +4,11 @@
 // Import necessary modules
 const express = require('express');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
-// Load environment variables from .env file immediately
-dotenv.config();
+// Load environment variables from .env file immediately (in project root)
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const { google } = require('googleapis');
 const cors = require('cors');
@@ -15,11 +17,44 @@ const { Client } = require('@googlemaps/google-maps-services-js');
 const { createClient } = require('@supabase/supabase-js');
 const session = require('express-session');
 
-// Initialize Supabase Admin client
+// Initialize service account auth for background operations
+let serviceAccountAuth = null;
+try {
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (credentialsPath && fs.existsSync(credentialsPath)) {
+    console.log(`Loading service account credentials from: ${credentialsPath}`);
+    const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+    serviceAccountAuth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
+    console.log('Google service account auth initialized successfully');
+  } else {
+    console.warn('Google service account credentials file not found:', credentialsPath);
+  }
+} catch (error) {
+  console.error('Error initializing Google service account auth:', error);
+}
+
+// Initialize Supabase Admin client (fixing the variable name)
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL || 'https://dxmvqbeyhfnqczvlfnfn.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
+
+// Verify Supabase connection on startup
+(async () => {
+  try {
+    const { data, error } = await supabaseAdmin.from('schedule_items').select('count').limit(1);
+    if (error) {
+      console.error('CRITICAL: Supabase connection verification failed:', error);
+    } else {
+      console.log('Supabase connection verified successfully');
+    }
+  } catch (err) {
+    console.error('CRITICAL: Supabase client initialization error:', err);
+  }
+})();
 
 // --- Helper Modules ---
 const driveHelper = require('./google-api-helpers/drive');
@@ -37,7 +72,15 @@ console.log(`  GOOGLE_REDIRECT_URI: ${process.env.GOOGLE_REDIRECT_URI ? 'Loaded'
 console.log(`  GOOGLE_MAPS_API_KEY: ${process.env.GOOGLE_MAPS_API_KEY ? 'Loaded' : 'MISSING'}`);
 console.log(`  SUPABASE_URL: ${process.env.SUPABASE_URL ? 'Loaded' : 'MISSING'}`);
 console.log(`  SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? 'Loaded' : 'MISSING'}`);
-console.log(`  SUPABASE_SERVICE_KEY: ${process.env.SUPABASE_SERVICE_KEY ? 'Loaded' : 'MISSING'}`);
+console.log(
+  `  SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Loaded' : 'MISSING'}`
+);
+console.log(
+  `  GOOGLE_APPLICATION_CREDENTIALS: ${process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'Loaded' : 'MISSING'}`
+);
+console.log(
+  `  GOOGLE_CALENDAR_PROJECT: ${process.env.GOOGLE_CALENDAR_PROJECT ? 'Loaded' : 'MISSING'}`
+);
 console.log('----------------------------------------');
 // --- End Debugging ---
 
@@ -55,11 +98,35 @@ const REDIRECT_URI =
 // --- Basic Server Setup ---
 const app = express();
 
-// Configure CORS for cross-origin requests
+// Add this middleware very early, before session, to log incoming cookies and path
+app.use((req, res, next) => {
+  console.log(`[REQUEST LOGGER] Path: ${req.path}, Method: ${req.method}`);
+  console.log(`[REQUEST LOGGER] Incoming Cookies: ${req.headers.cookie}`);
+  next();
+});
+
+// Configure session for token storage
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'akc-calendar-integration-secret',
+    resave: true, // TEMPORARY DEBUG: Force save on every request
+    saveUninitialized: true, // TEMPORARY DEBUG: Force save for new sessions
+    cookie: {
+      secure: false, // OK for HTTP localhost
+      httpOnly: true, // Good practice
+      sameSite: 'lax', // 'lax' is often suitable for dev, 'none' would require Secure=true
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/', // Ensure cookie is valid for all paths
+    },
+  })
+);
+
+// Configure CORS for cross-origin requests - TEMPORARILY MORE PERMISSIVE FOR DEBUGGING
 app.use(
   cors({
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
-    credentials: true, // Allow credentials (cookies)
+    origin: true, // Allow all origins TEMPORARILY - REMOVE FOR PRODUCTION
+    // origin: ['http://localhost:5173', 'http://localhost:8080', 'http://127.0.0.1:8080'], // Previous setting
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -67,20 +134,6 @@ app.use(
 
 // Parse JSON bodies
 app.use(express.json());
-
-// Configure session for token storage
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'akc-calendar-integration-secret',
-    resave: false,
-    saveUninitialized: true, // Changed to true to ensure session is created
-    cookie: {
-      secure: false, // Set to false for development on HTTP
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      httpOnly: true,
-    },
-  })
-);
 
 // --- Google OAuth2 Client Initialization ---
 const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
@@ -113,51 +166,72 @@ app.get('/auth/google', (req, res) => {
 
 // Task 2: Implement /auth/google/callback route
 app.get('/auth/google/callback', async (req, res) => {
+  console.log('[/auth/google/callback] TOP OF CALLBACK - Session ID:', req.sessionID); // Log session ID at start
   const code = req.query.code;
   if (!code) {
+    console.log('[/auth/google/callback] Authorization code missing.');
     return res.status(400).send('Authorization code missing.');
   }
 
   try {
-    console.log('Received authorization code:', code);
-    // Exchange code for tokens
+    console.log('[/auth/google/callback] Received authorization code:', code);
     const { tokens } = await oauth2Client.getToken(code);
-    console.log('Received tokens:', tokens);
+    console.log('[/auth/google/callback] Received tokens from Google:', tokens);
 
-    // Store tokens in the session instead of in-memory store
     oauth2Client.setCredentials(tokens);
 
-    // Fetch user profile to get email
-    const oauth2 = google.oauth2({
-      auth: oauth2Client,
-      version: 'v2',
-    });
-    const userInfo = await oauth2.userinfo.get();
-    const userEmail = userInfo.data.email;
+    const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
+    const userInfoResponse = await oauth2.userinfo.get();
+    const userEmail = userInfoResponse.data.email;
+    const userName = userInfoResponse.data.name;
+    const userPicture = userInfoResponse.data.picture;
+
+    console.log('[/auth/google/callback] Fetched userInfo:', { userEmail, userName });
 
     if (userEmail) {
-      // Store tokens and user info in session
+      console.log('[/auth/google/callback] Attempting to set session data...');
       req.session.tokens = tokens;
       req.session.userEmail = userEmail;
       req.session.userInfo = {
-        email: userInfo.data.email,
-        name: userInfo.data.name,
-        picture: userInfo.data.picture,
+        email: userEmail,
+        name: userName,
+        picture: userPicture,
       };
-      console.log(`Tokens stored in session for user: ${userEmail}`);
+      console.log('[/auth/google/callback] AFTER SETTING DATA - Session ID:', req.sessionID);
+      console.log(
+        '[/auth/google/callback] Session data PRE-SAVE:',
+        JSON.stringify(req.session, null, 2)
+      );
 
-      // Redirect to the frontend application with auth_success parameter
-      res.redirect('http://localhost:8080/settings?auth_success=true');
+      req.session.save(err => {
+        if (err) {
+          console.error('[/auth/google/callback] Error saving session:', err);
+          return res.redirect(
+            `http://localhost:8080/settings?auth_error=session_save_failed&message=${encodeURIComponent(err.message)}`
+          );
+        }
+        console.log(
+          `[/auth/google/callback] Session saved successfully for user: ${userEmail}. Session ID: ${req.sessionID}`
+        );
+        console.log(
+          '[/auth/google/callback] Session data POST-SAVE (from current req object):',
+          JSON.stringify(req.session, null, 2)
+        );
+        res.redirect('http://localhost:8080/settings?auth_success=true');
+      });
     } else {
-      console.error('Could not retrieve user email.');
-      res.redirect('http://localhost:8080/settings?auth_error=true');
+      console.error('[/auth/google/callback] Could not retrieve user email from Google userInfo.');
+      res.redirect('http://localhost:8080/settings?auth_error=email_missing');
     }
   } catch (error) {
     console.error(
-      'Error exchanging authorization code for tokens:',
-      error.response ? error.response.data : error.message
+      '[/auth/google/callback] Error in OAuth callback:',
+      error.response ? error.response.data : error.message,
+      error.stack
     );
-    res.redirect('http://localhost:8080/settings?auth_error=true');
+    res.redirect(
+      `http://localhost:8080/settings?auth_error=callback_exception&message=${encodeURIComponent(error.message)}`
+    );
   }
 });
 
@@ -242,46 +316,63 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Task 2: Implement middleware for authenticated routes
 const requireAuth = async (req, res, next) => {
-  // Check if user is authenticated via session
-  if (!req.session.tokens || !req.session.userEmail) {
-    return res.status(401).send('Authentication required: Please login again via /auth/google.');
-  }
+  console.log('[requireAuth] DEBUGGING - Path:', req.originalUrl);
+  console.log('[requireAuth] DEBUGGING - Origin:', req.headers.origin);
+  console.log('[requireAuth] DEBUGGING - Cookies Sent:', req.headers.cookie);
+  console.log('[requireAuth] DEBUGGING - Session ID:', req.sessionID);
 
-  const tokens = req.session.tokens;
-  const userEmail = req.session.userEmail;
-
-  console.log(`Using authenticated user: ${userEmail}`);
-
-  // Create a new OAuth2 client instance for this user request
-  const userClient = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-  userClient.setCredentials(tokens);
-
-  try {
-    // Check if the access token is expired and refresh if necessary
-    await userClient.getAccessToken();
-
-    // Check if the token was refreshed and update the session
-    if (userClient.credentials.access_token !== tokens.access_token) {
-      console.log(`Access token refreshed for user: ${userEmail}`);
-      req.session.tokens = userClient.credentials; // Update session with new tokens
-    }
-
-    // Attach the authenticated client and user email to the request object
-    req.googleClient = userClient;
-    req.userEmail = userEmail;
-    next(); // Proceed to the protected route
-  } catch (error) {
-    console.error(
-      'Authentication error or token refresh failed:',
-      error.response ? error.response.data : error.message
+  if (req.session) {
+    console.log(
+      '[requireAuth] DEBUGGING - Session Exists. Tokens:',
+      !!req.session.tokens,
+      'UserEmail:',
+      !!req.session.userEmail
     );
-    // Clear invalid tokens from the session
-    delete req.session.tokens;
-    delete req.session.userEmail;
-    delete req.session.userInfo;
-    return res
-      .status(401)
-      .send('Authentication failed or token expired. Please login again via /auth/google.');
+    if (req.session.tokens && req.session.userEmail) {
+      // Session looks okay, proceed with token validation
+      const tokens = req.session.tokens;
+      const userEmail = req.session.userEmail;
+
+      console.log(`[requireAuth] Authenticating for user: ${userEmail}`);
+      const userClient = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      userClient.setCredentials(tokens);
+
+      try {
+        console.log('[requireAuth] Attempting to get/refresh access token...');
+        await userClient.getAccessToken(); // This might refresh the token if expired
+        if (userClient.credentials.access_token !== tokens.access_token) {
+          console.log(`[requireAuth] Access token was refreshed for user: ${userEmail}`);
+          req.session.tokens = userClient.credentials; // Update session with new tokens
+        }
+        console.log('[requireAuth] Access token is valid or refreshed.');
+        req.googleClient = userClient;
+        req.userEmail = userEmail;
+        return next(); // Proceed to the protected route
+      } catch (error) {
+        console.error(
+          '[requireAuth] Authentication error or token refresh failed:',
+          error.response ? error.response.data : error.message,
+          error.stack // Log stack for more details
+        );
+        delete req.session.tokens;
+        delete req.session.userEmail;
+        delete req.session.userInfo;
+        console.log('[requireAuth] Cleared invalid session tokens due to refresh failure.');
+        return res
+          .status(401)
+          .send(
+            'Authentication failed (token refresh error). Please clear cookies and login again.'
+          );
+      }
+    } else {
+      console.log('[requireAuth] DENYING: Session present but missing tokens or userEmail.');
+      return res
+        .status(401)
+        .send('Authentication required: Session data incomplete. Please login again.');
+    }
+  } else {
+    console.log('[requireAuth] DENYING: No session found on request.');
+    return res.status(401).send('Authentication required: No session. Please login again.');
   }
 };
 
@@ -993,15 +1084,33 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
   console.log(`[Calendar Sync] Received request for schedule item ID: ${itemId}`);
 
   try {
-    // 1. Fetch the schedule item from Supabase
-    const { data: item, error: itemError } = await supabaseAdmin
-      .from('schedule_items')
-      .select('*')
-      .eq('id', itemId)
-      .single();
+    // Verify Supabase client is initialized
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized - check environment variables');
+    }
 
-    if (itemError) throw new Error(`Failed to fetch schedule item: ${itemError.message}`);
-    if (!item) throw new Error('Schedule item not found.');
+    // 1. Fetch the schedule item from Supabase
+    let item;
+    try {
+      const { data, error: itemError } = await supabaseAdmin
+        .from('schedule_items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+
+      if (itemError) {
+        console.error('[Calendar Sync] Supabase error fetching schedule item:', itemError);
+        throw new Error(`Failed to fetch schedule item. DB Error: ${itemError.message}`);
+      }
+      if (!data) {
+        console.error(`[Calendar Sync] Schedule item with ID ${itemId} not found.`);
+        throw new Error('Schedule item not found.');
+      }
+      item = data;
+    } catch (fetchError) {
+      console.error('[Calendar Sync] Exception during Supabase fetch:', fetchError);
+      throw new Error(`Database connection error: ${fetchError.message}`);
+    }
 
     console.log(`[Calendar Sync] Found item: ${item.title}`);
 
@@ -1043,9 +1152,11 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
       console.log(`[Calendar Sync] No assignee for this item.`);
     }
 
-    // 3. Determine Target Calendar ID (Placeholder - using primary for now)
-    // TODO: Implement logic to get shared project calendar ID based on item.project_id
-    const targetCalendarId = 'primary';
+    // 3. Determine Target Calendar ID - use environment variable
+    const targetCalendarId =
+      process.env.GOOGLE_CALENDAR_PROJECT ||
+      'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com';
+
     console.log(`[Calendar Sync] Target Calendar ID: ${targetCalendarId}`);
 
     // 4. Prepare Event Data
@@ -1065,12 +1176,21 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
     let syncStatus = 'success';
     let syncError = null;
 
-    // 5. Call Calendar Helper (Create or Update)
+    // 5. Choose authentication client - prefer service account for background tasks
+    const authClient = serviceAccountAuth ? await serviceAccountAuth.getClient() : req.googleClient;
+
+    if (serviceAccountAuth) {
+      console.log('[Calendar Sync] Using service account authentication');
+    } else {
+      console.log('[Calendar Sync] Using user OAuth authentication');
+    }
+
+    // 6. Call Calendar Helper (Create or Update)
     try {
       if (googleEventId) {
         console.log(`[Calendar Sync] Updating existing Google Event ID: ${googleEventId}`);
         const updatedEvent = await calendarHelper.updateEvent(
-          req.googleClient,
+          authClient,
           googleEventId,
           eventData,
           targetCalendarId
@@ -1078,18 +1198,18 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
         console.log(`[Calendar Sync] Event updated successfully.`);
       } else {
         console.log(`[Calendar Sync] Creating new Google Event.`);
-        const createdEvent = await calendarHelper.createEvent(req.googleClient, eventData);
+        const createdEvent = await calendarHelper.createEvent(authClient, eventData);
         googleEventId = createdEvent.id;
         console.log(`[Calendar Sync] Event created successfully with ID: ${googleEventId}`);
       }
     } catch (calendarError) {
-      console.error('[Calendar Sync] Google API Error:', calendarError.message);
+      console.error('[Calendar Sync] Google API Error:', calendarError);
       syncStatus = 'error';
-      syncError = calendarError.message;
+      syncError = calendarError.message || 'Unknown Google Calendar API error';
       // Don't re-throw, just record the error and proceed to update Supabase
     }
 
-    // 6. Update Schedule Item in Supabase with sync status
+    // 7. Update Schedule Item in Supabase with sync status
     const { error: updateError } = await supabaseAdmin
       .from('schedule_items')
       .update({
@@ -1113,7 +1233,7 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
       // Still return the original sync status to the client
     }
 
-    // 7. Return Response
+    // 8. Return Response
     if (syncStatus === 'success') {
       res.json({ success: true, message: 'Calendar sync successful.', eventId: googleEventId });
     } else {
@@ -1121,10 +1241,12 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
       res.status(500).json({ success: false, error: 'Calendar sync failed.', details: syncError });
     }
   } catch (error) {
-    console.error(`[Calendar Sync] Error processing sync for item ${itemId}:`, error);
+    console.error(`[Calendar Sync] Error processing sync for item ${itemId}:`, error); // Log the caught error
     res.status(500).json({
       success: false,
       error: error.message || 'Internal server error during calendar sync.',
+      details: error.details || null, // Include details if any
+      code: error.code || null, // Include code if any
     });
   }
 });
