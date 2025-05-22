@@ -31,6 +31,20 @@ The frontend will run on port 8081 (Vite) and the backend on port 3000 (Express)
 
 For detailed setup instructions, see [Development Environment Setup](./docs/development_setup.md).
 
+## Running Tests
+
+The project includes unit and integration tests for the calendar sync functionality:
+
+```bash
+# Install dependencies (if not already installed)
+npm install --legacy-peer-deps
+
+# Run tests
+npm test
+```
+
+Tests run with Mocha and use mocked responses for both Google Calendar API and Supabase, making them fast and reliable without requiring real credentials.
+
 ## Project Structure
 
 The project follows a standard React + Vite structure with TypeScript:
@@ -46,6 +60,7 @@ The project follows a standard React + Vite structure with TypeScript:
 - `db/` - Database scripts and migrations
 - `public/` - Static assets
 - `docs/` - Documentation
+- `tests/` - Unit and integration tests
 
 ## Database (Supabase) Integration
 
@@ -74,6 +89,16 @@ Database migrations are stored in `db/migrations/` and can be applied using:
 node db/scripts/migration-runner.cjs db/migrations/your_migration.sql
 ```
 
+#### Important Migration: Calendar Sync Fix
+
+The `supabase/migrations/20250522_fix_moddatetime.sql` migration fixes an issue with the `moddatetime()` trigger function that prevented updates to the `google_event_id` field in the `schedule_items` table. To apply this migration:
+
+```bash
+node db/scripts/migration-runner.cjs supabase/migrations/20250522_fix_moddatetime.sql
+```
+
+This migration is crucial for calendar sync functionality to work properly.
+
 For detailed Supabase integration documentation, see:
 
 - `docs/supabase_guide_for_agents.md`
@@ -86,6 +111,20 @@ The application integrates with Google Calendar for project scheduling. You'll n
 1. Configure Google OAuth credentials
 2. Set the proper redirect URIs to match your development environment
 3. Use the Settings > Google Calendar page to connect your account
+
+### Environment Variables
+
+For calendar sync to work properly, the following environment variables must be set:
+
+```
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+GOOGLE_CALENDAR_PROJECT=your_calendar_id
+GOOGLE_SERVICE_ACCOUNT_KEY_FILE=path/to/service-account.json
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
 
 See the [Development Environment Setup](./docs/development_setup.md) document for more details on configuring Google integration.
 
