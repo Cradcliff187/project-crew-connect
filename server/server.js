@@ -59,11 +59,10 @@ const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABAS
 
 // --- Helper Modules ---
 const driveHelper = require('./google-api-helpers/drive');
-const calendarHelper = require('./google-api-helpers/calendar');
+const calendarHelper = require('./google-api-helpers/calendar-helper'); // Using the consolidated helper
 const gmailHelper = require('./google-api-helpers/gmail');
-const sheetsHelper = require('./google-api-helpers/sheets'); // Import for potential future use
-const docsHelper = require('./google-api-helpers/docs'); // Import for potential future use
-// TODO: Import other helpers (Sheets, Docs)
+const sheetsHelper = require('./google-api-helpers/sheets');
+const docsHelper = require('./google-api-helpers/docs');
 
 // --- DEBUGGING: Log loaded environment variables ---
 console.log('DEBUG: Loaded Env Vars:');
@@ -1185,23 +1184,19 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
       console.log('[Calendar Sync] Using user OAuth authentication');
     }
 
-    // 6. Call Calendar Helper (Create or Update)
+    // 6. Call Consolidated Calendar Helper to sync the item
     try {
-      if (googleEventId) {
-        console.log(`[Calendar Sync] Updating existing Google Event ID: ${googleEventId}`);
-        const updatedEvent = await calendarHelper.updateEvent(
-          authClient,
-          googleEventId,
-          eventData,
-          targetCalendarId
-        );
-        console.log(`[Calendar Sync] Event updated successfully.`);
-      } else {
-        console.log(`[Calendar Sync] Creating new Google Event.`);
-        const createdEvent = await calendarHelper.createEvent(authClient, eventData);
-        googleEventId = createdEvent.id;
-        console.log(`[Calendar Sync] Event created successfully with ID: ${googleEventId}`);
-      }
+      console.log(`[Calendar Sync] Syncing schedule item with calendar...`);
+      const syncResult = await calendarHelper.syncScheduleItemWithCalendar(
+        authClient,
+        item,
+        targetCalendarId
+      );
+
+      googleEventId = syncResult.event.id;
+      console.log(
+        `[Calendar Sync] Event ${syncResult.action} successfully with ID: ${googleEventId}`
+      );
     } catch (calendarError) {
       console.error('[Calendar Sync] Google API Error:', calendarError);
       syncStatus = 'error';
