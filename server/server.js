@@ -20,8 +20,12 @@ const session = require('express-session');
 // Initialize service account auth for background operations
 let serviceAccountAuth = null;
 try {
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (credentialsPath && fs.existsSync(credentialsPath)) {
+  // First check specific environment variable, then fallback to the file in credentials directory
+  const credentialsPath =
+    process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
+    path.resolve(__dirname, '..', 'credentials/calendar-service-account.json');
+
+  if (fs.existsSync(credentialsPath)) {
     console.log(`Loading service account credentials from: ${credentialsPath}`);
     const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
     serviceAccountAuth = new google.auth.GoogleAuth({
