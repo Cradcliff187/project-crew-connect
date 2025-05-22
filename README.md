@@ -45,6 +45,31 @@ npm test
 
 Tests run with Mocha and use mocked responses for both Google Calendar API and Supabase, making them fast and reliable without requiring real credentials.
 
+## Continuous Integration
+
+This project uses GitHub Actions for continuous integration. The workflow is defined in `.github/workflows/test.yml`.
+
+To check the status of CI runs:
+
+1. Visit the Actions tab in the GitHub repository, or
+2. Install GitHub CLI and run:
+
+   ```bash
+   # Install GitHub CLI
+   # Windows: winget install GitHub.cli
+   # macOS: brew install gh
+   # Linux: See https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+
+   # Login to GitHub
+   gh auth login
+
+   # List recent workflow runs
+   gh run list
+
+   # Watch a specific run until it completes
+   gh run watch <run-id>
+   ```
+
 ## Project Structure
 
 The project follows a standard React + Vite structure with TypeScript:
