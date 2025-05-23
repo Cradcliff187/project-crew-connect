@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,14 @@ import {
   Plus,
   PlusCircle,
   FilePlus,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Users,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  MoreHorizontal,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +63,9 @@ import ProjectHealthCard from '@/components/projects/detail/cards/ProjectHealthC
 import UpcomingDatesCard from '@/components/projects/detail/cards/UpcomingDatesCard';
 import ProjectOverviewTab from '@/components/projects/detail/tabs/ProjectOverviewTab';
 import ProjectScheduleTab from '@/components/projects/schedule/ProjectScheduleTab';
+import StatusBadge from '@/components/common/status/StatusBadge';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 // Define type aliases using generated types
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -79,6 +90,7 @@ const ProjectDetail = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
