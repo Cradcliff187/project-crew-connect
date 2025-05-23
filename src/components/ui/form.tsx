@@ -42,13 +42,12 @@ const FormField = <
 const useSafeFormContext = () => {
   const fallbackContext = useFormFallback();
 
-  try {
-    const realFormContext = useFormContext();
-    return realFormContext || fallbackContext;
-  } catch (error) {
-    console.warn('Form context not available, using fallback implementation');
-    return fallbackContext;
-  }
+  // Always call useFormContext, but wrap the component usage in error boundary instead
+  // This is a simpler approach that doesn't violate hook rules
+  const formContext = useFormContext();
+
+  // If formContext is null/undefined, use fallback
+  return formContext || fallbackContext;
 };
 
 const useFormField = () => {
