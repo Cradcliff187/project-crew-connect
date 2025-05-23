@@ -1,0 +1,83 @@
+{
+  "serviceRoleTests": {
+    "simpleSelect": {
+      "success": true,
+      "data": [
+        {
+          "id": "4389512b-42bd-4a43-ad62-60afa74ab719",
+          "title": "Test 1",
+          "description": "kyle project"
+        },
+        {
+          "id": "dbd027d3-49be-4b28-a875-46227f85606f",
+          "title": "Test 1",
+          "description": "new stuff"
+        },
+        {
+          "id": "5f5bfe07-f6db-4bfd-b76d-35ea31daefa1",
+          "title": "test 1",
+          "description": "test 2\n"
+        },
+        {
+          "id": "c410e624-fae4-47c4-b67e-b62d851eb248",
+          "title": "Test 1",
+          "description": "Testing schedules"
+        },
+        {
+          "id": "947a6a2d-9a37-4006-912b-94e77d3da564",
+          "title": "test 1",
+          "description": "event 1 for kyle project"
+        }
+      ],
+      "error": null
+    },
+    "calendarFields": {
+      "success": true,
+      "data": [
+        {
+          "id": "4389512b-42bd-4a43-ad62-60afa74ab719",
+          "title": "Test 1",
+          "google_event_id": null,
+          "calendar_integration_enabled": true
+        },
+        {
+          "id": "dbd027d3-49be-4b28-a875-46227f85606f",
+          "title": "Test 1",
+          "google_event_id": null,
+          "calendar_integration_enabled": true
+        },
+        {
+          "id": "5f5bfe07-f6db-4bfd-b76d-35ea31daefa1",
+          "title": "test 1",
+          "google_event_id": null,
+          "calendar_integration_enabled": true
+        },
+        {
+          "id": "c410e624-fae4-47c4-b67e-b62d851eb248",
+          "title": "Test 1",
+          "google_event_id": null,
+          "calendar_integration_enabled": true
+        },
+        {
+          "id": "947a6a2d-9a37-4006-912b-94e77d3da564",
+          "title": "test 1",
+          "google_event_id": null,
+          "calendar_integration_enabled": true
+        }
+      ],
+      "error": null
+    }
+  },
+  "anonTests": {
+    "simpleSelect": {
+      "success": true,
+      "data": [],
+      "error": null
+    },
+    "calendarFields": {
+      "success": true,
+      "data": [],
+      "error": null
+    }
+  }
+}

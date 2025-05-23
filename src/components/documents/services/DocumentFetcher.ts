@@ -37,7 +37,7 @@ export async function fetchDocumentWithUrl(
 
     // Generate a URL for the document
     if (document.storage_path) {
-      let urlOptions: any = {
+      const urlOptions: any = {
         download: false,
       };
 

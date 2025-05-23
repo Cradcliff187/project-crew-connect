@@ -106,12 +106,12 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   };
 
   const applyTemplate = (template: EmailTemplate) => {
-    let processedSubject = template.subject_template
+    const processedSubject = template.subject_template
       .replace(/\{client_name\}/g, clientName)
       .replace(/\{estimate_id\}/g, estimateId)
       .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
 
-    let processedBody = template.body_template
+    const processedBody = template.body_template
       .replace(/\{client_name\}/g, clientName)
       .replace(/\{estimate_id\}/g, estimateId)
       .replace(/\{revision_number\}/g, revision?.version?.toString() || '');

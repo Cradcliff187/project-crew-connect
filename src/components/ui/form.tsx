@@ -38,25 +38,23 @@ const FormField = <
   );
 };
 
+// Custom hook that safely gets form context
+const useSafeFormContext = () => {
+  const fallbackContext = useFormFallback();
+
+  try {
+    const realFormContext = useFormContext();
+    return realFormContext || fallbackContext;
+  } catch (error) {
+    console.warn('Form context not available, using fallback implementation');
+    return fallbackContext;
+  }
+};
+
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-
-  // Use a try-catch block to safely get form context
-  let formContext;
-  try {
-    formContext = useFormContext();
-  } catch (error) {
-    // If useFormContext throws, use our fallback implementation
-    console.warn('Form context not available, using fallback implementation');
-    formContext = useFormFallback();
-  }
-
-  // Safety check for formContext
-  if (!formContext) {
-    console.warn('Form context is null or undefined, using fallback');
-    formContext = useFormFallback();
-  }
+  const formContext = useSafeFormContext();
 
   const { getFieldState, formState } = formContext;
 
