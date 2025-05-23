@@ -9,7 +9,7 @@
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "tsc && vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 2000",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 1950",
     "lint:strict": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "mocha \"tests/final-calendar-tests.cjs\" --timeout 30000"
