@@ -1,9 +1,17 @@
 import { useState } from 'react';
 
+type ExpenseData = {
+  expenseName: string;
+  quantity: number;
+  unitPrice: number;
+  vendorId: string | null;
+  expenseType: string;
+};
+
 export function useConfirmationManager(
-  handleAddExpense: Function,
-  handleReceiptUploaded: Function,
-  handleExpenseAdded: Function
+  handleAddExpense: (expense: ExpenseData) => Promise<any>,
+  handleReceiptUploaded: () => void,
+  handleExpenseAdded: () => void
 ) {
   // State for receipt confirmation dialog
   const [showReceiptConfirmation, setShowReceiptConfirmation] = useState(false);

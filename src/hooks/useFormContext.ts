@@ -16,13 +16,16 @@ export const useFormFallback = () => {
     return undefined;
   }, []);
 
-  const handleSubmit = useCallback((onValid: Function, onInvalid?: Function) => {
-    console.warn('useFormContext used outside FormProvider - using fallback implementation');
-    return (e: any) => {
-      e.preventDefault();
-      return undefined;
-    };
-  }, []);
+  const handleSubmit = useCallback(
+    (onValid: (data: any) => void, onInvalid?: (errors: any) => void) => {
+      console.warn('useFormContext used outside FormProvider - using fallback implementation');
+      return (e: any) => {
+        e.preventDefault();
+        return undefined;
+      };
+    },
+    []
+  );
 
   const reset = useCallback(() => {
     console.warn('useFormContext used outside FormProvider - using fallback implementation');

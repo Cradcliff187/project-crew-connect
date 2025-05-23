@@ -1,9 +1,16 @@
 import { useState } from 'react';
 
+type MaterialData = {
+  materialName: string;
+  quantity: number;
+  unitPrice: number;
+  vendorId: string | null;
+};
+
 export function useConfirmationManager(
-  handleAddMaterial: Function,
-  handleReceiptUploaded: Function,
-  handleMaterialAdded: Function
+  handleAddMaterial: (material: MaterialData) => Promise<any>,
+  handleReceiptUploaded: () => void,
+  handleMaterialAdded: () => void
 ) {
   // State for receipt confirmation dialog
   const [showReceiptConfirmation, setShowReceiptConfirmation] = useState(false);

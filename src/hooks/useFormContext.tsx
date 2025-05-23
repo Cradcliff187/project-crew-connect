@@ -8,17 +8,24 @@ interface FormFallbackContextValue {
     isTouched: false;
     error: undefined;
   };
-  formState: { errors: {} };
+  formState: { errors: Record<string, unknown> };
   getValues: (path?: string | string[]) => any;
   setValue: (name: string, value: any) => void;
-  handleSubmit: (onValid: Function, onInvalid?: Function) => (e: any) => void;
+  handleSubmit: (
+    onValid: (data: any) => void,
+    onInvalid?: (errors: any) => void
+  ) => (e: any) => void;
   reset: () => void;
   trigger: () => Promise<boolean>;
   watch: (name?: string | string[]) => any;
   control: {
     register: () => { name: string };
     unregister: () => void;
-    _names: { mount: {}; array: {}; watch: {} };
+    _names: {
+      mount: Record<string, unknown>;
+      array: Record<string, unknown>;
+      watch: Record<string, unknown>;
+    };
   };
   register: () => { name: string };
   unregister: () => void;

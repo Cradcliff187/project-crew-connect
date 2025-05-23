@@ -1,3 +1,6 @@
+import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
+
+export const MaterialsTableHeader = () => {
   return (
     <TableHeader>
       <TableRow>
