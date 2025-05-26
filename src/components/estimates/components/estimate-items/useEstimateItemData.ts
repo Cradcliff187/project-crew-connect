@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+interface SubcontractorFromDB {
+  subid: string;
+  company_name: string;
+}
+
 export const useEstimateItemData = () => {
   const [vendors, setVendors] = useState<{ vendorid: string; vendorname: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{ subid: string; subname: string }[]>([]);
@@ -21,7 +26,7 @@ export const useEstimateItemData = () => {
       // Use Promise.all to fetch data in parallel
       const [vendorsResult, subcontractorsResult] = await Promise.all([
         supabase.from('vendors').select('vendorid, vendorname').order('vendorname'),
-        supabase.from('subcontractors').select('subid, subname').order('subname'),
+        supabase.from('subcontractors').select('subid, company_name').order('company_name'),
       ]);
 
       if (vendorsResult.error) {
@@ -33,7 +38,12 @@ export const useEstimateItemData = () => {
       if (subcontractorsResult.error) {
         console.error('Error fetching subcontractors:', subcontractorsResult.error);
       } else {
-        setSubcontractors(subcontractorsResult.data || []);
+        // Map company_name to subname for compatibility with existing code
+        const mappedSubcontractors = ((subcontractorsResult.data as any) || []).map((sub: any) => ({
+          subid: sub.subid,
+          subname: sub.company_name,
+        }));
+        setSubcontractors(mappedSubcontractors);
       }
 
       // Mark data as fetched so we don't fetch it again

@@ -206,10 +206,14 @@ async function getEvent(authClient, eventId, calendarId = 'primary') {
  * Syncs a schedule item with Google Calendar (creates or updates event).
  * @param {object} authClient - An authenticated OAuth2 client or GoogleAuth client.
  * @param {object} scheduleItem - Schedule item data.
- * @param {string} [calendarId='primary'] - Calendar ID to use.
+ * @param {string} calendarId - Calendar ID to use (REQUIRED for schedule items).
  * @returns {Promise<object>} - The created or updated event data and status.
  */
-async function syncScheduleItemWithCalendar(authClient, scheduleItem, calendarId = 'primary') {
+async function syncScheduleItemWithCalendar(authClient, scheduleItem, calendarId) {
+  if (!calendarId) {
+    throw new Error('Calendar ID is required for schedule item sync');
+  }
+
   // If the item already has a Google event ID, update that event
   if (scheduleItem.google_event_id) {
     try {

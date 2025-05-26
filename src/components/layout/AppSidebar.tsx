@@ -14,6 +14,7 @@ import {
   BarChart,
   UserSquare,
   Settings,
+  Calendar,
 } from 'lucide-react';
 
 import {
@@ -52,6 +53,11 @@ const mainNav = [
     title: 'Active Work',
     href: '/active-work',
     icon: <Briefcase className="h-5 w-5" />,
+  },
+  {
+    title: 'Scheduling',
+    href: '/scheduling',
+    icon: <Calendar className="h-5 w-5" />,
   },
   {
     title: 'Projects',

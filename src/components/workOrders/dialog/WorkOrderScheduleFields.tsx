@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, CalendarCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   FormField,
@@ -14,7 +14,6 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
 import { UseFormReturn } from 'react-hook-form';
-import { CalendarIntegrationToggle } from '@/components/common/CalendarIntegrationToggle';
 
 interface WorkOrderScheduleFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -23,6 +22,8 @@ interface WorkOrderScheduleFieldsProps {
 const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
   const [scheduledDateOpen, setScheduledDateOpen] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
+
+  const scheduledDate = form.watch('scheduled_date');
 
   return (
     <div className="space-y-6">
@@ -116,23 +117,23 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
         />
       </div>
 
-      {/* Google Calendar Integration */}
-      <FormField
-        control={form.control}
-        name="calendar_sync_enabled"
-        render={({ field }) => (
-          <FormControl>
-            <CalendarIntegrationToggle
-              value={field.value}
-              onChange={field.onChange}
-              disabled={!form.watch('scheduled_date')}
-              disabledReason="A scheduled date is required for calendar integration"
-              description="When enabled, this work order will be synced with your Google Calendar"
-              entityType="work_order"
-            />
-          </FormControl>
-        )}
-      />
+      {/* Automatic Calendar Sync Notification */}
+      {scheduledDate && (
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-start space-x-3">
+            <CalendarCheck className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">Automatic Calendar Integration</p>
+              <p className="text-sm text-blue-700 mt-1">
+                This work order will be automatically added to your{' '}
+                <strong>Work Orders Calendar</strong> when created.
+                {form.watch('assigned_to') &&
+                  ' The assignee will receive a calendar invite automatically.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

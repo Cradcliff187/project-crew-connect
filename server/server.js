@@ -989,6 +989,292 @@ app.get('/api/calendar/list', requireAuth, async (req, res) => {
   }
 });
 
+// Get calendar configuration for frontend
+app.get('/api/calendar/config', requireAuth, async (req, res) => {
+  try {
+    // Return environment-based calendar configuration
+    const config = {
+      GOOGLE_CALENDAR_PROJECT: process.env.GOOGLE_CALENDAR_PROJECT || 'primary',
+      GOOGLE_CALENDAR_WORK_ORDER: process.env.GOOGLE_CALENDAR_WORK_ORDER || 'primary',
+      GOOGLE_CALENDAR_ADHOC: 'primary',
+    };
+
+    console.log('Returning calendar config:', {
+      PROJECT: config.GOOGLE_CALENDAR_PROJECT ? 'Set' : 'Missing',
+      WORK_ORDER: config.GOOGLE_CALENDAR_WORK_ORDER ? 'Set' : 'Missing',
+    });
+
+    res.json({
+      success: true,
+      ...config,
+    });
+  } catch (error) {
+    console.error('Error fetching calendar config:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch calendar configuration',
+      errorDetails: {
+        type: 'config_error',
+      },
+    });
+  }
+});
+
+// Generic calendar event creation endpoint
+app.post('/api/calendar/events', requireAuth, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      startTime,
+      endTime,
+      location,
+      calendarId = 'primary',
+      entityType,
+      entityId,
+      sendNotifications = false,
+      timezone = 'America/New_York',
+    } = req.body;
+
+    // Validation
+    if (!title || !startTime || !endTime) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: title, startTime, endTime',
+      });
+    }
+
+    // Create event data
+    const eventData = {
+      title,
+      description: description || '',
+      startTime,
+      endTime,
+      location: location || '',
+      targetCalendarId: calendarId,
+      entityType: entityType || 'generic',
+      entityId: entityId || '',
+      sendNotifications,
+      timezone,
+    };
+
+    // Use service account for group calendars, user auth for personal
+    const authClient =
+      calendarId !== 'primary' && serviceAccountAuth
+        ? await serviceAccountAuth.getClient()
+        : req.googleClient;
+
+    const event = await calendarHelper.createEvent(authClient, eventData);
+
+    res.json({
+      success: true,
+      event,
+      eventId: event.id,
+      message: 'Calendar event created successfully',
+    });
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create calendar event',
+    });
+  }
+});
+
+// Individual calendar invite endpoint
+app.post('/api/calendar/invites', requireAuth, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      startTime,
+      endTime,
+      location,
+      attendeeEmail,
+      attendeeRole = 'attendee',
+      attendeeType = 'employee',
+      primaryEventId,
+      entityType,
+      entityId,
+      sendNotifications = true,
+      timezone = 'America/New_York',
+    } = req.body;
+
+    // Validation
+    if (!title || !startTime || !endTime || !attendeeEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: title, startTime, endTime, attendeeEmail',
+      });
+    }
+
+    // Create invite event data
+    const eventData = {
+      title: `${title} (Invite)`,
+      description: `${description || ''}\n\nRelated to event: ${primaryEventId || 'N/A'}`,
+      startTime,
+      endTime,
+      location: location || '',
+      attendees: [{ email: attendeeEmail }],
+      targetCalendarId: 'primary', // Send to attendee's personal calendar
+      entityType: entityType || 'invite',
+      entityId: entityId || '',
+      sendNotifications,
+      timezone,
+    };
+
+    // Use user's auth client for personal calendar invites
+    const event = await calendarHelper.createEvent(req.googleClient, eventData);
+
+    res.json({
+      success: true,
+      event,
+      eventId: event.id,
+      attendeeEmail,
+      message: 'Calendar invite sent successfully',
+    });
+  } catch (error) {
+    console.error('Error sending calendar invite:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to send calendar invite',
+    });
+  }
+});
+
+// Email lookup endpoints for assignees
+app.get('/api/assignees/employee/:id/email', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('employees')
+      .select('email')
+      .eq('employee_id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching employee email:', error);
+      return res.status(404).json({
+        success: false,
+        error: 'Employee not found or no email available',
+      });
+    }
+
+    res.json({
+      success: true,
+      email: data.email,
+    });
+  } catch (error) {
+    console.error('Error in employee email lookup:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch employee email',
+    });
+  }
+});
+
+app.get('/api/assignees/subcontractor/:id/email', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('subcontractors')
+      .select('contactemail')
+      .eq('subid', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching subcontractor email:', error);
+      return res.status(404).json({
+        success: false,
+        error: 'Subcontractor not found or no email available',
+      });
+    }
+
+    res.json({
+      success: true,
+      email: data.contactemail,
+    });
+  } catch (error) {
+    console.error('Error in subcontractor email lookup:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch subcontractor email',
+    });
+  }
+});
+
+// Projects API endpoint
+app.get('/api/projects', requireAuth, async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .select('projectid, projectname, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch projects',
+      });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error in projects API:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch projects',
+    });
+  }
+});
+
+// Work Orders API endpoint
+app.get('/api/work-orders', requireAuth, async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('maintenance_work_orders')
+      .select('work_order_id, title, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Error fetching work orders:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch work orders',
+      });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error in work orders API:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch work orders',
+    });
+  }
+});
+
 // Update or create organization calendar with AJC Projects shared calendar ID
 app.post('/api/organization-calendar/update', requireAuth, async (req, res) => {
   try {

@@ -134,42 +134,30 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
 
   // Fetch vendors and subcontractors on component mount
   useEffect(() => {
-    const fetchVendorsAndSubcontractors = async () => {
-      setLoadingVendors(true);
-      setLoadingSubcontractors(true);
-
+    const fetchData = async () => {
       try {
-        // Fetch vendors
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .order('vendorname');
+        const [vendorsData, subcontractorsData] = await Promise.all([
+          supabase.from('vendors').select('vendorid, vendorname').order('vendorname'),
+          supabase.from('subcontractors').select('subid, company_name').order('company_name'),
+        ]);
 
-        if (vendorError) throw vendorError;
-        setVendors(vendorData || []);
-
-        // Fetch subcontractors
-        const { data: subData, error: subError } = await supabase
-          .from('subcontractors')
-          .select('subid, subname')
-          .order('subname');
-
-        if (subError) throw subError;
-        setSubcontractors(subData || []);
+        if (vendorsData.data) {
+          setVendors(vendorsData.data);
+        }
+        if (subcontractorsData.data) {
+          // Map company_name to subname for compatibility
+          const mappedSubcontractors = (subcontractorsData.data as any).map((sub: any) => ({
+            subid: sub.subid,
+            subname: sub.company_name,
+          }));
+          setSubcontractors(mappedSubcontractors);
+        }
       } catch (error) {
-        console.error('Error fetching vendors/subcontractors:', error);
-        toast({
-          title: 'Error loading data',
-          description: 'Could not load vendors or subcontractors.',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoadingVendors(false);
-        setLoadingSubcontractors(false);
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchVendorsAndSubcontractors();
+    fetchData();
   }, []);
 
   // --- Calculation Logic (adapted from Estimate Editor) ---

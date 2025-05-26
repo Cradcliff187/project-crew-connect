@@ -12,6 +12,7 @@ import Reports from './pages/Reports';
 import ReportBuilder from './pages/ReportBuilder';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
+import SchedulingPage from './pages/SchedulingPage';
 
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -103,6 +104,7 @@ const LayoutRoutes = () => (
       <Route path="reports" element={<Reports />} />
       <Route path="report-builder" element={<ReportBuilder />} />
       <Route path="report-builder/:reportId" element={<ReportBuilder />} />
+      <Route path="scheduling" element={<SchedulingPage />} />
       {/* Default catch-all for routes under Layout, Navigates to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Route>

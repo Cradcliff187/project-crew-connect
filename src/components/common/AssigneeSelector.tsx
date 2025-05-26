@@ -111,8 +111,8 @@ export function AssigneeSelector({
         // Fetch subcontractors
         const { data: subcontractorsData, error: subcontractorsError } = await supabase
           .from('subcontractors')
-          .select('subid, subname, contactemail')
-          .order('subname');
+          .select('subid, company_name, contactemail')
+          .order('company_name');
 
         if (subcontractorsError) throw subcontractorsError;
 
@@ -120,7 +120,7 @@ export function AssigneeSelector({
           setSubcontractors(
             subcontractorsData.map(sub => ({
               id: sub.subid,
-              name: sub.subname || 'Unnamed Subcontractor',
+              name: sub.company_name || 'Unnamed Subcontractor',
               email: sub.contactemail,
               type: 'subcontractor' as AssigneeType,
             }))

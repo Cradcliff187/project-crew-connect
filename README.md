@@ -2,6 +2,23 @@
 
 This repository contains the AKC Revisions application built with React, TypeScript, and Vite. It uses Supabase for database functionality and Google APIs for calendar integration.
 
+## 🎯 **NEW DEVELOPERS START HERE**
+
+### **📚 Essential Reading**
+
+1. **[CURRENT_STATUS.md](CURRENT_STATUS.md)** - Current system status and recent updates
+2. **[CODEBASE_ORGANIZATION.md](CODEBASE_ORGANIZATION.md)** - Complete architecture overview
+3. **[docs/README.md](docs/README.md)** - Documentation index and navigation
+
+### **🚀 Recent Major Updates**
+
+- ✅ **Intelligent Scheduling System** - Context-aware calendar selection and UX improvements
+- ✅ **API URL Fixes** - Resolved 401 Unauthorized errors with proper proxy configuration
+- ✅ **Enhanced UX** - Uniform interface with cognitive load reduction
+- ✅ **Complete Documentation** - Comprehensive guides for future development
+
+---
+
 ## Quick Start: Development Environment
 
 **Important: This application requires running both frontend and backend servers simultaneously.**
@@ -16,7 +33,7 @@ node server.js
 npm run dev
 ```
 
-The frontend will run on port 8081 (Vite) and the backend on port 3000 (Express).
+The frontend will run on port 8080 (Vite) and the backend on port 3000 (Express).
 
 ## Complete Development Setup
 
@@ -76,6 +93,8 @@ The project follows a standard React + Vite structure with TypeScript:
 
 - `src/` - Main source code
   - `components/` - React components
+    - `scheduling/` - **🆕 Intelligent scheduling system**
+  - `services/` - **🆕 Business logic services**
   - `hooks/` - Custom React hooks
   - `pages/` - Page components
   - `integrations/` - Third-party service integrations

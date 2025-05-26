@@ -164,7 +164,7 @@ export const useScheduleItems = (projectId: string) => {
         toast({ title: 'Success', description: 'Schedule item added.' });
 
         // If calendar integration is enabled, sync with Google Calendar
-        if (newItem.calendar_integration_enabled && newItem.send_invite) {
+        if (newItem.calendar_integration_enabled) {
           await syncWithCalendar(newItem.id);
         }
 
@@ -241,7 +241,7 @@ export const useScheduleItems = (projectId: string) => {
         toast({ title: 'Success', description: 'Schedule item updated.' });
 
         // If calendar integration is enabled, sync with Google Calendar
-        if (updatedItem.calendar_integration_enabled && updatedItem.send_invite) {
+        if (updatedItem.calendar_integration_enabled) {
           await syncWithCalendar(updatedItem.id);
         }
 

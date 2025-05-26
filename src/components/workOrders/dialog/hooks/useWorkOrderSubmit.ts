@@ -3,7 +3,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 import { useLocationCreate } from './useLocationCreate';
-import { useCalendarIntegration } from '@/hooks/useCalendarIntegration';
+import { EnhancedCalendarService } from '@/services/enhancedCalendarService';
 
 interface UseWorkOrderSubmitProps {
   onWorkOrderAdded: () => void;
@@ -18,7 +18,6 @@ export const useWorkOrderSubmit = ({
 }: UseWorkOrderSubmitProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createLocationIfNeeded } = useLocationCreate();
-  const { createEvent } = useCalendarIntegration();
 
   const onSubmit = async (values: WorkOrderFormValues) => {
     setIsSubmitting(true);
@@ -56,8 +55,8 @@ export const useWorkOrderSubmit = ({
           location_id: locationId || null,
           assigned_to: values.assigned_to || null,
           status: 'NEW',
-          calendar_sync_enabled: values.calendar_sync_enabled || false,
-          calendar_event_id: null, // Will be updated after calendar event is created
+          // calendar_sync_enabled: true, // Field exists in DB but not in types yet
+          // calendar_event_id: null, // Field exists in DB but not in types yet
         })
         .select();
 
@@ -65,36 +64,70 @@ export const useWorkOrderSubmit = ({
         throw error;
       }
 
-      // Create calendar event if calendar sync is enabled and a scheduled date is set
-      if (values.calendar_sync_enabled && scheduledDate && workOrder && workOrder.length > 0) {
+      // Automatically create calendar event for work orders with scheduled dates
+      if (scheduledDate && workOrder && workOrder.length > 0) {
         const workOrderId = workOrder[0].work_order_id;
 
-        // Create calendar event
-        const calendarResult = await createEvent({
-          title: values.title,
-          description: values.description || '',
-          startTime: scheduledDate,
-          endTime: dueByDate || undefined,
-          location: '', // Could potentially fetch and format location details
-          entityType: 'work_order',
-          entityId: workOrderId,
-        });
+        try {
+          // Use intelligent calendar service for automatic work order calendar integration
+          const calendarResult = await EnhancedCalendarService.createEvent({
+            title: values.title,
+            description: values.description || '',
+            startTime: scheduledDate,
+            endTime: dueByDate || undefined,
+            location: '', // Could potentially fetch and format location details
+            entityType: 'work_order',
+            entityId: workOrderId,
+            assignees: values.assigned_to
+              ? [
+                  {
+                    type: 'employee', // Assume employee for now - could be enhanced to detect type
+                    id: values.assigned_to,
+                    email: undefined, // Will be fetched automatically by EnhancedCalendarService
+                  },
+                ]
+              : [],
+            userEmail: 'current-user@example.com', // TODO: Get from auth context
+            sendNotifications: true,
+          });
 
-        // If event was created successfully, update the work order with the event ID
-        if (calendarResult.success && calendarResult.eventId) {
-          await supabase
-            .from('maintenance_work_orders')
-            .update({
-              calendar_event_id: calendarResult.eventId,
-            })
-            .eq('work_order_id', workOrderId);
+          // Log calendar result for debugging (since we can't store event ID yet)
+          if (calendarResult.success && calendarResult.primaryEventId) {
+            console.log('Calendar event created successfully:', {
+              workOrderId,
+              eventId: calendarResult.primaryEventId,
+              calendar: calendarResult.calendarSelection?.primaryCalendar.name,
+              invitesSent: calendarResult.invitesSent?.length || 0,
+            });
+
+            // Show success message with calendar details
+            toast({
+              title: 'Work Order Created',
+              description: `Work order created and added to ${calendarResult.calendarSelection?.primaryCalendar.name}. ${calendarResult.invitesSent?.length || 0} invite(s) sent.`,
+            });
+          } else {
+            // Work order created but calendar sync failed
+            console.warn('Calendar sync failed:', calendarResult.errors);
+            toast({
+              title: 'Work Order Created',
+              description: 'Work order created successfully, but calendar sync failed.',
+            });
+          }
+        } catch (calendarError) {
+          // Log calendar error but don't fail the work order creation
+          console.error('Calendar integration error:', calendarError);
+          toast({
+            title: 'Work Order Created',
+            description: 'Work order created successfully, but calendar sync failed.',
+          });
         }
+      } else {
+        // Work order created without scheduled date
+        toast({
+          title: 'Work Order Created',
+          description: 'The work order has been created successfully.',
+        });
       }
-
-      toast({
-        title: 'Work Order Created',
-        description: 'The work order has been created successfully.',
-      });
 
       onWorkOrderAdded();
       onOpenChange(false);

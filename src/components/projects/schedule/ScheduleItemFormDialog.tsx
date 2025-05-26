@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, X, Calendar, UserCircle, Mail, Clock } from 'lucide-react';
+import { Check, X, Calendar, UserCircle, Mail, Clock, CalendarCheck } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import {
   Dialog,
@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones'; // Import AssigneeType
 import { ScheduleItem } from '@/types/schedule'; // Import from our types file
+import { EnhancedCalendarService } from '@/services/enhancedCalendarService';
 
 // Define the type for the assignee value
 type AssigneeValue =
@@ -34,6 +35,7 @@ interface ScheduleItemFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editingItem: ScheduleItem | null;
   projectId: string; // Need project ID to associate the item
+  projectName?: string; // Optional project name for context
   onSave: (itemData: Partial<ScheduleItem>) => Promise<boolean>; // Pass the whole object
   onCancel: () => void;
 }
@@ -43,6 +45,7 @@ const ScheduleItemFormDialog = ({
   onOpenChange,
   editingItem,
   projectId,
+  projectName,
   onSave,
   onCancel,
 }: ScheduleItemFormDialogProps) => {
@@ -57,12 +60,12 @@ const ScheduleItemFormDialog = ({
   const [startTime, setStartTime] = useState(
     editingItem?.start_datetime && editingItem.start_datetime.includes('T')
       ? editingItem.start_datetime.split('T')[1].substring(0, 5)
-      : ''
+      : '09:00'
   );
   const [endTime, setEndTime] = useState(
     editingItem?.end_datetime && editingItem.end_datetime.includes('T')
       ? editingItem.end_datetime.split('T')[1].substring(0, 5)
-      : ''
+      : '10:00'
   );
   const [assignees, setAssignees] = useState<AssigneeValue>(
     editingItem?.assignee_id && editingItem?.assignee_type
@@ -74,7 +77,7 @@ const ScheduleItemFormDialog = ({
         ]
       : null
   );
-  const [sendInvite, setSendInvite] = useState(editingItem?.send_invite || false);
+  const [sendInvite, setSendInvite] = useState<boolean>(editingItem?.send_invite ?? true); // Default to true unless explicitly false
 
   const { toast } = useToast();
 
@@ -88,12 +91,12 @@ const ScheduleItemFormDialog = ({
       setStartTime(
         editingItem?.start_datetime && editingItem.start_datetime.includes('T')
           ? editingItem.start_datetime.split('T')[1].substring(0, 5)
-          : ''
+          : '09:00'
       );
       setEndTime(
         editingItem?.end_datetime && editingItem.end_datetime.includes('T')
           ? editingItem.end_datetime.split('T')[1].substring(0, 5)
-          : ''
+          : '10:00'
       );
       setAssignees(
         editingItem?.assignee_id && editingItem?.assignee_type
@@ -105,28 +108,21 @@ const ScheduleItemFormDialog = ({
             ]
           : null
       );
-      setSendInvite(editingItem?.send_invite || false);
+      setSendInvite(editingItem?.send_invite ?? true); // Default to true unless explicitly false
     }
   }, [editingItem, open]);
 
-  // Handle date and time changes to ensure valid datetime
+  // Auto-set end time based on start time (1 hour duration)
   useEffect(() => {
-    if (startDate && startTime) {
+    if (startTime) {
       const [hours, minutes] = startTime.split(':').map(Number);
-      const newDate = new Date(startDate);
-      newDate.setHours(hours, minutes, 0, 0);
-      setStartDate(newDate);
+      const endHour = (hours + 1) % 24;
+      setEndTime(`${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
     }
-
-    if (endDate && endTime) {
-      const [hours, minutes] = endTime.split(':').map(Number);
-      const newDate = new Date(endDate);
-      newDate.setHours(hours, minutes, 0, 0);
-      setEndDate(newDate);
-    }
-  }, [startTime, endTime]);
+  }, [startTime]);
 
   const handleSave = async () => {
+    // Validation
     if (!title.trim()) {
       toast({
         title: 'Title required',
@@ -151,7 +147,17 @@ const ScheduleItemFormDialog = ({
       });
       return;
     }
-    if (endDate <= startDate) {
+
+    // Create proper datetime objects
+    const startDateTime = new Date(startDate);
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    startDateTime.setHours(startHours, startMinutes, 0, 0);
+
+    const endDateTime = new Date(endDate);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
+
+    if (endDateTime <= startDateTime) {
       toast({
         title: 'Invalid Date Range',
         description: 'End date and time must be after the start date and time.',
@@ -159,17 +165,8 @@ const ScheduleItemFormDialog = ({
       });
       return;
     }
-    if (sendInvite && (!assignees || assignees.length === 0)) {
-      toast({
-        title: 'Assignee Required for Invite',
-        description: 'Please select at least one assignee before enabling calendar invites.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     // For now, use the first assignee since the database schema doesn't support multiple
-    // In future we may want to update the schema or create multiple schedule items
     const primaryAssignee = assignees && assignees.length > 0 ? assignees[0] : null;
 
     const itemData: Partial<ScheduleItem> = {
@@ -177,36 +174,63 @@ const ScheduleItemFormDialog = ({
       project_id: projectId,
       title: title.trim(),
       description: description || null,
-      start_datetime: startDate.toISOString(),
-      end_datetime: endDate.toISOString(),
+      start_datetime: startDateTime.toISOString(),
+      end_datetime: endDateTime.toISOString(),
       assignee_type:
         primaryAssignee?.type === 'employee' || primaryAssignee?.type === 'subcontractor'
           ? primaryAssignee.type
           : null,
       assignee_id: primaryAssignee?.id || null,
       send_invite: primaryAssignee ? sendInvite : false, // Only send invite if assignee exists
-      // calendar_integration_enabled could be set based on send_invite or other logic
-      calendar_integration_enabled: primaryAssignee ? sendInvite : false,
+      calendar_integration_enabled: true, // Always enabled for project schedule items
     };
 
+    // Save the schedule item first
     const success = await onSave(itemData);
+
     if (success) {
-      // Optionally reset form or let the parent component handle closing/resetting
-      // resetForm(); // Decided against resetting here, parent closes dialog
+      // Automatically create calendar event using intelligent system
+      try {
+        const calendarResult = await EnhancedCalendarService.createEvent({
+          title: title.trim(),
+          description: description || undefined,
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          entityType: 'schedule_item',
+          entityId: itemData.id || `temp-${Date.now()}`,
+          projectId: projectId,
+          assignees:
+            assignees?.map(a => ({
+              type: a.type as 'employee' | 'subcontractor',
+              id: a.id,
+              email: undefined, // Will be fetched automatically
+            })) || [],
+          userEmail: 'current-user@example.com', // TODO: Get from auth context
+          sendNotifications: sendInvite,
+        });
+
+        if (calendarResult.success) {
+          toast({
+            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
+            description: `Added to ${calendarResult.calendarSelection?.primaryCalendar.name}. ${calendarResult.invitesSent?.length || 0} invite(s) sent.`,
+          });
+        } else {
+          console.warn('Calendar sync failed:', calendarResult.errors);
+          toast({
+            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
+            description: 'Item saved successfully, but calendar sync failed.',
+          });
+        }
+      } catch (calendarError) {
+        console.error('Calendar integration error:', calendarError);
+        toast({
+          title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
+          description: 'Item saved successfully, but calendar sync failed.',
+        });
+      }
+
       onOpenChange(false); // Close dialog on successful save
     }
-  };
-
-  // Reset form fields (currently not called automatically on save success)
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setStartTime('');
-    setEndTime('');
-    setAssignees(null);
-    setSendInvite(false);
   };
 
   return (
@@ -218,6 +242,11 @@ const ScheduleItemFormDialog = ({
             {editingItem
               ? 'Update the details for this scheduled item.'
               : 'Schedule a specific task or event for this project.'}
+            {projectName && (
+              <span className="block mt-1 text-xs text-muted-foreground">
+                Project: {projectName}
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -306,10 +335,6 @@ const ScheduleItemFormDialog = ({
                   if (selected && selected.length > 0 && !sendInvite) {
                     setSendInvite(true);
                   }
-                  // Disable send invite if no assignees
-                  if (!selected || selected.length === 0) {
-                    setSendInvite(false);
-                  }
                 }}
                 allowedTypes={['employee', 'subcontractor']}
                 multiple={true}
@@ -336,6 +361,24 @@ const ScheduleItemFormDialog = ({
                 <span className="text-xs"> (Requires Assignee)</span>
               )}
             </Label>
+          </div>
+
+          {/* Automatic Calendar Sync Notification */}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-start space-x-3">
+              <CalendarCheck className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">Automatic Calendar Integration</p>
+                <p className="text-sm text-blue-700 mt-1">
+                  This schedule item will be automatically added to your{' '}
+                  <strong>AJC Projects Calendar</strong> when saved.
+                  {assignees &&
+                    assignees.length > 0 &&
+                    sendInvite &&
+                    ' Selected assignees will receive calendar invites automatically.'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
