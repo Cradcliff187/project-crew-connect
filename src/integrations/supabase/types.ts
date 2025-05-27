@@ -879,6 +879,9 @@ export type Database = {
           role: string | null;
           status: string | null;
           updated_at: string;
+          // New role-based fields
+          user_id: string | null;
+          app_role: 'admin' | 'field_user';
         };
         Insert: {
           bill_rate?: number | null;
@@ -894,6 +897,9 @@ export type Database = {
           role?: string | null;
           status?: string | null;
           updated_at?: string;
+          // New role-based fields
+          user_id?: string | null;
+          app_role?: 'admin' | 'field_user';
         };
         Update: {
           bill_rate?: number | null;
@@ -909,8 +915,19 @@ export type Database = {
           role?: string | null;
           status?: string | null;
           updated_at?: string;
+          // New role-based fields
+          user_id?: string | null;
+          app_role?: 'admin' | 'field_user';
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'fk_employees_user_id';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       estimate_documents: {
         Row: {

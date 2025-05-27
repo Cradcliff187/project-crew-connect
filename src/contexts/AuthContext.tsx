@@ -3,13 +3,22 @@ import { Session, User, AuthChangeEvent, SupabaseClient } from '@supabase/supaba
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+type UserRole = 'admin' | 'field_user';
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
+  // Enhanced role-based properties
+  role: UserRole | null;
+  employeeId: string | null;
+  isAdmin: boolean;
+  isFieldUser: boolean;
+  // Auth methods
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  // Add other auth methods as needed (e.g., signInWithPassword)
+  // Role management
+  refreshUserRole: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,7 +27,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Enhanced role-based state
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
+
   const navigate = useNavigate();
+
+  // Computed role properties
+  const isAdmin = role === 'admin';
+  const isFieldUser = role === 'field_user';
+
+  // Function to fetch user role and employee data
+  const fetchUserRole = async (userId: string) => {
+    try {
+      console.log('[AuthContext] Fetching user role for:', userId);
+
+      const { data, error } = await supabase
+        .from('employees')
+        .select('employee_id, app_role')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('[AuthContext] Error fetching user role:', error);
+        // If no employee record exists, user might need to be linked
+        setRole(null);
+        setEmployeeId(null);
+        return;
+      }
+
+      if (data) {
+        console.log('[AuthContext] User role data:', data);
+        setRole(data.app_role as UserRole);
+        setEmployeeId(data.employee_id);
+      } else {
+        console.warn('[AuthContext] No employee data found for user:', userId);
+        setRole(null);
+        setEmployeeId(null);
+      }
+    } catch (error) {
+      console.error('[AuthContext] Exception fetching user role:', error);
+      setRole(null);
+      setEmployeeId(null);
+    }
+  };
+
+  // Function to refresh user role (useful after role changes)
+  const refreshUserRole = async () => {
+    if (session?.user?.id) {
+      await fetchUserRole(session.user.id);
+    }
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -27,6 +87,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .then(({ data: { session: initialSession } }) => {
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
+
+        // Fetch role data if user is authenticated
+        if (initialSession?.user?.id) {
+          fetchUserRole(initialSession.user.id);
+        }
+
         setIsLoading(false);
       })
       .catch(error => {
@@ -39,15 +105,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log(`[AuthContext] onAuthStateChange event: ${_event}`, currentSession);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+
+        // Handle role data based on auth state
+        if (currentSession?.user?.id) {
+          await fetchUserRole(currentSession.user.id);
+        } else {
+          // Clear role data when user signs out
+          setRole(null);
+          setEmployeeId(null);
+        }
+
         setIsLoading(false);
 
         if (_event === 'SIGNED_OUT') {
+          // Clear all role data
+          setRole(null);
+          setEmployeeId(null);
           navigate('/login');
         } else if (_event === 'PASSWORD_RECOVERY') {
           // Handle password recovery if needed, e.g., redirect to a reset password page
           // navigate('/reset-password');
         } else if ((_event as string) === 'USER_DELETED') {
           // Cast to string to handle potential type mismatch
+          setRole(null);
+          setEmployeeId(null);
           navigate('/login');
         } else if (_event === 'INITIAL_SESSION' && !currentSession) {
           // This can happen if the stored session is invalid or expired on load
@@ -59,7 +140,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
 
     return () => {
-      authListener?.subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -68,40 +149,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // Ensure the redirectTo is an absolute URL for your auth callback page
-          redirectTo: new URL('/auth/callback', window.location.origin).toString(),
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
-      // Handle error (e.g., show toast)
+      throw error;
     }
   };
 
   const signOut = async () => {
     try {
+      // Clear role data immediately
+      setRole(null);
+      setEmployeeId(null);
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      // The onAuthStateChange listener will handle navigation to /login
     } catch (error) {
       console.error('Error signing out:', error);
-      // Handle error
+      throw error;
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     session,
     user,
     isLoading,
+    role,
+    employeeId,
+    isAdmin,
+    isFieldUser,
     signInWithGoogle,
     signOut,
+    refreshUserRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

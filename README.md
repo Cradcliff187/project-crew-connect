@@ -8,14 +8,41 @@ This repository contains the AKC Revisions application built with React, TypeScr
 
 1. **[CURRENT_STATUS.md](CURRENT_STATUS.md)** - Current system status and recent updates
 2. **[CODEBASE_ORGANIZATION.md](CODEBASE_ORGANIZATION.md)** - Complete architecture overview
-3. **[docs/README.md](docs/README.md)** - Documentation index and navigation
+3. **[ROLE_BASED_TIME_TRACKING_IMPLEMENTATION.md](ROLE_BASED_TIME_TRACKING_IMPLEMENTATION.md)** - 🆕 Role-based time tracking system
+4. **[docs/README.md](docs/README.md)** - Documentation index and navigation
 
 ### **🚀 Recent Major Updates**
 
+- ✅ **🆕 Role-Based Time Tracking** - Complete field user and admin interfaces with overtime management
 - ✅ **Intelligent Scheduling System** - Context-aware calendar selection and UX improvements
 - ✅ **API URL Fixes** - Resolved 401 Unauthorized errors with proper proxy configuration
 - ✅ **Enhanced UX** - Uniform interface with cognitive load reduction
 - ✅ **Complete Documentation** - Comprehensive guides for future development
+
+---
+
+## 🎨 **New Role-Based Time Tracking System**
+
+### **Field User Experience**
+
+- **Mobile-First Dashboard** - Beautiful assignment cards with priority indicators
+- **Quick Log Wizard** - Step-by-step time entry with automatic overtime calculation
+- **Receipt Management** - Camera integration with OCR processing
+- **Weekly Overview** - Personal time entry management and status tracking
+
+### **Administrator Experience**
+
+- **Comprehensive Management** - Bulk processing, filtering, and export capabilities
+- **Overtime Tracking** - Automatic calculation and visualization
+- **Cost Analysis** - Real-time cost and billable amount calculations
+- **Audit Trail** - Complete activity logging for compliance
+
+### **Technical Features**
+
+- **Role-Based Authentication** - Secure admin/field_user role system
+- **Database Migration** - Enhanced schema with overtime and receipt support
+- **TypeScript Coverage** - Complete type safety across all components
+- **Responsive Design** - Consistent with existing scheduling system excellence
 
 ---
 
@@ -42,7 +69,11 @@ The frontend will run on port 8080 (Vite) and the backend on port 3000 (Express)
    ```bash
    npm install
    ```
-3. Start both servers:
+3. **🆕 Apply role-based migration:**
+   ```bash
+   node db/scripts/apply-role-migration.cjs
+   ```
+4. Start both servers:
    - Backend server (provides API and Google integration)
    - Frontend server (provides UI)
 
@@ -94,14 +125,19 @@ The project follows a standard React + Vite structure with TypeScript:
 - `src/` - Main source code
   - `components/` - React components
     - `scheduling/` - **🆕 Intelligent scheduling system**
+    - `auth/` - **🆕 Role-based authentication components**
   - `services/` - **🆕 Business logic services**
-  - `hooks/` - Custom React hooks
+  - `types/` - **🆕 Role-based TypeScript definitions**
   - `pages/` - Page components
+    - `FieldUserDashboard.tsx` - **🆕 Field user interface**
+    - `AdminTimeEntries.tsx` - **🆕 Admin time management**
+  - `hooks/` - Custom React hooks
   - `integrations/` - Third-party service integrations
   - `utils/` - Utility functions
 - `server/` - Express.js backend server
   - `google-api-helpers/` - Google API integration helpers
 - `db/` - Database scripts and migrations
+  - `scripts/apply-role-migration.cjs` - **🆕 Role-based migration**
 - `public/` - Static assets
 - `docs/` - Documentation
 - `tests/` - Unit and integration tests
@@ -132,6 +168,21 @@ Database migrations are stored in `db/migrations/` and can be applied using:
 ```bash
 node db/scripts/migration-runner.cjs db/migrations/your_migration.sql
 ```
+
+#### **🆕 Role-Based Time Tracking Migration**
+
+The `db/scripts/apply-role-migration.cjs` migration adds comprehensive role-based functionality:
+
+```bash
+node db/scripts/apply-role-migration.cjs
+```
+
+This migration adds:
+
+- Role-based authentication system
+- Enhanced time entries with overtime tracking
+- Receipt management with OCR support
+- Activity logging for audit trails
 
 #### Important Migration: Calendar Sync Fix
 
