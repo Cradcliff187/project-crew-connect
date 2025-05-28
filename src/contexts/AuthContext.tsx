@@ -55,13 +55,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLastFetchedUserId(userId);
       console.log('[AuthContext] Fetching user role for:', userId);
 
-      // FIRST: Try to get role from JWT token (fastest and avoids RLS issues)
+      // Try to get role from JWT token first (fast path)
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
-        console.log('[AuthContext] Using role from JWT token (primary method)');
+        console.log('[AuthContext] Using role from JWT token');
         setRole(user.user_metadata.role as UserRole);
         setEmployeeId(user.user_metadata.employee_id);
         console.log(
@@ -70,46 +70,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'Employee ID:',
           user.user_metadata.employee_id
         );
-        return; // Success! No need to query database
+        return;
       }
 
-      // FALLBACK: Only query database if JWT doesn't have role data
-      console.log('[AuthContext] JWT token missing role data, querying database as fallback...');
+      // Fallback to database query with shorter timeout
+      console.log('[AuthContext] JWT missing role data, querying database...');
 
-      // Reduced timeout to 5 seconds since this is now a fallback
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout')), 5000); // 5 second timeout
-      });
-
-      // Simplified query with better error handling
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('employees')
         .select('employee_id, app_role')
         .eq('user_id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
-
-      const { data, error } = (await Promise.race([queryPromise, timeoutPromise])) as any;
+        .maybeSingle();
 
       if (error) {
-        console.error('[AuthContext] Error fetching user role from database:', error);
-
-        // Handle specific error cases
-        if (error.message === 'Query timeout') {
-          console.error('[AuthContext] Database query timed out - using JWT fallback failed');
-        } else if (error.code === 'PGRST116') {
-          console.warn('[AuthContext] No employee record found for user:', userId);
-        } else {
-          console.error('[AuthContext] Database error:', error.code, error.message);
-        }
-
-        // Set role to null since both JWT and database failed
+        console.error('[AuthContext] Database error:', error);
+        // Don't fail completely - set role to null and continue
         setRole(null);
         setEmployeeId(null);
         return;
       }
 
       if (data) {
-        console.log('[AuthContext] User role data from database:', data);
+        console.log('[AuthContext] Role data from database:', data);
         setRole(data.app_role as UserRole);
         setEmployeeId(data.employee_id);
         console.log(
@@ -119,32 +101,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           data.employee_id
         );
       } else {
-        console.warn('[AuthContext] No employee data found in database for user:', userId);
+        console.warn('[AuthContext] No employee data found for user:', userId);
         setRole(null);
         setEmployeeId(null);
       }
     } catch (error) {
       console.error('[AuthContext] Exception fetching user role:', error);
-
-      // Final fallback: try JWT one more time
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
-          console.log('[AuthContext] Using JWT metadata as final fallback after exception');
-          setRole(user.user_metadata.role as UserRole);
-          setEmployeeId(user.user_metadata.employee_id);
-        } else {
-          console.error('[AuthContext] No role data available in JWT or database');
-          setRole(null);
-          setEmployeeId(null);
-        }
-      } catch (fallbackError) {
-        console.error('[AuthContext] Final fallback also failed:', fallbackError);
-        setRole(null);
-        setEmployeeId(null);
-      }
+      // Don't fail completely - set role to null and continue
+      setRole(null);
+      setEmployeeId(null);
     } finally {
       setIsRoleFetching(false);
     }
@@ -159,26 +124,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     setIsLoading(true);
-    supabase.auth
-      .getSession()
-      .then(({ data: { session: initialSession } }) => {
+
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+        } = await supabase.auth.getSession();
         console.log('[AuthContext] Initial session:', initialSession?.user?.email || 'No session');
+
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
 
         // Fetch role data if user is authenticated
         if (initialSession?.user?.id) {
-          fetchUserRole(initialSession.user.id).finally(() => {
-            setIsLoading(false);
-          });
-        } else {
-          setIsLoading(false);
+          try {
+            await fetchUserRole(initialSession.user.id);
+          } catch (roleError) {
+            console.error('[AuthContext] Error fetching initial role:', roleError);
+            // Don't fail the whole auth flow if role fetch fails
+          }
         }
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error getting initial session:', error);
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+
+    initializeAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, currentSession: Session | null) => {
@@ -197,7 +170,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           if (needsRoleFetch) {
             console.log('[AuthContext] Role fetch needed for event:', _event);
-            await fetchUserRole(currentSession.user.id);
+            try {
+              await fetchUserRole(currentSession.user.id);
+            } catch (roleError) {
+              console.error('[AuthContext] Error fetching role for event:', _event, roleError);
+              // Don't fail the auth flow if role fetch fails
+            }
           } else {
             console.log('[AuthContext] Role already available, skipping fetch for event:', _event);
           }
