@@ -60,6 +60,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         data: { user },
       } = await supabase.auth.getUser();
 
+      console.log('[AuthContext] JWT user data:', user?.user_metadata);
+
       if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
         console.log('[AuthContext] Using role from JWT token');
         setRole(user.user_metadata.role as UserRole);
@@ -73,7 +75,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      // Fallback to database query with shorter timeout
+      // Additional debugging for JWT structure
+      console.log('[AuthContext] JWT role check failed:');
+      console.log('- user exists:', !!user);
+      console.log('- user_metadata exists:', !!user?.user_metadata);
+      console.log('- role exists:', !!user?.user_metadata?.role);
+      console.log('- employee_id exists:', !!user?.user_metadata?.employee_id);
+      console.log('- role value:', user?.user_metadata?.role);
+      console.log('- employee_id value:', user?.user_metadata?.employee_id);
+
       console.log('[AuthContext] JWT missing role data, querying database...');
 
       const { data, error } = await supabase
