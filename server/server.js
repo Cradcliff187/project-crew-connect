@@ -59,10 +59,11 @@ const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABAS
 
 // --- Helper Modules ---
 const driveHelper = require('./google-api-helpers/drive');
-const calendarHelper = require('./google-api-helpers/calendar-helper'); // Using the consolidated helper
+const calendarHelper = require('./google-api-helpers/calendar-helper');
 const gmailHelper = require('./google-api-helpers/gmail');
 const sheetsHelper = require('./google-api-helpers/sheets');
 const docsHelper = require('./google-api-helpers/docs');
+const visionHelper = require('./google-api-helpers/vision');
 
 // --- DEBUGGING: Log loaded environment variables ---
 console.log('DEBUG: Loaded Env Vars:');
@@ -85,7 +86,7 @@ console.log('----------------------------------------');
 // --- End Debugging ---
 
 // --- Configuration ---
-const PORT = process.env.SERVER_PORT || 8080; // Default to 8080 if not specified
+const PORT = process.env.SERVER_PORT || 3000; // Default to 3000 if not specified
 
 // Constants
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -149,6 +150,7 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/userinfo.profile', // To get basic user info
   'https://www.googleapis.com/auth/userinfo.email', // To get user email
+  'https://www.googleapis.com/auth/cloud-platform', // For Google Vision API
 ];
 
 app.get('/auth/google', (req, res) => {
@@ -1552,10 +1554,47 @@ app.get('/auth/clear', (req, res) => {
   res.redirect('/');
 });
 
+// --- OCR Processing Endpoint ---
+app.post('/api/ocr/process-receipt', async (req, res) => {
+  console.log('[/api/ocr/process-receipt] Processing receipt OCR request');
+
+  try {
+    // Check if user is authenticated
+    if (!req.session.tokens) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'Image URL is required' });
+    }
+
+    // Set up OAuth2 client with stored tokens
+    oauth2Client.setCredentials(req.session.tokens);
+
+    // Process the receipt using Google Vision API
+    const ocrResult = await visionHelper.processReceiptOCR(oauth2Client, imageUrl);
+
+    console.log('[/api/ocr/process-receipt] OCR processing completed');
+
+    res.json({
+      success: true,
+      data: ocrResult,
+    });
+  } catch (error) {
+    console.error('[/api/ocr/process-receipt] Error:', error);
+    res.status(500).json({
+      error: 'OCR processing failed',
+      details: error.message,
+    });
+  }
+});
+
 // --- Start Server ---
-// Use port 3000 for the backend API server
-app.listen(3000, () => {
-  console.log(`Backend server listening on http://localhost:3000`); // Updated log message
+// Use the configured PORT (defaults to 8080 if SERVER_PORT not set)
+app.listen(PORT, () => {
+  console.log(`Backend server listening on http://localhost:${PORT}`);
   if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !process.env.GOOGLE_MAPS_API_KEY) {
     console.warn('!!! WARNING: One or more Google API credentials are missing in .env file.');
   }

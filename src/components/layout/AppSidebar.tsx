@@ -15,6 +15,7 @@ import {
   UserSquare,
   Settings,
   Calendar,
+  ClockIcon,
 } from 'lucide-react';
 
 import {
@@ -43,7 +44,8 @@ const siteConfig = {
   name: 'AKC LLC',
 };
 
-const mainNav = [
+// Base navigation items (common to all users)
+const baseNav = [
   {
     title: 'Dashboard',
     href: '/',
@@ -65,14 +67,18 @@ const mainNav = [
     icon: <FolderKanban className="h-5 w-5" />,
   },
   {
-    title: 'Estimates',
-    href: '/estimates',
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-  },
-  {
     title: 'Work Orders',
     href: '/work-orders',
     icon: <ClipboardList className="h-5 w-5" />,
+  },
+];
+
+// Admin-specific navigation items
+const adminNav = [
+  {
+    title: 'Estimates',
+    href: '/estimates',
+    icon: <FileSpreadsheet className="h-5 w-5" />,
   },
   {
     title: 'Contacts',
@@ -90,8 +96,13 @@ const mainNav = [
     icon: <HardHat className="h-5 w-5" />,
   },
   {
-    title: 'Time Tracking',
-    href: '/time-tracking',
+    title: 'Time Entry Management',
+    href: '/admin/time-entries',
+    icon: <ClockIcon className="h-5 w-5" />,
+  },
+  {
+    title: 'Field Time Tracking (Test)',
+    href: '/test/field-dashboard',
     icon: <Clock className="h-5 w-5" />,
   },
   {
@@ -116,16 +127,45 @@ const mainNav = [
   },
 ];
 
+// Field user-specific navigation items
+const fieldUserNav = [
+  {
+    title: 'Time Tracking',
+    href: '/field/time-tracking',
+    icon: <Clock className="h-5 w-5" />,
+  },
+  {
+    title: 'Documents',
+    href: '/documents',
+    icon: <FileText className="h-5 w-5" />,
+  },
+];
+
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { session, user, isLoading, signOut } = useAuth();
+  const { session, user, isLoading, signOut, isAdmin, isFieldUser } = useAuth();
   const [mounted, setMounted] = React.useState(false);
   const [logoError, setLogoError] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Build navigation based on user role
+  const getNavigationItems = () => {
+    let navItems = [...baseNav];
+
+    if (isAdmin) {
+      navItems = [...navItems, ...adminNav];
+    } else if (isFieldUser) {
+      navItems = [...navItems, ...fieldUserNav];
+    }
+
+    return navItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <Sidebar>
@@ -150,7 +190,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarMenu>
-          {mainNav.map(item => (
+          {navigationItems.map(item => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
@@ -188,14 +228,25 @@ export function AppSidebar() {
                       <AvatarImage src={user?.user_metadata?.avatar_url || ''} />
                       <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="text-left">
-                      {user?.user_metadata?.full_name || user?.email}
-                    </span>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium">
+                        {user?.user_metadata?.full_name || user?.email}
+                      </span>
+                      {(isAdmin || isFieldUser) && (
+                        <span className="text-xs text-muted-foreground">
+                          {isAdmin ? 'Administrator' : 'Field User'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" forceMount>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    Settings
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>Log out</DropdownMenuItem>
               </DropdownMenuContent>

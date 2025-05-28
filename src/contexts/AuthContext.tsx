@@ -43,15 +43,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       console.log('[AuthContext] Fetching user role for:', userId);
 
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout')), 30000); // 30 second timeout
+      });
+
+      const queryPromise = supabase
         .from('employees')
         .select('employee_id, app_role')
         .eq('user_id', userId)
         .single();
 
+      const { data, error } = (await Promise.race([queryPromise, timeoutPromise])) as any;
+
       if (error) {
         console.error('[AuthContext] Error fetching user role:', error);
-        // If no employee record exists, user might need to be linked
+
+        // Check if it's a timeout or other error
+        if (error.message === 'Query timeout') {
+          console.error('[AuthContext] Query timed out - possible RLS or network issue');
+        } else if (error.code === 'PGRST116') {
+          console.warn('[AuthContext] No employee record found for user:', userId);
+        } else {
+          console.error('[AuthContext] Database error:', error.code, error.message);
+        }
+
+        // Set role to null but don't throw - let the user continue
         setRole(null);
         setEmployeeId(null);
         return;
@@ -61,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('[AuthContext] User role data:', data);
         setRole(data.app_role as UserRole);
         setEmployeeId(data.employee_id);
+        console.log('[AuthContext] Role set to:', data.app_role, 'Employee ID:', data.employee_id);
       } else {
         console.warn('[AuthContext] No employee data found for user:', userId);
         setRole(null);
@@ -85,15 +103,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     supabase.auth
       .getSession()
       .then(({ data: { session: initialSession } }) => {
+        console.log('[AuthContext] Initial session:', initialSession?.user?.email || 'No session');
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
 
         // Fetch role data if user is authenticated
         if (initialSession?.user?.id) {
-          fetchUserRole(initialSession.user.id);
+          fetchUserRole(initialSession.user.id).finally(() => {
+            setIsLoading(false);
+          });
+        } else {
+          setIsLoading(false);
         }
-
-        setIsLoading(false);
       })
       .catch(error => {
         console.error('Error getting initial session:', error);
@@ -102,7 +123,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log(`[AuthContext] onAuthStateChange event: ${_event}`, currentSession);
+        console.log(
+          `[AuthContext] onAuthStateChange event: ${_event}`,
+          currentSession?.user?.email || 'No session'
+        );
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 

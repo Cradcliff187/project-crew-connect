@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { TimeEntry } from '@/types/timeTracking';
+import { TimeEntry } from '@/types/role-based-types';
 import { Employee } from '@/types/common';
 import { useEmployees } from '@/hooks/useEmployees';
 

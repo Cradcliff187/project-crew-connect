@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Trash, FileText } from 'lucide-react';
 import { Expense } from '../hooks/useProjectExpenses';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { formatTime } from '@/components/timeTracking/utils/timeUtils';
+import { formatTime } from '@/utils/time/timeUtils';
 import ExpenseDetailModal from './ExpenseDetailModal';
 
 interface ExpensesTableProps {

@@ -402,7 +402,7 @@ export const LocationFields = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {formData.customers.map(customer => (
                   <SelectItem key={customer.customerid} value={customer.customerid}>
                     {customer.customername}
@@ -433,7 +433,7 @@ export const LocationFields = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {formData.locations.map(location => (
                     <SelectItem key={location.location_id} value={location.location_id}>
                       {location.location_name || location.address}
@@ -564,7 +564,7 @@ export const AssignmentFields = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="none">Unassigned</SelectItem>
               {formData.employees.map(employee => (
                 <SelectItem key={employee.employee_id} value={employee.employee_id}>
                   {`${employee.first_name} ${employee.last_name}`}

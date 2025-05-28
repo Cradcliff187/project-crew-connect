@@ -3,11 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface AdminRouteProps {
+interface FieldUserRouteProps {
   children: React.ReactNode;
 }
 
-const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+const FieldUserRoute: React.FC<FieldUserRouteProps> = ({ children }) => {
   const { isAdmin, isFieldUser, isLoading } = useAuth();
 
   if (isLoading) {
@@ -21,10 +21,10 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     );
   }
 
-  if (!isAdmin) {
-    // If user is a field user, redirect to their dashboard
-    if (isFieldUser) {
-      return <Navigate to="/field/time-tracking" replace />;
+  if (!isFieldUser) {
+    // If user is an admin, redirect to their dashboard
+    if (isAdmin) {
+      return <Navigate to="/admin/time-entries" replace />;
     }
 
     // If user has no role, show access denied
@@ -34,7 +34,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
           <CardHeader>
             <CardTitle className="text-center">Access Denied</CardTitle>
             <CardDescription className="text-center">
-              This page is only accessible to administrators.
+              This page is only accessible to field users.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -45,4 +45,4 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-export default AdminRoute;
+export default FieldUserRoute;

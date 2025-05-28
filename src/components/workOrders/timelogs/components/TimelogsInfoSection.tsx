@@ -4,9 +4,11 @@ import { Loader2 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { TimelogAddSheet } from './TimelogAddSheet';
 import { Button } from '@/components/ui/button';
-import { formatTime, formatHoursToDuration } from '@/components/timeTracking/utils/timeUtils';
+import { formatTime, formatHoursToDuration } from '@/utils/time/timeUtils';
 import { Employee } from '@/types/common';
 import { Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Clock, User, Calendar } from 'lucide-react';
 
 interface TimelogsInfoSectionProps {
   timelogs: any[];
@@ -17,6 +19,8 @@ interface TimelogsInfoSectionProps {
   onTimeLogAdded: () => void;
   totalHours: number;
   totalLaborCost: number;
+  totalEntries: number;
+  lastEntryDate?: string;
 }
 
 export const TimelogsInfoSection = ({
@@ -28,84 +32,51 @@ export const TimelogsInfoSection = ({
   onTimeLogAdded,
   totalHours,
   totalLaborCost,
+  totalEntries,
+  lastEntryDate,
 }: TimelogsInfoSectionProps) => {
   const [showAddSheet, setShowAddSheet] = useState(false);
 
   return (
-    <Card>
-      <div className="flex justify-between items-center p-4 border-b">
-        <h3 className="text-lg font-medium">Time Entries</h3>
-        <Button size="sm" onClick={() => setShowAddSheet(true)}>
-          Add Time
-        </Button>
-      </div>
-      <CardContent className="pt-4">
-        {loading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : timelogs.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            No time entries recorded for this work order yet.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 mb-2">
-              <div className="rounded-md bg-muted p-3">
-                <div className="text-sm text-muted-foreground">Total Hours</div>
-                <div className="text-lg font-semibold">{totalHours.toFixed(1)}</div>
-              </div>
-              <div className="rounded-md bg-muted p-3">
-                <div className="text-sm text-muted-foreground">Total Labor Cost</div>
-                <div className="text-lg font-semibold">{formatCurrency(totalLaborCost)}</div>
-              </div>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatHoursToDuration(totalHours)}</div>
+        </CardContent>
+      </Card>
 
-            <div className="space-y-3">
-              {timelogs.map(timelog => (
-                <div
-                  key={timelog.id}
-                  className="flex justify-between items-center border-b pb-2 last:border-0"
-                >
-                  <div>
-                    <div className="font-medium">
-                      {timelog.employee_name || 'Unassigned'} •{' '}
-                      {formatHoursToDuration(timelog.hours_worked)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDate(timelog.date_worked)} • {formatTime(timelog.start_time)} -{' '}
-                      {formatTime(timelog.end_time)}
-                    </div>
-                    {timelog.notes && <div className="text-sm mt-1">{timelog.notes}</div>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className="font-medium">{formatCurrency(timelog.total_cost)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        @{formatCurrency(timelog.employee_rate)}/hr
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => onDelete(timelog.id)}
-                      className="text-red-500 hover:text-red-700 text-xs p-1"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Time Entries</CardTitle>
+          <User className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalEntries}</div>
+          <p className="text-xs text-muted-foreground">
+            {totalEntries === 1 ? 'entry' : 'entries'} logged
+          </p>
+        </CardContent>
+      </Card>
 
-      <TimelogAddSheet
-        open={showAddSheet}
-        onOpenChange={setShowAddSheet}
-        workOrderId={workOrderId}
-        employees={employees}
-        onSuccess={onTimeLogAdded}
-      />
-    </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Last Entry</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {lastEntryDate ? (
+              <Badge variant="outline">{lastEntryDate}</Badge>
+            ) : (
+              <span className="text-muted-foreground">No entries</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

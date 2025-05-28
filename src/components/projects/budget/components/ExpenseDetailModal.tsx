@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Expense } from '../hooks/useProjectExpenses'; // Assuming Expense type is here
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { formatTime } from '@/components/timeTracking/utils/timeUtils';
+import { formatTime } from '@/utils/time/timeUtils';
 import { FileText } from 'lucide-react'; // For document view button
 
 interface ExpenseDetailModalProps {

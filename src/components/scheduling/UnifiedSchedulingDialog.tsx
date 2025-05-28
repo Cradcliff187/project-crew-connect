@@ -473,7 +473,7 @@ const UnifiedSchedulingDialog = ({
                     </SelectTrigger>
                     <SelectContent>
                       {entityType === 'contact_interaction' && (
-                        <SelectItem value="">
+                        <SelectItem value="none">
                           <div className="flex items-center gap-2">
                             <UserCircle className="h-4 w-4 text-gray-400" />
                             General Meeting (No Project)

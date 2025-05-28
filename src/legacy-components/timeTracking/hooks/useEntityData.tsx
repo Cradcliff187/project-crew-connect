@@ -20,10 +20,11 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues | any>) =>
     const fetchWorkOrdersAndProjects = async () => {
       setIsLoadingWOsProjects(true);
       try {
-        // Fetch work orders
+        // Fetch work orders with active statuses (NEW and IN_PROGRESS)
         const { data: woData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
-          .select('work_order_id, title')
+          .select('work_order_id, title, status')
+          .in('status', ['NEW', 'IN_PROGRESS'])
           .order('created_at', { ascending: false });
 
         if (workOrdersError) {
@@ -41,10 +42,11 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues | any>) =>
           setWorkOrders([]);
         }
 
-        // Fetch projects
+        // Fetch projects with active status
         const { data: projData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname, status')
+          .eq('status', 'active')
           .order('created_at', { ascending: false });
 
         if (projectsError) {

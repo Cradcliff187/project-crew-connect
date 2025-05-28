@@ -1,72 +1,53 @@
+import React from 'react';
+import { TimeEntry } from '@/types/role-based-types';
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { formatDate } from '@/lib/utils';
-import { TimeEntry } from '@/types/timeTracking';
-import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Clock, Trash2, Edit } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatTime, formatHoursToDuration } from '@/utils/time/timeUtils';
+import { Trash2 } from 'lucide-react';
 
 interface TimelogsTableBodyProps {
   timelogs: TimeEntry[];
   employeeNameFn: (employeeId: string | null) => string;
   onDelete: (id: string) => Promise<void>;
-  onEdit: (log: TimeEntry) => void;
-  employees: { employee_id: string; name: string }[];
 }
 
-const TimelogsTableBody = ({
+export const TimelogsTableBody: React.FC<TimelogsTableBodyProps> = ({
   timelogs,
   employeeNameFn,
   onDelete,
-  onEdit,
-  employees,
-}: TimelogsTableBodyProps) => {
-  // The parent components will handle empty states, so we'll just render the rows here
+}) => {
   return (
     <TableBody>
-      {timelogs.map(log => {
-        const employee = employees.find(e => e.employee_id === log.employee_id);
-        const actionGroups: ActionGroup[] = [
-          {
-            items: [
-              {
-                label: 'View Details',
-                icon: <Clock className="h-4 w-4" />,
-                onClick: () => console.log('View time log details:', log.id),
-                className: 'text-[#0485ea] hover:text-[#0375d1]',
-              },
-              {
-                label: 'Edit Entry',
-                icon: <Edit className="h-4 w-4" />,
-                onClick: () => onEdit(log),
-                className: 'text-primary hover:text-primary/80',
-              },
-            ],
-          },
-          {
-            items: [
-              {
-                label: 'Delete',
-                icon: <Trash2 className="h-4 w-4" />,
-                onClick: () => onDelete(log.id),
-                className: 'text-red-500 hover:text-red-700',
-              },
-            ],
-          },
-        ];
-
-        return (
-          <TableRow key={log.id} className="hover:bg-muted/50 transition-colors">
-            <TableCell>{formatDate(log.date_worked)}</TableCell>
-            <TableCell>{employeeNameFn(log.employee_id)}</TableCell>
-            <TableCell className="font-medium">{log.hours_worked}</TableCell>
-            <TableCell className="max-w-[200px] truncate">{log.notes || '-'}</TableCell>
-            <TableCell className="text-right">
-              <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
-            </TableCell>
-          </TableRow>
-        );
-      })}
+      {timelogs.map(timelog => (
+        <TableRow key={timelog.id}>
+          <TableCell className="font-medium">{employeeNameFn(timelog.employee_id)}</TableCell>
+          <TableCell>{formatDate(timelog.date_worked)}</TableCell>
+          <TableCell>
+            {formatTime(timelog.start_time)} - {formatTime(timelog.end_time)}
+          </TableCell>
+          <TableCell>{formatHoursToDuration(timelog.hours_worked)}</TableCell>
+          <TableCell>{formatCurrency(timelog.employee_rate || 0)}/hr</TableCell>
+          <TableCell className="font-medium">{formatCurrency(timelog.total_cost || 0)}</TableCell>
+          <TableCell>
+            {timelog.notes && (
+              <div className="max-w-[200px] truncate" title={timelog.notes}>
+                {timelog.notes}
+              </div>
+            )}
+          </TableCell>
+          <TableCell>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(timelog.id)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TableCell>
+        </TableRow>
+      ))}
     </TableBody>
   );
 };
-
-export default TimelogsTableBody;

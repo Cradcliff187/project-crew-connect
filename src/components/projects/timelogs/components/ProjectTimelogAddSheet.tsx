@@ -16,9 +16,7 @@ import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DatePicker } from '@/components/ui/date-picker';
-import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
-import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
-import EmployeeSelect from '@/components/timeTracking/form/EmployeeSelect';
+import { calculateHours } from '@/utils/time/timeUtils';
 import { Employee } from '@/types/common';
 
 interface ProjectTimelogAddSheetProps {
@@ -44,15 +42,8 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   const [hasReceipt, setHasReceipt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const calculateHours = () => {
-    if (!startTime || !endTime) return 0;
-
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-    const diffMs = end.getTime() - start.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
-    return diffHours > 0 ? diffHours : 0;
+  const getCalculatedHours = () => {
+    return calculateHours(startTime, endTime);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +66,7 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
       return;
     }
 
-    const hoursWorked = calculateHours();
+    const hoursWorked = getCalculatedHours();
     if (hoursWorked <= 0) {
       toast({
         title: 'Invalid time',
@@ -201,6 +192,10 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Hours: {getCalculatedHours().toFixed(1)}</Label>
           </div>
 
           <div className="space-y-2">

@@ -3,6 +3,12 @@
 
 export type UserRole = 'admin' | 'field_user';
 
+// Time utility types
+export interface TimeOfDay {
+  hours: number;
+  minutes: number;
+}
+
 // Enhanced Employee type with role-based fields
 export interface RoleBasedEmployee {
   employee_id: string;
@@ -51,6 +57,13 @@ export interface RoleBasedTimeEntry {
   updated_at: string;
 }
 
+// Legacy compatibility - alias for existing components
+export type TimeEntry = RoleBasedTimeEntry & {
+  employee_name?: string;
+  entity_name?: string;
+  can_process?: boolean;
+};
+
 // Receipt type for OCR and expense tracking
 export interface Receipt {
   id: string;
@@ -96,6 +109,12 @@ export interface QuickLogFormData {
   end_time: string;
   notes?: string;
   has_receipts?: boolean;
+  receipt_data?: {
+    expense_category_id?: string;
+    cost_category_id?: string;
+    description?: string;
+    is_billable?: boolean;
+  };
 }
 
 export interface ReceiptFormData {
@@ -155,6 +174,9 @@ export interface UseReceiptsReturn {
   error: Error | null;
   uploadReceipt: (data: ReceiptFormData) => Promise<Receipt>;
   deleteReceipt: (id: string) => Promise<void>;
+  updateReceipt: (id: string, updates: Partial<Receipt>) => Promise<void>;
+  getReceiptUrl: (storagePath: string) => Promise<string | null>;
+  refetch: () => void;
 }
 
 export interface UseActivityLogReturn {

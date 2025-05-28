@@ -61,9 +61,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       if (entityType === 'work_order') {
         const { data } = await supabase
           .from('maintenance_work_orders')
-          .select('work_order_id, title')
+          .select('work_order_id, title, status')
+          .in('status', ['NEW', 'IN_PROGRESS'])
           .order('updated_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (data) {
           setEntityOptions(
@@ -76,9 +77,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       } else {
         const { data } = await supabase
           .from('projects')
-          .select('projectid, projectname')
+          .select('projectid, projectname, status')
+          .eq('status', 'active')
           .order('updated_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (data) {
           setEntityOptions(

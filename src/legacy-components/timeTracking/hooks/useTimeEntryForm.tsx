@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
+import { useTimeEntrySubmit } from './useTimeEntrySubmit';
 import { toast } from '@/hooks/use-toast';
-import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import { calculateHours } from '@/utils/time/timeUtils';
 import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
+import { useEntityData } from './useEntityData';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -36,17 +37,34 @@ const defaultFormValues: TimeEntryFormValues = {
   calendar_sync_enabled: false,
 };
 
-export function useTimeEntryForm(onSuccess: () => void) {
+interface UseTimeEntryFormProps {
+  onSuccess: () => void;
+  initialValues?: Partial<TimeEntryFormValues>;
+}
+
+export function useTimeEntryForm({ onSuccess, initialValues }: UseTimeEntryFormProps) {
+  const [formData, setFormData] = useState<TimeEntryFormValues>({
+    entityType: 'project',
+    entityId: '',
+    workDate: new Date(),
+    startTime: '09:00',
+    endTime: '17:00',
+    hoursWorked: 8,
+    employeeId: '',
+    notes: '',
+    calendar_sync_enabled: false,
+    ...initialValues,
+  });
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
     category: 'receipt',
     expenseType: null,
     tags: ['time-entry'],
-    vendorType: 'vendor',
   });
 
-  // Use our submission hook
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
+  const { entities, isLoading: entitiesLoading } = useEntityData(formData.entityType);
 
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
@@ -138,23 +156,68 @@ export function useTimeEntryForm(onSuccess: () => void) {
     return true;
   };
 
-  const handleSubmit = (data: TimeEntryFormValues) => {
+  const handleSubmit = async () => {
+    // Validation
+    if (!formData.entityId) {
+      toast({
+        title: 'Missing information',
+        description: 'Please select a project or work order.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.hoursWorked <= 0) {
+      toast({
+        title: 'Invalid hours',
+        description: 'Hours worked must be greater than 0.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!validateReceiptData()) {
       return;
     }
 
-    // Submit with enhanced receipt metadata
-    submitTimeEntry(data, selectedFiles, receiptMetadata);
+    await submitTimeEntry(formData, selectedFiles, receiptMetadata);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      entityType: 'project',
+      entityId: '',
+      workDate: new Date(),
+      startTime: '09:00',
+      endTime: '17:00',
+      hoursWorked: 8,
+      employeeId: '',
+      notes: '',
+      calendar_sync_enabled: false,
+    });
+    setSelectedFiles([]);
+    setReceiptMetadata({
+      category: 'receipt',
+      expenseType: null,
+      tags: ['time-entry'],
+    });
   };
 
   return {
     form,
-    isLoading: isSubmitting,
+    formData,
+    setFormData,
     selectedFiles,
+    setSelectedFiles,
     receiptMetadata,
+    setReceiptMetadata,
+    entities,
+    entitiesLoading,
+    isSubmitting,
+    handleSubmit,
+    resetForm,
     handleFilesSelected,
     handleFileClear,
     updateReceiptMetadata,
-    handleSubmit,
   };
 }
