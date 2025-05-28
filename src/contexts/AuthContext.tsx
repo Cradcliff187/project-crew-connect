@@ -44,80 +44,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchUserRole = async (userId: string) => {
     // Skip if already fetching for the same user
     if (isRoleFetching || lastFetchedUserId === userId) {
-      console.log(
-        '[AuthContext] Role fetch already in progress or already fetched for user, skipping...'
-      );
       return;
     }
 
     try {
       setIsRoleFetching(true);
       setLastFetchedUserId(userId);
-      console.log('[AuthContext] Fetching user role for:', userId);
 
-      // Try to get role from JWT token first (fast path)
+      // Try to get role from JWT token first
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      console.log('[AuthContext] JWT user data:', user?.user_metadata);
-
       if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
-        console.log('[AuthContext] Using role from JWT token');
         setRole(user.user_metadata.role as UserRole);
         setEmployeeId(user.user_metadata.employee_id);
-        console.log(
-          '[AuthContext] Role set from JWT:',
-          user.user_metadata.role,
-          'Employee ID:',
-          user.user_metadata.employee_id
-        );
         return;
       }
 
-      // Additional debugging for JWT structure
-      console.log('[AuthContext] JWT role check failed:');
-      console.log('- user exists:', !!user);
-      console.log('- user_metadata exists:', !!user?.user_metadata);
-      console.log('- role exists:', !!user?.user_metadata?.role);
-      console.log('- employee_id exists:', !!user?.user_metadata?.employee_id);
-      console.log('- role value:', user?.user_metadata?.role);
-      console.log('- employee_id value:', user?.user_metadata?.employee_id);
-
-      console.log('[AuthContext] JWT missing role data, querying database...');
-
+      // Simple database fallback
       const { data, error } = await supabase
         .from('employees')
         .select('employee_id, app_role')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('[AuthContext] Database error:', error);
-        // Don't fail completely - set role to null and continue
-        setRole(null);
-        setEmployeeId(null);
-        return;
-      }
-
       if (data) {
-        console.log('[AuthContext] Role data from database:', data);
         setRole(data.app_role as UserRole);
         setEmployeeId(data.employee_id);
-        console.log(
-          '[AuthContext] Role set from database:',
-          data.app_role,
-          'Employee ID:',
-          data.employee_id
-        );
       } else {
-        console.warn('[AuthContext] No employee data found for user:', userId);
+        console.warn('[AuthContext] No role data found for user:', userId);
         setRole(null);
         setEmployeeId(null);
       }
     } catch (error) {
-      console.error('[AuthContext] Exception fetching user role:', error);
-      // Don't fail completely - set role to null and continue
+      console.error('[AuthContext] Role fetch error:', error);
       setRole(null);
       setEmployeeId(null);
     } finally {
@@ -140,23 +101,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const {
           data: { session: initialSession },
         } = await supabase.auth.getSession();
-        console.log('[AuthContext] Initial session:', initialSession?.user?.email || 'No session');
 
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
 
-        // Fetch role data if user is authenticated
+        // Try to fetch role data but don't let it block loading
         if (initialSession?.user?.id) {
-          try {
-            await fetchUserRole(initialSession.user.id);
-          } catch (roleError) {
-            console.error('[AuthContext] Error fetching initial role:', roleError);
-            // Don't fail the whole auth flow if role fetch fails
-          }
+          fetchUserRole(initialSession.user.id).catch(error => {
+            console.error('[AuthContext] Initial role fetch failed:', error);
+          });
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
+        // Always complete loading regardless of role fetch status
         setIsLoading(false);
       }
     };
@@ -165,61 +123,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log(
-          `[AuthContext] onAuthStateChange event: ${_event}`,
-          currentSession?.user?.email || 'No session'
-        );
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
-        // Handle role data based on auth state - be smarter about when to fetch
+        // Handle role data - don't block on this
         if (currentSession?.user?.id) {
-          // Only fetch role if we don't have it or if it's a new user
           const needsRoleFetch =
             !role || !employeeId || lastFetchedUserId !== currentSession.user.id;
 
           if (needsRoleFetch) {
-            console.log('[AuthContext] Role fetch needed for event:', _event);
-            try {
-              await fetchUserRole(currentSession.user.id);
-            } catch (roleError) {
-              console.error('[AuthContext] Error fetching role for event:', _event, roleError);
-              // Don't fail the auth flow if role fetch fails
-            }
-          } else {
-            console.log('[AuthContext] Role already available, skipping fetch for event:', _event);
+            fetchUserRole(currentSession.user.id).catch(error => {
+              console.error('[AuthContext] Role fetch failed for event:', _event, error);
+            });
           }
         } else {
-          // Clear role data when user signs out
           setRole(null);
           setEmployeeId(null);
           setLastFetchedUserId(null);
         }
 
+        // Always complete loading
         setIsLoading(false);
 
+        // Simple navigation handling
         if (_event === 'SIGNED_OUT') {
-          // Clear all role data
           setRole(null);
           setEmployeeId(null);
           setLastFetchedUserId(null);
           setIsRoleFetching(false);
           navigate('/login');
-        } else if (_event === 'PASSWORD_RECOVERY') {
-          // Handle password recovery if needed, e.g., redirect to a reset password page
-          // navigate('/reset-password');
-        } else if ((_event as string) === 'USER_DELETED') {
-          // Cast to string to handle potential type mismatch
-          setRole(null);
-          setEmployeeId(null);
-          setLastFetchedUserId(null);
-          setIsRoleFetching(false);
-          navigate('/login');
-        } else if (_event === 'INITIAL_SESSION' && !currentSession) {
-          // This can happen if the stored session is invalid or expired on load
-          // No need to navigate to /login here as useRequireAuth will handle it
-          // if the current page requires auth.
-          console.log('[AuthContext] Initial session was null or invalid.');
         }
       }
     );
@@ -227,7 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
