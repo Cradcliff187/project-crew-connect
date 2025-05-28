@@ -31,6 +31,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Enhanced role-based state
   const [role, setRole] = useState<UserRole | null>(null);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [isRoleFetching, setIsRoleFetching] = useState(false);
+  const [lastFetchedUserId, setLastFetchedUserId] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -38,56 +40,113 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAdmin = role === 'admin';
   const isFieldUser = role === 'field_user';
 
-  // Function to fetch user role and employee data
+  // Debounce role fetching to prevent multiple concurrent calls
   const fetchUserRole = async (userId: string) => {
+    // Skip if already fetching for the same user
+    if (isRoleFetching || lastFetchedUserId === userId) {
+      console.log(
+        '[AuthContext] Role fetch already in progress or already fetched for user, skipping...'
+      );
+      return;
+    }
+
     try {
+      setIsRoleFetching(true);
+      setLastFetchedUserId(userId);
       console.log('[AuthContext] Fetching user role for:', userId);
 
-      // Add timeout to prevent hanging
+      // FIRST: Try to get role from JWT token (fastest and avoids RLS issues)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
+        console.log('[AuthContext] Using role from JWT token (primary method)');
+        setRole(user.user_metadata.role as UserRole);
+        setEmployeeId(user.user_metadata.employee_id);
+        console.log(
+          '[AuthContext] Role set from JWT:',
+          user.user_metadata.role,
+          'Employee ID:',
+          user.user_metadata.employee_id
+        );
+        return; // Success! No need to query database
+      }
+
+      // FALLBACK: Only query database if JWT doesn't have role data
+      console.log('[AuthContext] JWT token missing role data, querying database as fallback...');
+
+      // Reduced timeout to 5 seconds since this is now a fallback
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout')), 30000); // 30 second timeout
+        setTimeout(() => reject(new Error('Query timeout')), 5000); // 5 second timeout
       });
 
+      // Simplified query with better error handling
       const queryPromise = supabase
         .from('employees')
         .select('employee_id, app_role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
 
       const { data, error } = (await Promise.race([queryPromise, timeoutPromise])) as any;
 
       if (error) {
-        console.error('[AuthContext] Error fetching user role:', error);
+        console.error('[AuthContext] Error fetching user role from database:', error);
 
-        // Check if it's a timeout or other error
+        // Handle specific error cases
         if (error.message === 'Query timeout') {
-          console.error('[AuthContext] Query timed out - possible RLS or network issue');
+          console.error('[AuthContext] Database query timed out - using JWT fallback failed');
         } else if (error.code === 'PGRST116') {
           console.warn('[AuthContext] No employee record found for user:', userId);
         } else {
           console.error('[AuthContext] Database error:', error.code, error.message);
         }
 
-        // Set role to null but don't throw - let the user continue
+        // Set role to null since both JWT and database failed
         setRole(null);
         setEmployeeId(null);
         return;
       }
 
       if (data) {
-        console.log('[AuthContext] User role data:', data);
+        console.log('[AuthContext] User role data from database:', data);
         setRole(data.app_role as UserRole);
         setEmployeeId(data.employee_id);
-        console.log('[AuthContext] Role set to:', data.app_role, 'Employee ID:', data.employee_id);
+        console.log(
+          '[AuthContext] Role set from database:',
+          data.app_role,
+          'Employee ID:',
+          data.employee_id
+        );
       } else {
-        console.warn('[AuthContext] No employee data found for user:', userId);
+        console.warn('[AuthContext] No employee data found in database for user:', userId);
         setRole(null);
         setEmployeeId(null);
       }
     } catch (error) {
       console.error('[AuthContext] Exception fetching user role:', error);
-      setRole(null);
-      setEmployeeId(null);
+
+      // Final fallback: try JWT one more time
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.user_metadata?.role && user?.user_metadata?.employee_id) {
+          console.log('[AuthContext] Using JWT metadata as final fallback after exception');
+          setRole(user.user_metadata.role as UserRole);
+          setEmployeeId(user.user_metadata.employee_id);
+        } else {
+          console.error('[AuthContext] No role data available in JWT or database');
+          setRole(null);
+          setEmployeeId(null);
+        }
+      } catch (fallbackError) {
+        console.error('[AuthContext] Final fallback also failed:', fallbackError);
+        setRole(null);
+        setEmployeeId(null);
+      }
+    } finally {
+      setIsRoleFetching(false);
     }
   };
 
@@ -130,13 +189,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
-        // Handle role data based on auth state
+        // Handle role data based on auth state - be smarter about when to fetch
         if (currentSession?.user?.id) {
-          await fetchUserRole(currentSession.user.id);
+          // Only fetch role if we don't have it or if it's a new user
+          const needsRoleFetch =
+            !role || !employeeId || lastFetchedUserId !== currentSession.user.id;
+
+          if (needsRoleFetch) {
+            console.log('[AuthContext] Role fetch needed for event:', _event);
+            await fetchUserRole(currentSession.user.id);
+          } else {
+            console.log('[AuthContext] Role already available, skipping fetch for event:', _event);
+          }
         } else {
           // Clear role data when user signs out
           setRole(null);
           setEmployeeId(null);
+          setLastFetchedUserId(null);
         }
 
         setIsLoading(false);
@@ -145,6 +214,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Clear all role data
           setRole(null);
           setEmployeeId(null);
+          setLastFetchedUserId(null);
+          setIsRoleFetching(false);
           navigate('/login');
         } else if (_event === 'PASSWORD_RECOVERY') {
           // Handle password recovery if needed, e.g., redirect to a reset password page
@@ -153,6 +224,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Cast to string to handle potential type mismatch
           setRole(null);
           setEmployeeId(null);
+          setLastFetchedUserId(null);
+          setIsRoleFetching(false);
           navigate('/login');
         } else if (_event === 'INITIAL_SESSION' && !currentSession) {
           // This can happen if the stored session is invalid or expired on load
@@ -188,6 +261,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Clear role data immediately
       setRole(null);
       setEmployeeId(null);
+      setLastFetchedUserId(null);
+      setIsRoleFetching(false);
 
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
