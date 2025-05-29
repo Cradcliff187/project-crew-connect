@@ -409,22 +409,35 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
   const actionGroups: ActionGroup[] = [
     {
       items: [
-        { label: 'View Details', icon: <Eye className="h-4 w-4" />, onClick: handleViewDetails },
-        { label: 'Edit', icon: <Edit className="h-4 w-4" />, onClick: handleViewDetails },
+        {
+          label: 'View Details',
+          icon: <Eye className="h-4 w-4" />,
+          onClick: handleViewDetails,
+          className: 'text-[#0485ea] hover:text-[#0375d1] font-opensans',
+        },
+        {
+          label: 'Edit',
+          icon: <Edit className="h-4 w-4" />,
+          onClick: handleViewDetails,
+          className: 'text-gray-600 hover:text-gray-800 font-opensans',
+        },
         {
           label: 'New Version',
           icon: <FileUp className="h-4 w-4" />,
           onClick: handleCreateNewVersion,
+          className: 'text-gray-600 hover:text-gray-800 font-opensans',
         },
         {
           label: 'Duplicate',
           icon: <Copy className="h-4 w-4" />,
           onClick: handleDuplicateEstimate,
+          className: 'text-gray-600 hover:text-gray-800 font-opensans',
         },
         {
           label: 'Download PDF',
           icon: <Download className="h-4 w-4" />,
           onClick: handleDownloadPDF,
+          className: 'text-gray-600 hover:text-gray-800 font-opensans',
         },
       ],
     },
@@ -434,7 +447,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           label: 'Delete',
           icon: <Trash2 className="h-4 w-4" />,
           onClick: () => setDeleteDialogOpen(true),
-          className: 'text-destructive',
+          className: 'text-red-600 hover:text-red-700 font-opensans',
         },
       ],
     },
@@ -450,14 +463,14 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     <>
       <TableRow
         key={estimate.id}
-        className="hover:bg-primary/5 transition-colors cursor-pointer"
+        className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
         onClick={handleViewDetails}
       >
-        <TableCell className="font-medium">
+        <TableCell className="font-medium font-opensans">
           {estimate.id ? (
             <Link
               to={`/estimates/${estimate.id}`}
-              className="text-primary hover:underline"
+              className="text-[#0485ea] hover:underline font-opensans"
               onClick={e => e.stopPropagation()}
             >
               {estimate.id.startsWith('EST-')
@@ -468,17 +481,19 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
             'N/A'
           )}
         </TableCell>
-        <TableCell>{estimate.client || 'No Client'}</TableCell>
-        <TableCell>{estimate.project || 'No Project'}</TableCell>
-        <TableCell>{formatDate(estimate.latestRevisionDate || estimate.date)}</TableCell>
-        <TableCell>
+        <TableCell className="font-opensans">{estimate.client || 'No Client'}</TableCell>
+        <TableCell className="font-opensans">{estimate.project || 'No Project'}</TableCell>
+        <TableCell className="font-opensans">
+          {formatDate(estimate.latestRevisionDate || estimate.date)}
+        </TableCell>
+        <TableCell className="font-opensans">
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
                 <span className="cursor-help">{formatCurrency(estimate.amount)}</span>
               </TooltipTrigger>
               <TooltipContent side="top" align="center">
-                <p>Total amount from the latest revision.</p>
+                <p className="font-opensans">Total amount from the latest revision.</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -494,17 +509,19 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-montserrat">Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription className="font-opensans">
               This action cannot be undone. This will permanently delete the estimate and all
               associated revisions and items.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting} className="font-opensans">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteEstimate}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 font-opensans"
               disabled={isDeleting}
             >
               {isDeleting ? 'Deleting...' : 'Delete'}

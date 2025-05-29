@@ -62,14 +62,18 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
     <div className="flex justify-between items-start">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Estimate #{data.estimateid.substring(4, 10)}</h1>
+          <h1 className="text-2xl font-bold font-montserrat">
+            Estimate #{data.estimateid.substring(4, 10)}
+          </h1>
           <EstimateStatusControl
             estimateId={data.estimateid}
             currentStatus={data.status}
             onStatusChange={onStatusChange}
           />
         </div>
-        <p className="text-gray-500 mt-1">Created on {formatDate(data.datecreated)}</p>
+        <p className="text-gray-500 mt-1 font-opensans">
+          Created on {formatDate(data.datecreated)}
+        </p>
       </div>
 
       <div className="flex items-center gap-2">
@@ -78,7 +82,7 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setRevisionDialogOpen(true)}
-            className="flex items-center"
+            className="flex items-center font-opensans"
           >
             <FileUp className="h-4 w-4 mr-1" />
             Create Revision
@@ -86,7 +90,12 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
         )}
 
         {showConvertButton && (
-          <Button variant="outline" size="sm" onClick={handleConvert} className="flex items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleConvert}
+            className="flex items-center font-opensans"
+          >
             <ArrowRightLeft className="h-4 w-4 mr-1" />
             Convert to Project
           </Button>

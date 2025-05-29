@@ -95,9 +95,9 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
         <div>
-          <h3 className="text-lg font-semibold">{workOrder.title}</h3>
+          <h3 className="text-lg font-semibold font-montserrat">{workOrder.title}</h3>
           {workOrder.po_number && (
-            <p className="text-sm text-muted-foreground">PO #{workOrder.po_number}</p>
+            <p className="text-sm text-muted-foreground font-opensans">PO #{workOrder.po_number}</p>
           )}
         </div>
 
@@ -106,16 +106,16 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="overview" className="text-sm">
+          <TabsTrigger value="overview" className="text-sm font-opensans">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="documents" className="text-sm">
+          <TabsTrigger value="documents" className="text-sm font-opensans">
             Documents
           </TabsTrigger>
-          <TabsTrigger value="time" className="text-sm">
+          <TabsTrigger value="time" className="text-sm font-opensans">
             Time Tracking
           </TabsTrigger>
-          <TabsTrigger value="expenses" className="text-sm">
+          <TabsTrigger value="expenses" className="text-sm font-opensans">
             Expenses
           </TabsTrigger>
         </TabsList>
@@ -145,8 +145,8 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
             <div className="md:col-span-2">
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="text-base font-medium mb-4">Summary</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="text-base font-medium mb-4 font-montserrat">Summary</h3>
+                  <p className="text-sm text-muted-foreground font-opensans">
                     This work order is currently{' '}
                     <span className="font-medium">{workOrder.progress || 0}% complete</span>.
                     {workOrder.status === 'COMPLETED'
@@ -157,7 +157,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
                   </p>
 
                   {workOrder.scheduled_date && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-muted-foreground mt-2 font-opensans">
                       Scheduled for completion by{' '}
                       {new Date(workOrder.scheduled_date).toLocaleDateString()}.
                     </p>

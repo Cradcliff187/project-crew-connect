@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import QuickLogWizard from '@/components/time-entries/QuickLogWizard';
+import StandardizedDocumentUploadDialog from '@/components/documents/StandardizedDocumentUploadDialog';
 import {
   Clock,
   MapPin,
@@ -19,6 +20,7 @@ import {
   Briefcase,
   Building2,
   Loader2,
+  User,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,6 +33,7 @@ const FieldUserDashboard: React.FC = () => {
   const { timeEntries, isLoading, createTimeEntry, refetch } = useRoleBasedTimeEntries();
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [showQuickLog, setShowQuickLog] = useState(false);
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [assignments, setAssignments] = useState<FieldUserAssignment[]>([]);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
@@ -187,6 +190,18 @@ const FieldUserDashboard: React.FC = () => {
     refetch();
   };
 
+  const handleReceiptUploadSuccess = (documentId?: string) => {
+    setShowReceiptUpload(false);
+    toast({
+      title: 'Receipt Uploaded Successfully! 📄',
+      description: 'Your receipt has been processed and saved.',
+    });
+  };
+
+  const handleReceiptUploadCancel = () => {
+    setShowReceiptUpload(false);
+  };
+
   // Calculate weekly summary from actual time entries
   const weeklyStats = {
     totalHours: timeEntries.reduce((sum, entry) => sum + entry.hours_worked, 0),
@@ -208,73 +223,82 @@ const FieldUserDashboard: React.FC = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Header */}
+        {/* Header - AKC Brand Styling */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Good morning! 👋</h1>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center font-montserrat">
+              <User className="h-8 w-8 mr-3 text-[#0485ea]" />
+              Good morning! 👋
+            </h1>
             <div className="flex items-center space-x-2">
               {isTestingRoute && isAdmin && (
                 <Badge
                   variant="destructive"
-                  className="bg-orange-100 text-orange-800 border-orange-200"
+                  className="bg-orange-100 text-orange-800 border-orange-200 font-opensans"
                 >
                   Admin Testing Mode
                 </Badge>
               )}
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Badge
+                variant="outline"
+                className="bg-blue-50 text-blue-700 border-blue-200 font-opensans"
+              >
                 Field User Interface
               </Badge>
             </div>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 font-opensans">
             {isTestingRoute && isAdmin
               ? `Testing field user interface as ${user?.user_metadata?.full_name || 'Admin'}`
               : `Welcome back, ${user?.user_metadata?.full_name || 'Field User'}`}
           </p>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - AKC Brand Styling */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <Card
-            className="hover:shadow-lg transition-all duration-200 cursor-pointer group"
+            className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer group"
             onClick={() => setShowQuickLog(true)}
           >
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
-                <Plus className="h-6 w-6 text-blue-600" />
+                <Plus className="h-6 w-6 text-[#0485ea]" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Quick Log</h3>
-              <p className="text-sm text-gray-600">Log time for current work</p>
+              <h3 className="font-semibold text-gray-900 mb-1 font-montserrat">Quick Log</h3>
+              <p className="text-sm text-gray-600 font-opensans">Log time for current work</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group">
+          <Card
+            className="bg-gradient-to-r from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+            onClick={() => setShowReceiptUpload(true)}
+          >
             <CardContent className="p-6 text-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors">
                 <Camera className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Add Receipt</h3>
-              <p className="text-sm text-gray-600">Scan expense receipts</p>
+              <h3 className="font-semibold text-gray-900 mb-1 font-montserrat">Add Receipt</h3>
+              <p className="text-sm text-gray-600 font-opensans">Scan expense receipts</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Today's Assignments */}
+        {/* Today's Assignments - AKC Brand Styling */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-              <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center font-montserrat">
+              <Briefcase className="h-5 w-5 mr-2 text-[#0485ea]" />
               My Assignments
             </h2>
             {isLoadingAssignments ? (
               <div className="flex items-center space-x-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-600">Loading...</span>
+                <span className="text-sm text-gray-600 font-opensans">Loading...</span>
               </div>
             ) : (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700 font-opensans">
                 {assignments.length} active
               </Badge>
             )}
@@ -283,7 +307,7 @@ const FieldUserDashboard: React.FC = () => {
           {isLoadingAssignments ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i} className="animate-pulse shadow-sm border border-gray-200">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
@@ -310,11 +334,11 @@ const FieldUserDashboard: React.FC = () => {
                 <Card
                   key={assignment.id}
                   className={cn(
-                    'hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4',
+                    'hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 shadow-sm border border-gray-200',
                     assignment.priority === 'high' && 'border-l-red-500',
                     assignment.priority === 'medium' && 'border-l-yellow-500',
                     assignment.priority === 'low' && 'border-l-green-500',
-                    selectedAssignment === assignment.id && 'ring-2 ring-blue-500 ring-opacity-50'
+                    selectedAssignment === assignment.id && 'ring-2 ring-[#0485ea] ring-opacity-50'
                   )}
                   onClick={() => setSelectedAssignment(assignment.id)}
                 >
@@ -322,30 +346,38 @@ const FieldUserDashboard: React.FC = () => {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         {assignment.entity_type === 'project' ? (
-                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <Building2 className="h-5 w-5 text-[#0485ea]" />
                         ) : (
                           <Briefcase className="h-5 w-5 text-green-600" />
                         )}
-                        <h3 className="font-semibold text-gray-900">{assignment.title}</h3>
+                        <h3 className="font-semibold text-gray-900 font-montserrat">
+                          {assignment.title}
+                        </h3>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={getPriorityColor(assignment.priority)}>
+                        <Badge
+                          variant={getPriorityColor(assignment.priority)}
+                          className="font-opensans"
+                        >
                           {assignment.priority}
                         </Badge>
-                        <Badge variant="outline" className={getStatusColor(assignment.status)}>
+                        <Badge
+                          variant="outline"
+                          className={cn(getStatusColor(assignment.status), 'font-opensans')}
+                        >
                           {assignment.status.replace('_', ' ')}
                         </Badge>
                       </div>
                     </div>
 
-                    <p className="text-gray-600 mb-4">{assignment.description}</p>
+                    <p className="text-gray-600 mb-4 font-opensans">{assignment.description}</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center text-gray-600">
+                      <div className="flex items-center text-gray-600 font-opensans">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span>Due: {formatDate(assignment.due_date)}</span>
                       </div>
-                      <div className="flex items-center text-gray-600">
+                      <div className="flex items-center text-gray-600 font-opensans">
                         <MapPin className="h-4 w-4 mr-2" />
                         <span>{assignment.location}</span>
                       </div>
@@ -356,7 +388,7 @@ const FieldUserDashboard: React.FC = () => {
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
                             onClick={e => {
                               e.stopPropagation();
                               setShowQuickLog(true);
@@ -365,7 +397,7 @@ const FieldUserDashboard: React.FC = () => {
                             <Clock className="h-4 w-4 mr-2" />
                             Log Time
                           </Button>
-                          <Button size="sm" variant="outline" className="flex-1">
+                          <Button size="sm" variant="outline" className="flex-1 font-opensans">
                             <FileText className="h-4 w-4 mr-2" />
                             View Details
                           </Button>
@@ -380,11 +412,17 @@ const FieldUserDashboard: React.FC = () => {
             <Card className="border-dashed border-2 border-gray-300">
               <CardContent className="p-8 text-center">
                 <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No active assignments</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-2 font-montserrat">
+                  No active assignments
+                </h3>
+                <p className="text-gray-600 mb-4 font-opensans">
                   No active projects or work orders found for time logging
                 </p>
-                <Button onClick={() => setShowQuickLog(true)} variant="outline">
+                <Button
+                  onClick={() => setShowQuickLog(true)}
+                  variant="outline"
+                  className="font-opensans"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Log Time Anyway
                 </Button>
@@ -393,14 +431,14 @@ const FieldUserDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Recent Time Entries */}
+        {/* Recent Time Entries - AKC Brand Styling */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center font-montserrat">
               <Clock className="h-5 w-5 mr-2 text-green-600" />
               My Recent Entries
             </h2>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="font-opensans">
               View All
             </Button>
           </div>
@@ -408,7 +446,7 @@ const FieldUserDashboard: React.FC = () => {
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i} className="animate-pulse shadow-sm border border-gray-200">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -427,7 +465,10 @@ const FieldUserDashboard: React.FC = () => {
           ) : recentEntries.length > 0 ? (
             <div className="space-y-3">
               {recentEntries.map(entry => (
-                <Card key={entry.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={entry.id}
+                  className="hover:shadow-md transition-shadow shadow-sm border border-gray-200"
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -438,8 +479,10 @@ const FieldUserDashboard: React.FC = () => {
                           )}
                         />
                         <div>
-                          <p className="font-medium text-gray-900">{entry.entity_name}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className="font-medium text-gray-900 font-montserrat">
+                            {entry.entity_name}
+                          </p>
+                          <p className="text-sm text-gray-600 font-opensans">
                             {formatDate(entry.date)} • {entry.hours}h
                           </p>
                         </div>
@@ -455,7 +498,8 @@ const FieldUserDashboard: React.FC = () => {
                           className={cn(
                             entry.status === 'processed'
                               ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
+                              : 'bg-yellow-100 text-yellow-800',
+                            'font-opensans'
                           )}
                         >
                           {entry.status}
@@ -470,11 +514,16 @@ const FieldUserDashboard: React.FC = () => {
             <Card className="border-dashed border-2 border-gray-300">
               <CardContent className="p-8 text-center">
                 <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No time entries yet</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-2 font-montserrat">
+                  No time entries yet
+                </h3>
+                <p className="text-gray-600 mb-4 font-opensans">
                   Start logging your work time to see entries here
                 </p>
-                <Button onClick={() => setShowQuickLog(true)}>
+                <Button
+                  onClick={() => setShowQuickLog(true)}
+                  className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Log Your First Entry
                 </Button>
@@ -483,10 +532,10 @@ const FieldUserDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Weekly Summary */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        {/* Weekly Summary - AKC Brand Styling */}
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center">
+            <CardTitle className="text-blue-900 flex items-center font-montserrat">
               <Timer className="h-5 w-5 mr-2" />
               This Week's Summary
             </CardTitle>
@@ -494,24 +543,28 @@ const FieldUserDashboard: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-900">
+                <p className="text-2xl font-bold text-blue-900 font-montserrat">
                   {weeklyStats.totalHours.toFixed(1)}
                 </p>
-                <p className="text-sm text-blue-700">Total Hours</p>
+                <p className="text-sm text-blue-700 font-opensans">Total Hours</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-900">{weeklyStats.projects}</p>
-                <p className="text-sm text-blue-700">Projects</p>
+                <p className="text-2xl font-bold text-blue-900 font-montserrat">
+                  {weeklyStats.projects}
+                </p>
+                <p className="text-sm text-blue-700 font-opensans">Projects</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-900">{weeklyStats.workOrders}</p>
-                <p className="text-sm text-blue-700">Work Orders</p>
+                <p className="text-2xl font-bold text-blue-900 font-montserrat">
+                  {weeklyStats.workOrders}
+                </p>
+                <p className="text-sm text-blue-700 font-opensans">Work Orders</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-900">
+                <p className="text-2xl font-bold text-blue-900 font-montserrat">
                   ${weeklyStats.expenses.toFixed(0)}
                 </p>
-                <p className="text-sm text-blue-700">Expenses</p>
+                <p className="text-sm text-blue-700 font-opensans">Expenses</p>
               </div>
             </div>
           </CardContent>
@@ -525,6 +578,24 @@ const FieldUserDashboard: React.FC = () => {
             assignments={assignments}
           />
         )}
+
+        {/* Receipt Upload Dialog */}
+        <StandardizedDocumentUploadDialog
+          open={showReceiptUpload}
+          onOpenChange={setShowReceiptUpload}
+          entityType="EMPLOYEE"
+          entityId={user?.id || ''}
+          onSuccess={handleReceiptUploadSuccess}
+          onCancel={handleReceiptUploadCancel}
+          title="Upload Receipt"
+          description="Upload a receipt for work-related expenses"
+          isReceiptUpload={true}
+          prefillData={{
+            category: 'receipt',
+            notes: `Receipt uploaded by ${user?.user_metadata?.full_name || 'Field User'}`,
+            tags: ['receipt', 'field-user', 'expense'],
+          }}
+        />
       </div>
     </div>
   );

@@ -35,7 +35,12 @@ const WorkOrdersHeader = ({
 
         <div className="flex items-center gap-2 w-full md:w-auto">
           <FilterButton />
-          <Button size="sm" variant="default" onClick={() => setShowAddDialog(true)}>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => setShowAddDialog(true)}
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+          >
             <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
             New Work Order
           </Button>

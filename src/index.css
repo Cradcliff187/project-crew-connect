@@ -79,6 +79,27 @@
   }
 }
 
+/* AKC Brand Font Utility Classes */
+@layer utilities {
+  .font-montserrat {
+    font-family:
+      'Montserrat',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+  }
+
+  .font-opensans {
+    font-family:
+      'Open Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+  }
+}
+
 /* Card styles with gradients and glass effects */
 @layer components {
   .card-gradient {

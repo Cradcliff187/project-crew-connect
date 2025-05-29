@@ -1,0 +1,58 @@
+# Google App Engine deployment configuration
+runtime: nodejs18
+
+# Environment variables for production
+env_variables:
+  # Server Configuration
+  SERVER_PORT: '8080' # App Engine uses port 8080
+  NODE_ENV: 'production'
+
+  # Google Maps API Key
+  GOOGLE_MAPS_API_KEY: 'AIzaSyCYCkSgaTqL25zJhMbwBnD4gMVlJzdSw0I'
+
+  # Google OAuth Configuration (UPDATE THESE FOR PRODUCTION)
+  GOOGLE_CLIENT_ID: '1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com'
+  GOOGLE_CLIENT_SECRET: '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'
+  GOOGLE_REDIRECT_URI: 'https://YOUR-DOMAIN.com/auth/google/callback' # UPDATE THIS
+  GOOGLE_SCOPES: 'https://www.googleapis.com/auth/calendar'
+
+  # Supabase Configuration
+  SUPABASE_URL: 'https://zrxezqllmpdlhiudutme.supabase.co'
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ'
+  SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY'
+  SUPABASE_PROJECT_ID: 'zrxezqllmpdlhiudutme'
+
+  # API Configuration (UPDATE THESE FOR PRODUCTION)
+  VITE_API_BASE_URL: 'https://YOUR-API-DOMAIN.com/api' # UPDATE THIS
+  CLIENT_ID: '1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com'
+  CLIENT_SECRET: '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'
+  REDIRECT_URI: 'https://YOUR-DOMAIN.com/auth/google/callback' # UPDATE THIS
+
+  # Google Calendar Configuration
+  GOOGLE_CALENDAR_PROJECT: 'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com'
+  GOOGLE_CALENDAR_WORK_ORDER: 'c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com'
+  GOOGLE_CALENDAR_ADHOC: 'primary'
+
+  # Webhook Configuration (UPDATE THIS FOR PRODUCTION)
+  WEBHOOK_URL: 'https://zrxezqllmpdlhiudutme.functions.supabase.co/calendarWebhook'
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.6
+
+# Health check configuration
+readiness_check:
+  path: '/health'
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+liveness_check:
+  path: '/health'
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 4
+  success_threshold: 2

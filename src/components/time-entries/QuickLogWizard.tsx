@@ -500,20 +500,28 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
   const renderStep1 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Select Assignment</h3>
-        <p className="text-gray-600">Choose the project or work order you're logging time for</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 font-montserrat">
+          Select Assignment
+        </h3>
+        <p className="text-gray-600 font-opensans">
+          Choose the project or work order you worked on
+        </p>
       </div>
 
       {isLoadingAssignments ? (
-        <div className="flex items-center justify-center py-8">
+        <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading active work...</span>
+          <span className="ml-2 text-gray-600 font-opensans">Loading assignments...</span>
         </div>
       ) : assignments.length === 0 ? (
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Work Available</h3>
-          <p className="text-gray-600">No active projects or work orders found for time logging.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2 font-montserrat">
+            No Active Work Available
+          </h3>
+          <p className="text-gray-600 font-opensans">
+            No active projects or work orders found for time logging.
+          </p>
         </div>
       ) : (
         <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -525,7 +533,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 assignment.priority === 'high' && 'border-l-red-500',
                 assignment.priority === 'medium' && 'border-l-yellow-500',
                 assignment.priority === 'low' && 'border-l-green-500',
-                selectedAssignment?.id === assignment.id && 'ring-2 ring-blue-500 bg-blue-50'
+                selectedAssignment?.id === assignment.id && 'ring-2 ring-[#0485ea] bg-blue-50'
               )}
               onClick={() => setSelectedAssignment(assignment)}
             >
@@ -533,23 +541,23 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     {assignment.entity_type === 'project' ? (
-                      <Building2 className="h-4 w-4 text-blue-600" />
+                      <Building2 className="h-4 w-4 text-[#0485ea]" />
                     ) : (
                       <Briefcase className="h-4 w-4 text-green-600" />
                     )}
-                    <h4 className="font-medium text-gray-900">{assignment.title}</h4>
+                    <h4 className="font-medium text-gray-900 font-opensans">{assignment.title}</h4>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant={getPriorityColor(assignment.priority)}>
                       {assignment.priority}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs font-opensans">
                       {assignment.entity_type === 'project' ? 'Project' : 'Work Order'}
                     </Badge>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{assignment.description}</p>
-                <div className="flex items-center text-xs text-gray-500">
+                <p className="text-sm text-gray-600 mb-2 font-opensans">{assignment.description}</p>
+                <div className="flex items-center text-xs text-gray-500 font-opensans">
                   <MapPin className="h-3 w-3 mr-1" />
                   {assignment.location}
                 </div>
@@ -564,8 +572,8 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
   const renderStep2 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Details</h3>
-        <p className="text-gray-600">When did you work and do you have receipts?</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 font-montserrat">Work Details</h3>
+        <p className="text-gray-600 font-opensans">When did you work and do you have receipts?</p>
       </div>
 
       <div className="space-y-4">
@@ -672,13 +680,15 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Set Time</h3>
-        <p className="text-gray-600">What time did you start and finish?</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 font-montserrat">Set Time</h3>
+        <p className="text-gray-600 font-opensans">What time did you start and finish?</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="start-time">Start Time</Label>
+          <Label htmlFor="start-time" className="font-opensans">
+            Start Time
+          </Label>
           <Input
             id="start-time"
             type="time"
@@ -688,7 +698,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
           />
         </div>
         <div>
-          <Label htmlFor="end-time">End Time</Label>
+          <Label htmlFor="end-time" className="font-opensans">
+            End Time
+          </Label>
           <Input
             id="end-time"
             type="time"
@@ -704,26 +716,32 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <Timer className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">Time Summary</span>
+                <Timer className="h-5 w-5 text-[#0485ea]" />
+                <span className="font-medium text-blue-900 font-montserrat">Time Summary</span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-blue-700">Total Hours</p>
-                <p className="text-xl font-bold text-blue-900">{calculatedHours.toFixed(1)}h</p>
+                <p className="text-blue-700 font-opensans">Total Hours</p>
+                <p className="text-xl font-bold text-blue-900 font-montserrat">
+                  {calculatedHours.toFixed(1)}h
+                </p>
               </div>
               {overtimeHours > 0 && (
                 <div>
-                  <p className="text-orange-700">Overtime</p>
-                  <p className="text-xl font-bold text-orange-900">{overtimeHours.toFixed(1)}h</p>
+                  <p className="text-orange-700 font-opensans">Overtime</p>
+                  <p className="text-xl font-bold text-orange-900 font-montserrat">
+                    {overtimeHours.toFixed(1)}h
+                  </p>
                 </div>
               )}
             </div>
             {overtimeHours > 0 && (
               <div className="mt-2 flex items-center space-x-1 text-orange-700">
                 <AlertTriangle className="h-4 w-4" />
-                <span className="text-sm">Overtime will be calculated at 1.5x rate</span>
+                <span className="text-sm font-opensans">
+                  Overtime will be calculated at 1.5x rate
+                </span>
               </div>
             )}
           </CardContent>
@@ -733,7 +751,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
       {/* Quick Time Presets */}
       <div className="space-y-3">
         <div>
-          <Label className="text-sm font-medium text-gray-700 mb-2 block">Quick Start Times</Label>
+          <Label className="text-sm font-medium text-gray-700 mb-2 block font-opensans">
+            Quick Start Times
+          </Label>
           <div className="grid grid-cols-4 gap-2">
             {['07:00', '08:00', '09:00', '10:00'].map(time => (
               <Button
@@ -741,7 +761,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 variant={formData.start_time === time ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFormData(prev => ({ ...prev, start_time: time }))}
-                className="text-xs"
+                className="text-xs font-opensans"
               >
                 {time}
               </Button>
@@ -750,7 +770,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-gray-700 mb-2 block">Quick End Times</Label>
+          <Label className="text-sm font-medium text-gray-700 mb-2 block font-opensans">
+            Quick End Times
+          </Label>
           <div className="grid grid-cols-4 gap-2">
             {['16:00', '17:00', '18:00', '19:00'].map(time => (
               <Button
@@ -758,7 +780,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 variant={formData.end_time === time ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFormData(prev => ({ ...prev, end_time: time }))}
-                className="text-xs"
+                className="text-xs font-opensans"
               >
                 {time}
               </Button>
@@ -768,7 +790,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
 
         {/* Common Work Day Presets */}
         <div>
-          <Label className="text-sm font-medium text-gray-700 mb-2 block">Common Work Days</Label>
+          <Label className="text-sm font-medium text-gray-700 mb-2 block font-opensans">
+            Common Work Days
+          </Label>
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
@@ -776,7 +800,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
               onClick={() =>
                 setFormData(prev => ({ ...prev, start_time: '08:00', end_time: '17:00' }))
               }
-              className="text-xs"
+              className="text-xs font-opensans"
             >
               8AM - 5PM (9h)
             </Button>
@@ -786,7 +810,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
               onClick={() =>
                 setFormData(prev => ({ ...prev, start_time: '09:00', end_time: '17:00' }))
               }
-              className="text-xs"
+              className="text-xs font-opensans"
             >
               9AM - 5PM (8h)
             </Button>
@@ -799,14 +823,18 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
   const renderStep4 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Receipt Categories</h3>
-        <p className="text-gray-600">How should receipts be categorized?</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 font-montserrat">
+          Receipt Categories
+        </h3>
+        <p className="text-gray-600 font-opensans">How should receipts be categorized?</p>
       </div>
 
       {formData.has_receipts ? (
         <div className="space-y-4">
           <div>
-            <Label htmlFor="expense-category">Expense Category</Label>
+            <Label htmlFor="expense-category" className="font-opensans">
+              Expense Category
+            </Label>
             <Select
               value={formData.receipt_data?.expense_category_id || ''}
               onValueChange={value =>
@@ -823,9 +851,11 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 {expenseCategories.map(category => (
                   <SelectItem key={category.id} value={category.id}>
                     <div>
-                      <div className="font-medium">{category.name}</div>
+                      <div className="font-medium font-opensans">{category.name}</div>
                       {category.description && (
-                        <div className="text-xs text-gray-500">{category.description}</div>
+                        <div className="text-xs text-gray-500 font-opensans">
+                          {category.description}
+                        </div>
                       )}
                     </div>
                   </SelectItem>
@@ -835,7 +865,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="cost-category">Cost Category</Label>
+            <Label htmlFor="cost-category" className="font-opensans">
+              Cost Category
+            </Label>
             <Select
               value={formData.receipt_data?.cost_category_id || ''}
               onValueChange={value =>
@@ -852,9 +884,11 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
                 {costCategories.map(category => (
                   <SelectItem key={category.category_id} value={category.category_id}>
                     <div>
-                      <div className="font-medium">{category.name}</div>
+                      <div className="font-medium font-opensans">{category.name}</div>
                       {category.description && (
-                        <div className="text-xs text-gray-500">{category.description}</div>
+                        <div className="text-xs text-gray-500 font-opensans">
+                          {category.description}
+                        </div>
                       )}
                     </div>
                   </SelectItem>
@@ -864,7 +898,9 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="receipt-description">Receipt Description (Optional)</Label>
+            <Label htmlFor="receipt-description" className="font-opensans">
+              Receipt Description (Optional)
+            </Label>
             <Input
               id="receipt-description"
               placeholder="e.g., Materials for kitchen renovation"
@@ -891,7 +927,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
               }
               className="rounded border-gray-300"
             />
-            <Label htmlFor="is-billable" className="text-sm">
+            <Label htmlFor="is-billable" className="text-sm font-opensans">
               This expense is billable to the client
             </Label>
           </div>
@@ -899,8 +935,8 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
       ) : (
         <div className="text-center py-8">
           <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No receipts to categorize</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-gray-600 font-opensans">No receipts to categorize</p>
+          <p className="text-sm text-gray-500 mt-1 font-opensans">
             You can always add receipts later from the time entries page
           </p>
         </div>
@@ -914,10 +950,10 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span>Quick Log Time</span>
+              <Clock className="h-5 w-5 text-[#0485ea]" />
+              <span className="font-montserrat">Quick Log Time</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="font-opensans">
               Step {currentStep} of {totalSteps}
             </DialogDescription>
           </DialogHeader>
@@ -938,7 +974,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
               <Button
                 variant="outline"
                 onClick={currentStep === 1 ? onCancel : handlePrevious}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 font-opensans"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>{currentStep === 1 ? 'Cancel' : 'Previous'}</span>
@@ -947,7 +983,7 @@ const QuickLogWizard: React.FC<QuickLogWizardProps> = ({
               <Button
                 onClick={currentStep === totalSteps ? handleSubmit : handleNext}
                 disabled={!canProceedToNext()}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
               >
                 <span>{currentStep === totalSteps ? 'Submit' : 'Next'}</span>
                 {currentStep === totalSteps ? (

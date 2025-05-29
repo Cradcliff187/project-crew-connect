@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/ui/search-input';
 import CreateProjectWizard from './createWizard/CreateProjectWizard';
 import PageHeader from '@/components/layout/PageHeader';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ProjectsHeaderProps {
   searchQuery: string;
@@ -19,6 +21,8 @@ const ProjectsHeader = ({
   showAddDialog = false,
   setShowAddDialog = () => {},
 }: ProjectsHeaderProps) => {
+  const navigate = useNavigate();
+
   const openAddDialog = () => {
     if (setShowAddDialog) {
       setShowAddDialog(true);
@@ -29,6 +33,10 @@ const ProjectsHeader = ({
     if (setShowAddDialog) {
       setShowAddDialog(false);
     }
+  };
+
+  const handleViewSchedule = () => {
+    navigate('/scheduling');
   };
 
   return (
@@ -45,14 +53,19 @@ const ProjectsHeader = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => console.log('View schedule')}
-            className="hidden md:flex"
+            onClick={handleViewSchedule}
+            className="hidden md:flex font-opensans"
           >
             <CalendarClock className="mr-1 h-4 w-4" aria-hidden="true" />
             Schedule
           </Button>
 
-          <Button onClick={openAddDialog} size="sm" variant="default">
+          <Button
+            onClick={openAddDialog}
+            size="sm"
+            variant="default"
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+          >
             <PlusCircle className="mr-1 h-4 w-4" aria-hidden="true" />
             New Project
           </Button>

@@ -43,7 +43,7 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
         // Step 2: Fetch the actual projects using the IDs we collected
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
-          .select('projectid, projectname, status, createdon, total_budget')
+          .select('projectid, projectname, status, created_at, total_budget')
           .in('projectid', projectIds);
 
         if (projectsError) {
@@ -55,7 +55,7 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
             projectid: project.projectid,
             projectname: project.projectname,
             status: project.status || 'Unknown',
-            createdon: project.createdon,
+            createdon: project.created_at,
             total_budget: project.total_budget,
           }));
 

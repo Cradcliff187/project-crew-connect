@@ -49,13 +49,18 @@ const EstimatesHeader = ({
               <FilterButton />
 
               <Link to="/estimates/settings">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="font-opensans">
                   <Settings className="h-4 w-4 mr-1" aria-hidden="true" />
                   Email Settings
                 </Button>
               </Link>
 
-              <Button onClick={openEstimateForm} size="sm" variant="default">
+              <Button
+                onClick={openEstimateForm}
+                size="sm"
+                variant="default"
+                className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+              >
                 <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
                 New Estimate
               </Button>

@@ -34,6 +34,7 @@ import { projectFormSchema, type ProjectFormValues } from './schemas/projectForm
 import { statusOptions } from './ProjectConstants';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete';
 
 const ProjectEdit = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -72,6 +73,56 @@ const ProjectEdit = () => {
     },
   });
 
+  // Google Maps autocomplete for site location
+  const {
+    inputValue: siteAddressInputValue,
+    suggestions: siteAddressSuggestions,
+    loading: siteAddressLoading,
+    handleInputChange: handleSiteAddressInputChange,
+    handleSelectSuggestion: handleSiteAddressSelect,
+    setInputValueManual: setSiteAddressInputValue,
+  } = usePlacesAutocomplete({
+    onSelect: (placeDetails: PlaceDetails | null) => {
+      if (placeDetails) {
+        // Update form with selected place details
+        form.setValue('siteLocation.address', placeDetails.formatted_address || '');
+
+        // Extract city, state, zip from address components
+        const addressComponents = placeDetails.address_components || [];
+
+        const city =
+          addressComponents.find(component => component.types.includes('locality'))?.long_name ||
+          '';
+
+        const state =
+          addressComponents.find(component =>
+            component.types.includes('administrative_area_level_1')
+          )?.long_name || '';
+
+        const zip =
+          addressComponents.find(component => component.types.includes('postal_code'))?.long_name ||
+          '';
+
+        form.setValue('siteLocation.city', city);
+        form.setValue('siteLocation.state', state);
+        form.setValue('siteLocation.zip', zip);
+      }
+    },
+  });
+
+  // Keep site address input synchronized
+  const currentSiteAddressValue = form.watch('siteLocation.address');
+  useEffect(() => {
+    if (useDifferentSiteLocation && currentSiteAddressValue !== siteAddressInputValue) {
+      setSiteAddressInputValue(currentSiteAddressValue || '');
+    }
+  }, [
+    currentSiteAddressValue,
+    siteAddressInputValue,
+    setSiteAddressInputValue,
+    useDifferentSiteLocation,
+  ]);
+
   // Fetch project and customers data
   useEffect(() => {
     const fetchData = async () => {
@@ -101,10 +152,10 @@ const ProjectEdit = () => {
 
         // Determine if site location is different from customer address
         const hasSiteLocation = !!(
-          projectData.sitelocationaddress ||
-          projectData.sitelocationcity ||
-          projectData.sitelocationstate ||
-          projectData.sitelocationzip
+          projectData.site_address ||
+          projectData.site_city ||
+          projectData.site_state ||
+          projectData.site_zip
         );
 
         setUseDifferentSiteLocation(hasSiteLocation);
@@ -113,16 +164,16 @@ const ProjectEdit = () => {
         form.reset({
           projectName: projectData.projectname || '',
           customerId: projectData.customerid || '',
-          jobDescription: projectData.jobdescription || '',
+          jobDescription: projectData.description || '',
           status: projectData.status || 'active',
           start_date: projectData.start_date || undefined,
-          dueDate: projectData.due_date || undefined,
+          dueDate: projectData.target_end_date || undefined,
           siteLocationSameAsCustomer: !hasSiteLocation,
           siteLocation: {
-            address: projectData.sitelocationaddress || '',
-            city: projectData.sitelocationcity || '',
-            state: projectData.sitelocationstate || '',
-            zip: projectData.sitelocationzip || '',
+            address: projectData.site_address || '',
+            city: projectData.site_city || '',
+            state: projectData.site_state || '',
+            zip: projectData.site_zip || '',
           },
           newCustomer: {
             customerName: '',
@@ -442,7 +493,30 @@ const ProjectEdit = () => {
                             <FormItem>
                               <FormLabel>Address</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter address" {...field} />
+                                <div className="relative">
+                                  <Input
+                                    placeholder="Enter address"
+                                    value={siteAddressInputValue}
+                                    onChange={handleSiteAddressInputChange}
+                                    disabled={siteAddressLoading}
+                                  />
+                                  {siteAddressSuggestions.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                      {siteAddressSuggestions.map(suggestion => (
+                                        <button
+                                          key={suggestion.place_id}
+                                          type="button"
+                                          className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                          onClick={() =>
+                                            handleSiteAddressSelect(suggestion.place_id)
+                                          }
+                                        >
+                                          {suggestion.description}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
