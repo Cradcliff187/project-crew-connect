@@ -1,0 +1,212 @@
+{
+  "timestamp": "2025-05-29T18:19:22.917Z",
+  "frontendUrl": "http://localhost:8080",
+  "backendUrl": "http://localhost:3000",
+  "tests": [
+    {
+      "test": "Frontend Server Connectivity",
+      "status": "FAIL",
+      "message": "Frontend server not responding: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.956Z"
+    },
+    {
+      "test": "Backend Server Connectivity",
+      "status": "PASS",
+      "message": "Backend server is responding",
+      "details": {
+        "statusCode": 200,
+        "responseTime": 7
+      },
+      "timestamp": "2025-05-29T18:19:22.967Z"
+    },
+    {
+      "test": "Frontend Route: /",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.970Z"
+    },
+    {
+      "test": "Frontend Route: /projects",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.974Z"
+    },
+    {
+      "test": "Frontend Route: /work-orders",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.976Z"
+    },
+    {
+      "test": "Frontend Route: /estimates",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.978Z"
+    },
+    {
+      "test": "Frontend Route: /contacts",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.981Z"
+    },
+    {
+      "test": "Frontend Route: /employees",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.983Z"
+    },
+    {
+      "test": "Frontend Route: /vendors",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.986Z"
+    },
+    {
+      "test": "Frontend Route: /subcontractors",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.989Z"
+    },
+    {
+      "test": "Frontend Route: /documents",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.991Z"
+    },
+    {
+      "test": "Frontend Route: /reports",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.993Z"
+    },
+    {
+      "test": "Frontend Route: /admin/time-entries",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.994Z"
+    },
+    {
+      "test": "Frontend Route: /field-dashboard",
+      "status": "FAIL",
+      "message": "Route error: ",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:22.996Z"
+    },
+    {
+      "test": "Backend API: /api/auth/status",
+      "status": "PASS",
+      "message": "API endpoint accessible",
+      "details": {
+        "statusCode": 200,
+        "responseTime": 3
+      },
+      "timestamp": "2025-05-29T18:19:23.000Z"
+    },
+    {
+      "test": "Backend API: /test/drive",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.006Z"
+    },
+    {
+      "test": "Backend API: /test/calendar",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.012Z"
+    },
+    {
+      "test": "Backend API: /test/gmail",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.017Z"
+    },
+    {
+      "test": "Backend API: /api/maps/placedetails?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4",
+      "status": "FAIL",
+      "message": "Unexpected status code: 500",
+      "details": {},
+      "timestamp": "2025-05-29T18:19:23.023Z"
+    },
+    {
+      "test": "Backend API: /api/calendar/events",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.029Z"
+    },
+    {
+      "test": "Backend API: /api/calendar/list",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.034Z"
+    },
+    {
+      "test": "Backend API: /api/projects",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.041Z"
+    },
+    {
+      "test": "Backend API: /api/work-orders",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.045Z"
+    },
+    {
+      "test": "Backend API: /api/assignees/employee/1/email",
+      "status": "WARNING",
+      "message": "API requires authentication",
+      "details": {
+        "statusCode": 401
+      },
+      "timestamp": "2025-05-29T18:19:23.050Z"
+    },
+    {
+      "test": "Backend API: /api/ocr/process-receipt",
+      "status": "FAIL",
+      "message": "API endpoint not found",
+      "details": {
+        "statusCode": 404
+      },
+      "timestamp": "2025-05-29T18:19:23.054Z"
+    }
+  ],
+  "summary": {
+    "total": 25,
+    "passed": 2,
+    "failed": 15,
+    "warnings": 8
+  }
+}
