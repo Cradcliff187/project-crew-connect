@@ -59,41 +59,83 @@ interface CalendarConfig {
 }
 
 export class CalendarSelectionService {
+  // Cache for calendar configuration to prevent repeated API calls
+  private static configCache: CalendarConfig | null = null;
+  private static configCacheExpiry: number = 0;
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   // Get calendar configuration from backend API (since env vars aren't available in frontend)
   private static async getCalendarConfig(): Promise<CalendarConfig> {
+    // Check cache first
+    if (this.configCache && Date.now() < this.configCacheExpiry) {
+      return this.configCache;
+    }
+
     try {
       const response = await fetch('/api/calendar/config', {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        console.warn('Failed to fetch calendar config from backend, using fallback');
-        // Fallback configuration
-        return {
+      if (response.status === 401) {
+        // User not authenticated - return fallback without logging error
+        console.debug('Calendar config requires authentication, using fallback');
+        const fallbackConfig = {
           PROJECT:
             'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com',
           WORK_ORDER:
             'c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com',
           ADHOC: 'primary',
         };
+
+        // Cache fallback config for a shorter duration
+        this.configCache = fallbackConfig;
+        this.configCacheExpiry = Date.now() + 30 * 1000; // 30 seconds for fallback
+        return fallbackConfig;
+      }
+
+      if (!response.ok) {
+        console.warn('Failed to fetch calendar config from backend, using fallback');
+        // Fallback configuration
+        const fallbackConfig = {
+          PROJECT:
+            'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com',
+          WORK_ORDER:
+            'c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com',
+          ADHOC: 'primary',
+        };
+
+        // Cache fallback config
+        this.configCache = fallbackConfig;
+        this.configCacheExpiry = Date.now() + 30 * 1000; // 30 seconds for fallback
+        return fallbackConfig;
       }
 
       const config = await response.json();
-      return {
+      const calendarConfig = {
         PROJECT: config.GOOGLE_CALENDAR_PROJECT || 'primary',
         WORK_ORDER: config.GOOGLE_CALENDAR_WORK_ORDER || 'primary',
         ADHOC: 'primary',
       };
+
+      // Cache successful config
+      this.configCache = calendarConfig;
+      this.configCacheExpiry = Date.now() + this.CACHE_DURATION;
+      return calendarConfig;
     } catch (error) {
-      console.error('Error fetching calendar config:', error);
+      console.debug('Error fetching calendar config (using fallback):', error);
       // Return hardcoded fallback
-      return {
+      const fallbackConfig = {
         PROJECT:
           'c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com',
         WORK_ORDER:
           'c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com',
         ADHOC: 'primary',
       };
+
+      // Cache fallback config
+      this.configCache = fallbackConfig;
+      this.configCacheExpiry = Date.now() + 30 * 1000; // 30 seconds for fallback
+      return fallbackConfig;
     }
   }
 
