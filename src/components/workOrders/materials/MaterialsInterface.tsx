@@ -74,21 +74,27 @@ const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
         <div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Materials Summary</CardTitle>
+              <CardTitle className="text-base font-montserrat">Materials Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Items:</span>
-                  <span className="font-medium">{materials.length}</span>
+                  <span className="text-sm text-muted-foreground font-opensans">Total Items:</span>
+                  <span className="font-medium font-opensans">{materials.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Materials Cost:</span>
-                  <span className="font-semibold">{formatCurrency(totalMaterialsCost)}</span>
+                  <span className="text-sm text-muted-foreground font-opensans">
+                    Materials Cost:
+                  </span>
+                  <span className="font-semibold font-montserrat">
+                    {formatCurrency(totalMaterialsCost)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">With Receipts:</span>
-                  <span className="font-medium">
+                  <span className="text-sm text-muted-foreground font-opensans">
+                    With Receipts:
+                  </span>
+                  <span className="font-medium font-opensans">
                     {materials.filter(m => m.receipt_document_id).length} / {materials.length}
                   </span>
                 </div>

@@ -35,9 +35,9 @@ const WorkOrderDetailContent = ({
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
         <div>
-          <h3 className="text-lg font-semibold">{workOrder.title}</h3>
+          <h3 className="text-lg font-semibold font-montserrat">{workOrder.title}</h3>
           {workOrder.po_number && (
-            <p className="text-sm text-muted-foreground">PO #{workOrder.po_number}</p>
+            <p className="text-sm text-muted-foreground font-opensans">PO #{workOrder.po_number}</p>
           )}
         </div>
 
@@ -46,22 +46,22 @@ const WorkOrderDetailContent = ({
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid grid-cols-6 mb-4">
-          <TabsTrigger value="overview" className="text-sm">
+          <TabsTrigger value="overview" className="text-sm font-opensans">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="documents" className="text-sm">
+          <TabsTrigger value="documents" className="text-sm font-opensans">
             Documents
           </TabsTrigger>
-          <TabsTrigger value="time" className="text-sm">
+          <TabsTrigger value="time" className="text-sm font-opensans">
             Time Tracking
           </TabsTrigger>
-          <TabsTrigger value="expenses" className="text-sm">
+          <TabsTrigger value="expenses" className="text-sm font-opensans">
             Expenses
           </TabsTrigger>
-          <TabsTrigger value="materials" className="text-sm">
+          <TabsTrigger value="materials" className="text-sm font-opensans">
             Materials
           </TabsTrigger>
-          <TabsTrigger value="changes" className="text-sm">
+          <TabsTrigger value="changes" className="text-sm font-opensans">
             Change Orders
           </TabsTrigger>
         </TabsList>

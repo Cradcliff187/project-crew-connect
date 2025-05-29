@@ -1,23 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import useBreakpoint from '@/hooks/use-breakpoint';
-import { Plus, GridIcon, ListIcon, Download, ViewIcon, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Document } from '@/components/documents/schemas/documentSchema';
-import DocumentsDataTable from '@/components/documents/DocumentsDataTable';
-import DocumentsGrid from '@/components/documents/DocumentsGrid';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import StandardizedDocumentUpload from '@/components/documents/StandardizedDocumentUpload';
-import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
-import DocumentDeleteDialog from '@/components/documents/DocumentDeleteDialog';
-import { useToast } from '@/hooks/use-toast';
+import { Plus } from 'lucide-react';
+import { Document } from '@/components/documents/schemas/documentSchema';
+import DocumentsGrid from '@/components/documents/DocumentsGrid';
+import DocumentsDataTable from '@/components/documents/DocumentsDataTable';
+import DocumentViewToggle, { DocumentViewType } from '@/components/documents/DocumentViewToggle';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import DocumentViewer from '@/components/documents/DocumentViewer';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ProjectDocumentsSectionProps {
   projectId: string;
@@ -29,18 +22,18 @@ export default function ProjectDocumentsSection({
   projectName = 'Project',
 }: ProjectDocumentsSectionProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const { isAboveMd } = useBreakpoint('md');
-  const { toast } = useToast();
+  const [viewType, setViewType] = useState<DocumentViewType>('grid');
+  const { viewDocument, closeViewer, isViewerOpen, currentDocument } = useDocumentViewer();
 
-  const fetchDocuments = useCallback(async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    fetchDocuments();
+  }, [projectId]);
+
+  const fetchDocuments = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -49,118 +42,71 @@ export default function ProjectDocumentsSection({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Transform the data
-      const docsWithUrls = await Promise.all(
-        (data || []).map(async doc => {
-          let publicUrl = '';
-
-          try {
-            const { data: urlData } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-
-            publicUrl = urlData.publicUrl;
-          } catch (err) {
-            console.error('Error getting public URL:', err);
-          }
-
-          return {
-            ...doc,
-            url: publicUrl,
-            file_url: publicUrl,
-            is_latest_version: doc.is_latest_version ?? true,
-            mime_type: doc.file_type || 'application/octet-stream',
-          } as Document;
-        })
-      );
-
-      setDocuments(docsWithUrls);
-    } catch (err) {
-      console.error('Error fetching project documents:', err);
+      setDocuments((data as Document[]) || []);
+    } catch (error: any) {
+      console.error('Error fetching project documents:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load project documents.',
+        description: 'Failed to load project documents',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, toast]);
-
-  useEffect(() => {
-    if (projectId) {
-      fetchDocuments();
-    }
-  }, [projectId, fetchDocuments]);
-
-  const handleViewDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setViewerOpen(true);
   };
 
-  const handleDownloadDocument = async (document: Document) => {
-    if (document.url) {
-      window.open(document.url, '_blank');
-    } else {
+  const handleViewDocument = (document: Document) => {
+    viewDocument(document.document_id || '');
+  };
+
+  const handleDeleteDocument = async (document: Document) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('document_id', document.document_id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+
+      fetchDocuments();
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
       toast({
         title: 'Error',
-        description: 'Document URL not available.',
+        description: 'Failed to delete document',
         variant: 'destructive',
       });
     }
   };
 
-  const handleDeleteClick = (document: Document) => {
-    setSelectedDocument(document);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDocumentDeleted = async () => {
-    setDeleteDialogOpen(false);
-    await fetchDocuments();
-    toast({
-      title: 'Document Deleted',
-      description: 'The document has been successfully deleted.',
-    });
-  };
-
   const getDocumentActions = (document: Document) => [
     {
-      icon: <ViewIcon className="h-4 w-4" />,
+      icon: <Plus className="h-4 w-4" />,
       label: 'View',
       onClick: () => handleViewDocument(document),
     },
     {
-      icon: <Download className="h-4 w-4" />,
-      label: 'Download',
-      onClick: () => handleDownloadDocument(document),
-    },
-    {
-      icon: <Trash2 className="h-4 w-4" />,
+      icon: <Plus className="h-4 w-4" />,
       label: 'Delete',
-      onClick: () => handleDeleteClick(document),
+      onClick: () => handleDeleteDocument(document),
     },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Project Documents</h3>
+        <h3 className="text-lg font-medium font-montserrat">Project Documents</h3>
         <div className="flex items-center gap-2">
-          <ToggleGroup
-            type="single"
-            value={viewType}
-            onValueChange={v => v && setViewType(v as 'grid' | 'list')}
+          <DocumentViewToggle viewType={viewType} onViewTypeChange={setViewType} />
+          <Button
+            onClick={() => setUploadOpen(true)}
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
           >
-            <ToggleGroupItem value="grid" aria-label="Grid View">
-              <GridIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="List View">
-              <ListIcon className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Button onClick={() => setUploadOpen(true)} className="bg-[#0485ea] hover:bg-[#0375d1]">
             <Plus className="h-4 w-4 mr-1" />
             Add Document
           </Button>
@@ -187,50 +133,30 @@ export default function ProjectDocumentsSection({
 
       {/* Document Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Upload Project Document</DialogTitle>
-            <DialogDescription>
-              Upload documents related to {projectName} such as photos, contracts, or
-              specifications.
-            </DialogDescription>
+            <DialogTitle className="font-montserrat">Upload Project Document</DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto flex-grow pr-1 -mr-1">
-            <StandardizedDocumentUpload
-              entityType="PROJECT"
-              entityId={projectId}
-              onSuccess={() => {
-                setUploadOpen(false);
-                fetchDocuments();
-                toast({
-                  title: 'Document Uploaded',
-                  description: 'The document has been successfully uploaded.',
-                });
-              }}
-              onCancel={() => setUploadOpen(false)}
-              prefillData={{
-                notes: `Document for ${projectName}`,
-              }}
-              preventFormPropagation={true}
-            />
-          </div>
+          <EnhancedDocumentUpload
+            entityType="PROJECT"
+            entityId={projectId}
+            entityName={projectName}
+            onSuccess={() => {
+              setUploadOpen(false);
+              fetchDocuments();
+            }}
+          />
         </DialogContent>
       </Dialog>
 
-      {/* Document Viewer Dialog */}
-      <DocumentViewerDialog
-        document={selectedDocument}
-        open={viewerOpen}
-        onOpenChange={setViewerOpen}
-      />
-
-      {/* Document Delete Dialog */}
-      <DocumentDeleteDialog
-        document={selectedDocument}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onDocumentDeleted={handleDocumentDeleted}
-      />
+      {/* Document Viewer */}
+      {currentDocument && (
+        <DocumentViewer
+          document={currentDocument}
+          open={isViewerOpen}
+          onOpenChange={open => !open && closeViewer()}
+        />
+      )}
     </div>
   );
 }

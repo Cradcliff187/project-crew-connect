@@ -30,7 +30,7 @@ const WorkOrderStepTabs = ({ currentStep, setCurrentStep, isDisabled }: WorkOrde
             key={step.id}
             value={step.id}
             disabled={isDisabled}
-            className={`text-sm font-medium transition-all duration-200 ${
+            className={`text-sm font-medium transition-all duration-200 font-opensans ${
               currentStep === step.id
                 ? 'bg-[#0485ea] text-white shadow-md'
                 : 'hover:bg-gray-100 hover:text-[#0485ea]'

@@ -321,22 +321,22 @@ const ProjectDetail = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-6 w-full rounded-lg border p-1">
-            <TabsTrigger value="overview">
+            <TabsTrigger value="overview" className="font-opensans">
               <Banknote className="h-4 w-4 mr-1" /> Overview
             </TabsTrigger>
-            <TabsTrigger value="financials">
+            <TabsTrigger value="financials" className="font-opensans">
               <BarChart3 className="h-4 w-4 mr-1" /> Financials
             </TabsTrigger>
-            <TabsTrigger value="budget">
+            <TabsTrigger value="budget" className="font-opensans">
               <Banknote className="h-4 w-4 mr-1" /> Budget
             </TabsTrigger>
-            <TabsTrigger value="schedule">
+            <TabsTrigger value="schedule" className="font-opensans">
               <FileText className="h-4 w-4 mr-1" /> Schedule
             </TabsTrigger>
-            <TabsTrigger value="changes">
+            <TabsTrigger value="changes" className="font-opensans">
               <FileDown className="h-4 w-4 mr-1" /> Change Orders
             </TabsTrigger>
-            <TabsTrigger value="documents">
+            <TabsTrigger value="documents" className="font-opensans">
               <FileText className="h-4 w-4 mr-1" /> Documents
             </TabsTrigger>
           </TabsList>

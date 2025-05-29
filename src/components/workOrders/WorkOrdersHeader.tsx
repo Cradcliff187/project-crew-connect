@@ -2,7 +2,6 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { FilterButton } from '@/components/ui/filter-button';
-import PageHeader from '@/components/layout/PageHeader';
 import WorkOrderDialog from './dialog/WorkOrderDialog';
 
 interface WorkOrdersHeaderProps {
@@ -22,18 +21,16 @@ const WorkOrdersHeader = ({
 }: WorkOrdersHeaderProps) => {
   return (
     <>
-      <PageHeader
-        title="Work Orders"
-        description="Manage maintenance work orders and service requests"
-      >
+      {/* Clean Search and Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <SearchInput
           placeholder="Search work orders..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          containerClassName="w-full md:w-auto flex-1 max-w-sm"
+          containerClassName="w-full sm:w-auto flex-1 max-w-md"
         />
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2">
           <FilterButton />
           <Button
             size="sm"
@@ -45,7 +42,7 @@ const WorkOrdersHeader = ({
             New Work Order
           </Button>
         </div>
-      </PageHeader>
+      </div>
 
       <WorkOrderDialog
         isOpen={showAddDialog}

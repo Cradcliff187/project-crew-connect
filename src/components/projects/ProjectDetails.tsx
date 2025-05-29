@@ -65,22 +65,22 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-6 mb-4">
-          <TabsTrigger value="overview" className="text-sm">
+          <TabsTrigger value="overview" className="text-sm font-opensans">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="budget" className="text-sm">
+          <TabsTrigger value="budget" className="text-sm font-opensans">
             Budget
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="text-sm">
+          <TabsTrigger value="schedule" className="text-sm font-opensans">
             Timeline
           </TabsTrigger>
-          <TabsTrigger value="documents" className="text-sm">
+          <TabsTrigger value="documents" className="text-sm font-opensans">
             Documents
           </TabsTrigger>
-          <TabsTrigger value="changes" className="text-sm">
+          <TabsTrigger value="changes" className="text-sm font-opensans">
             Change Orders
           </TabsTrigger>
-          <TabsTrigger value="time" className="text-sm">
+          <TabsTrigger value="time" className="text-sm font-opensans">
             Time Tracking
           </TabsTrigger>
         </TabsList>

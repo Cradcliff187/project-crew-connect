@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,6 +21,7 @@ import {
   GitCompareArrows,
   GitBranch,
   Eye,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +55,7 @@ import RevisionComparisonView from '../detail/RevisionComparisonView';
 import EstimateRevisionDialog from '../detail/dialogs/EstimateRevisionDialog';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import usePdfGeneration from '../hooks/usePdfGeneration';
+import RevisionFinancialComparison from '../detail/RevisionFinancialComparison';
 
 interface EstimateRevisionsTabProps {
   estimateId: string;
@@ -830,7 +832,77 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-montserrat">Revision History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sortedRevisions.map(revision => (
+              <div
+                key={revision.id}
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  revision.id === currentRevisionId
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+                onClick={() => handleRevisionSelect(revision.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-5 w-5 text-gray-500" />
+                      <span className="font-medium font-opensans">Version {revision.version}</span>
+                      {isRevisionConverted(revision.id) && (
+                        <Badge className="bg-green-100 text-green-800 font-opensans">
+                          Converted
+                        </Badge>
+                      )}
+                      {revision.id === currentRevisionId && (
+                        <Badge className="bg-blue-100 text-blue-800 font-opensans">Current</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <div className="flex items-center space-x-1">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="font-opensans">{formatCurrency(revision.amount || 0)}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-opensans">{formatDate(revision.revision_date)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {revision.notes && (
+                  <div className="mt-2 text-sm text-gray-600 font-opensans">{revision.notes}</div>
+                )}
+              </div>
+            ))}
+
+            {sortedRevisions.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="font-opensans">No revisions found for this estimate.</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial Comparison */}
+      {sortedRevisions.length > 1 && (
+        <RevisionFinancialComparison
+          estimateId={estimateId}
+          revisions={sortedRevisions}
+          currentRevisionId={currentRevisionId}
+          contingencyPercentage={contingencyPercentage}
+        />
+      )}
+
       {renderViewToggle()}
 
       {viewType === 'table' && renderCompactTableView()}

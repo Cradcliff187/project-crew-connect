@@ -5,7 +5,6 @@ import { FilterButton } from '@/components/ui/filter-button';
 import EstimateMultiStepForm from './EstimateMultiStepForm';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import PageHeader from '@/components/common/layout/PageHeader';
 
 interface EstimatesHeaderProps {
   searchQuery: string;
@@ -33,41 +32,36 @@ const EstimatesHeader = ({
 
   return (
     <>
-      <PageHeader
-        title="Estimates"
-        subtitle="Create and manage client estimates"
-        actions={
-          <>
-            <SearchInput
-              placeholder="Search estimates..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              containerClassName="w-full md:w-auto flex-1 max-w-sm"
-            />
+      {/* Clean Search and Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <SearchInput
+          placeholder="Search estimates..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          containerClassName="w-full sm:w-auto flex-1 max-w-md"
+        />
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <FilterButton />
+        <div className="flex items-center gap-2">
+          <FilterButton />
 
-              <Link to="/estimates/settings">
-                <Button variant="outline" size="sm" className="font-opensans">
-                  <Settings className="h-4 w-4 mr-1" aria-hidden="true" />
-                  Email Settings
-                </Button>
-              </Link>
+          <Link to="/estimates/settings">
+            <Button variant="outline" size="sm" className="font-opensans">
+              <Settings className="h-4 w-4 mr-1" aria-hidden="true" />
+              Email Settings
+            </Button>
+          </Link>
 
-              <Button
-                onClick={openEstimateForm}
-                size="sm"
-                variant="default"
-                className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
-              >
-                <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-                New Estimate
-              </Button>
-            </div>
-          </>
-        }
-      />
+          <Button
+            onClick={openEstimateForm}
+            size="sm"
+            variant="default"
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+          >
+            <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+            New Estimate
+          </Button>
+        </div>
+      </div>
 
       <EstimateMultiStepForm open={estimateFormOpen} onClose={closeEstimateForm} />
     </>

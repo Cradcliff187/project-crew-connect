@@ -53,27 +53,27 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
     <div className="grid gap-6 md:grid-cols-2">
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-4">Estimate Information</h3>
+          <h3 className="text-lg font-medium mb-4 font-montserrat">Estimate Information</h3>
           <div className="space-y-3">
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Estimate ID:</span>
-              <span className="font-medium">{estimate.id}</span>
+              <span className="text-muted-foreground font-opensans">Estimate ID:</span>
+              <span className="font-medium font-opensans">{estimate.id}</span>
             </div>
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Date Created:</span>
-              <span className="font-medium">{formatDate(estimate.date)}</span>
+              <span className="text-muted-foreground font-opensans">Date Created:</span>
+              <span className="font-medium font-opensans">{formatDate(estimate.date)}</span>
             </div>
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium">{formatCurrency(estimate.amount)}</span>
+              <span className="text-muted-foreground font-opensans">Amount:</span>
+              <span className="font-medium font-opensans">{formatCurrency(estimate.amount)}</span>
             </div>
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Status:</span>
-              <span className="font-medium capitalize">{estimate.status}</span>
+              <span className="text-muted-foreground font-opensans">Status:</span>
+              <span className="font-medium capitalize font-opensans">{estimate.status}</span>
             </div>
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Total Revisions:</span>
-              <span className="font-medium">{estimate.versions}</span>
+              <span className="text-muted-foreground font-opensans">Total Revisions:</span>
+              <span className="font-medium font-opensans">{estimate.versions}</span>
             </div>
           </div>
         </CardContent>
@@ -81,20 +81,20 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
 
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-4">Client & Project Details</h3>
+          <h3 className="text-lg font-medium mb-4 font-montserrat">Client & Project Details</h3>
           <div className="space-y-3">
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Client:</span>
-              <span className="font-medium">{estimate.client}</span>
+              <span className="text-muted-foreground font-opensans">Client:</span>
+              <span className="font-medium font-opensans">{estimate.client}</span>
             </div>
             <div className="grid grid-cols-2">
-              <span className="text-muted-foreground">Project:</span>
-              <span className="font-medium">{estimate.project}</span>
+              <span className="text-muted-foreground font-opensans">Project:</span>
+              <span className="font-medium font-opensans">{estimate.project}</span>
             </div>
             {hasLocationData && (
               <div className="grid grid-cols-2">
-                <span className="text-muted-foreground">Location:</span>
-                <div className="font-medium">
+                <span className="text-muted-foreground font-opensans">Location:</span>
+                <div className="font-medium font-opensans">
                   {estimate.location?.address && <div>{estimate.location.address}</div>}
                   {(estimate.location?.city ||
                     estimate.location?.state ||
@@ -115,8 +115,10 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
       {estimate.description && (
         <Card className="md:col-span-2">
           <CardContent className="p-6">
-            <h3 className="text-lg font-medium mb-4">Description</h3>
-            <p className="whitespace-pre-wrap text-gray-700">{estimate.description}</p>
+            <h3 className="text-lg font-medium mb-4 font-montserrat">Description</h3>
+            <p className="whitespace-pre-wrap text-gray-700 font-opensans">
+              {estimate.description}
+            </p>
           </CardContent>
         </Card>
       )}

@@ -455,10 +455,18 @@ const EstimateDetailPage = () => {
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-4 w-full rounded-none border-b">
-                <TabsTrigger value="overview">Details</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-                <TabsTrigger value="email">Communication</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="overview" className="font-opensans">
+                  Details
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="font-opensans">
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger value="email" className="font-opensans">
+                  Communication
+                </TabsTrigger>
+                <TabsTrigger value="history" className="font-opensans">
+                  History
+                </TabsTrigger>
               </TabsList>
 
               <div className="p-6">

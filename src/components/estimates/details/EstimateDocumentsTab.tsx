@@ -18,12 +18,21 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   onShareDocument,
 }) => {
   return (
-    <EstimateDocumentsSection
-      estimateId={estimateId}
-      estimateName={estimateName || `Estimate #${estimateId.substring(0, 6)}`}
-      revisionId={currentRevisionId}
-      versionNumber={currentVersion}
-    />
+    <div className="space-y-4">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold font-montserrat">Documents</h3>
+        <p className="text-sm text-muted-foreground font-opensans">
+          Manage documents related to this estimate
+        </p>
+      </div>
+
+      <EstimateDocumentsSection
+        estimateId={estimateId}
+        estimateName={estimateName || `Estimate #${estimateId.substring(0, 6)}`}
+        revisionId={currentRevisionId}
+        versionNumber={currentVersion}
+      />
+    </div>
   );
 };
 

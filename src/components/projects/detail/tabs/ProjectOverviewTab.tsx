@@ -129,19 +129,21 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           {/* Description Card */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Project Description</CardTitle>
+              <CardTitle className="text-base font-medium font-montserrat">
+                Project Description
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {project.description ? (
-                <p className="text-sm">{project.description}</p>
+                <p className="text-sm font-opensans">{project.description}</p>
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-opensans">
                     No description has been added yet.
                   </p>
                   <Button variant="ghost" size="sm" className="mt-2" onClick={onEditClick}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />
-                    Add Description
+                    <span className="font-opensans">Add Description</span>
                   </Button>
                 </div>
               )}
@@ -151,7 +153,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           {/* Key Dates Card */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium flex items-center">
+              <CardTitle className="text-base font-medium flex items-center font-montserrat">
                 <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                 Key Dates
               </CardTitle>
@@ -163,7 +165,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                 <div className="mt-4 pt-3 border-t border-border">
                   <p
                     className={cn(
-                      'text-sm font-medium',
+                      'text-sm font-medium font-opensans',
                       daysRemaining < 0
                         ? 'text-destructive'
                         : daysRemaining < 7
@@ -188,7 +190,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           {/* Financial Snapshot Card */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium flex items-center">
+              <CardTitle className="text-base font-medium flex items-center font-montserrat">
                 <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
                 Financial Snapshot
               </CardTitle>
@@ -240,7 +242,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           {/* Project Health Card */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium flex items-center">
+              <CardTitle className="text-base font-medium flex items-center font-montserrat">
                 <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
                 Project Health
               </CardTitle>

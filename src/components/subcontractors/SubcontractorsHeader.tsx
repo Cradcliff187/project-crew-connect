@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Plus, Tag } from 'lucide-react';
 import SubcontractorSheet from './SubcontractorSheet';
 import SpecialtyDialog from './SpecialtyDialog';
-import PageHeader from '@/components/layout/PageHeader';
 import { SearchInput } from '@/components/ui/search-input';
 
 interface SubcontractorsHeaderProps {
@@ -19,41 +18,62 @@ const SubcontractorsHeader = ({
   onSubcontractorAdded,
   onSpecialtyAdded,
 }: SubcontractorsHeaderProps) => {
-  const [addSubcontractorOpen, setAddSubcontractorOpen] = useState(false);
-  const [specialtyDialogOpen, setSpecialtyDialogOpen] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
+
+  const handleSubcontractorAdded = () => {
+    onSubcontractorAdded();
+    setShowAddDialog(false);
+  };
+
+  const handleSpecialtyAdded = () => {
+    onSpecialtyAdded();
+    setShowSpecialtyDialog(false);
+  };
 
   return (
     <>
-      <PageHeader title="Subcontractors">
-        <div className="flex gap-2 items-center flex-wrap">
-          <SearchInput
-            placeholder="Search subcontractors..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            containerClassName="w-[180px] sm:w-[300px]"
-          />
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setSpecialtyDialogOpen(true)}>
-              <Tag className="h-4 w-4 mr-1" aria-hidden="true" />
-              Add Specialty
-            </Button>
-            <Button size="sm" variant="default" onClick={() => setAddSubcontractorOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-              Add Subcontractor
-            </Button>
-          </div>
+      {/* Clean Search and Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <SearchInput
+          placeholder="Search subcontractors..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          containerClassName="w-full sm:w-auto flex-1 max-w-md"
+        />
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSpecialtyDialog(true)}
+            className="font-opensans"
+          >
+            <Tag className="h-4 w-4 mr-1" />
+            Manage Specialties
+          </Button>
+
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            size="sm"
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Subcontractor
+          </Button>
         </div>
-      </PageHeader>
+      </div>
 
       <SubcontractorSheet
-        open={addSubcontractorOpen}
-        onOpenChange={setAddSubcontractorOpen}
-        onSubcontractorAdded={onSubcontractorAdded}
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSubcontractorAdded={handleSubcontractorAdded}
       />
+
       <SpecialtyDialog
-        open={specialtyDialogOpen}
-        onOpenChange={setSpecialtyDialogOpen}
-        onSpecialtyAdded={onSpecialtyAdded}
+        open={showSpecialtyDialog}
+        onOpenChange={setShowSpecialtyDialog}
+        onSpecialtyAdded={handleSpecialtyAdded}
       />
     </>
   );

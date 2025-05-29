@@ -1,7 +1,6 @@
 import { Search, Filter, ChevronDown, List, LayoutGrid } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import PageHeader from '@/components/layout/PageHeader';
 
 interface ActiveWorkHeaderProps {
   searchQuery: string;
@@ -17,11 +16,8 @@ const ActiveWorkHeader = ({
   setViewMode,
 }: ActiveWorkHeaderProps) => {
   return (
-    <PageHeader
-      title="Active Work"
-      description="View and manage all active projects and work orders"
-    >
-      <div className="relative w-full md:w-auto flex-1 max-w-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="relative w-full sm:w-auto flex-1 max-w-md">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
@@ -33,7 +29,7 @@ const ActiveWorkHeader = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="flex items-center gap-1">
+        <Button variant="outline" size="sm" className="flex items-center gap-1 font-opensans">
           <Filter className="h-4 w-4 mr-1" />
           Filter
           <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
@@ -58,7 +54,7 @@ const ActiveWorkHeader = ({
           </Button>
         </div>
       </div>
-    </PageHeader>
+    </div>
   );
 };
 

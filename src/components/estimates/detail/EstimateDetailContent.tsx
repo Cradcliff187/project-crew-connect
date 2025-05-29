@@ -42,6 +42,7 @@ interface EstimateDetailContentProps {
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
   const [detailViewMode, setDetailViewMode] = useState<'internal' | 'customer'>('internal');
+  const [showFinancialDetails, setShowFinancialDetails] = useState(false);
 
   const formatLocation = () => {
     const parts = [
@@ -80,235 +81,157 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Estimate Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Client Information</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="text-sm text-muted-foreground">Client Name:</span>
-                  <p>{data.customername || 'Not specified'}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Created Date:</span>
-                  <p>{data.datecreated ? formatDate(data.datecreated) : 'Not specified'}</p>
-                </div>
-                {data.sentdate && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Sent Date:</span>
-                    <p>{formatDate(data.sentdate)}</p>
-                  </div>
-                )}
-                {data.approveddate && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Approved Date:</span>
-                    <p>{formatDate(data.approveddate)}</p>
-                  </div>
-                )}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-opensans">Total Amount</p>
+                <p className="text-2xl font-bold font-montserrat">
+                  {formatCurrency(data.estimateamount)}
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-opensans">Status</p>
+                <p className="text-lg font-semibold capitalize font-opensans">{data.status}</p>
+              </div>
+              <Eye className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-opensans">Line Items</p>
+                <p className="text-2xl font-bold font-montserrat">{data.items.length}</p>
+              </div>
+              <Eye className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Estimate Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 font-montserrat">Estimate Information</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Estimate ID:</span>
+                <span className="font-medium font-opensans">{data.estimateid}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Customer:</span>
+                <span className="font-medium font-opensans">{data.customername || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Project:</span>
+                <span className="font-medium font-opensans">{data.projectname || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Date Created:</span>
+                <span className="font-medium font-opensans">
+                  {data.datecreated ? formatDate(data.datecreated) : 'N/A'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Version:</span>
+                <span className="font-medium font-opensans">{data.current_version || 1}</span>
               </div>
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Job Information</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="text-sm text-muted-foreground">Project Name:</span>
-                  <p>{data.projectname || 'Not specified'}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 font-montserrat">Financial Summary</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-opensans">Estimate Amount:</span>
+                <span className="font-medium font-opensans">
+                  {formatCurrency(data.estimateamount)}
+                </span>
+              </div>
+              {data.contingencyamount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground font-opensans">Contingency:</span>
+                  <span className="font-medium font-opensans">
+                    {formatCurrency(data.contingencyamount)}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Location:</span>
-                  <p>{formatLocation()}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Description:</span>
-                  <p className="whitespace-pre-wrap">
-                    {data.job_description || 'No description provided'}
-                  </p>
-                </div>
+              )}
+              {showFinancialDetails && data.total_cost && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground font-opensans">Total Cost:</span>
+                    <span className="font-medium font-opensans">
+                      {formatCurrency(data.total_cost)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground font-opensans">Gross Margin:</span>
+                    <span className="font-medium font-opensans">
+                      {formatCurrency(data.estimateamount - data.total_cost)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-financial" className="font-opensans">
+                  Show Financial Details
+                </Label>
+                <Switch
+                  id="show-financial"
+                  checked={showFinancialDetails}
+                  onCheckedChange={setShowFinancialDetails}
+                />
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle>Line Items</CardTitle>
-          <div className="flex items-center space-x-2">
-            <DollarSign
-              className={`h-4 w-4 ${detailViewMode === 'internal' ? 'text-primary' : 'text-muted-foreground'}`}
-            />
-            <Label
-              htmlFor="view-mode-toggle"
-              className={`text-sm font-medium ${detailViewMode === 'internal' ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              Internal View
-            </Label>
-            <Switch
-              id="view-mode-toggle"
-              checked={detailViewMode === 'customer'}
-              onCheckedChange={checked => setDetailViewMode(checked ? 'customer' : 'internal')}
-            />
-            <Label
-              htmlFor="view-mode-toggle"
-              className={`text-sm font-medium ${detailViewMode === 'customer' ? 'text-primary' : 'text-muted-foreground'}`}
-            >
-              Customer View
-            </Label>
-            <Eye
-              className={`h-4 w-4 ${detailViewMode === 'customer' ? 'text-primary' : 'text-muted-foreground'}`}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {data.items.length === 0 ? (
-            <p className="text-muted-foreground">No items in this estimate</p>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="p-2 text-left font-medium">Description</th>
-                    <th className="p-2 text-right font-medium">Quantity</th>
-                    {/* Conditionally show internal financial headers */}
-                    {detailViewMode === 'internal' && (
-                      <>
-                        <th className="p-2 text-right font-medium">Cost</th>
-                        <th className="p-2 text-right font-medium">Markup %</th>
-                      </>
-                    )}
-                    <th className="p-2 text-right font-medium">Unit Price</th>
-                    {/* Conditionally show internal financial headers */}
-                    {detailViewMode === 'internal' && (
-                      <>
-                        <th className="p-2 text-right font-medium">Margin</th>
-                        <th className="p-2 text-right font-medium">Margin %</th>
-                      </>
-                    )}
-                    <th className="p-2 text-right font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.items.map((item, index) => {
-                    // Calculate per-item margin
-                    const itemCost = Number(item.cost) || 0;
-                    const itemQuantity = Number(item.quantity) || 0;
-                    const itemTotalPrice = Number(item.total_price) || 0;
-                    const itemTotalCost = itemCost * itemQuantity;
-                    const itemMargin = itemTotalPrice - itemTotalCost;
-                    const itemMarginPercent =
-                      itemTotalPrice > 0 ? (itemMargin / itemTotalPrice) * 100 : 0;
-                    const itemMarkupPercent = item.markup_percentage; // Assuming markup % is directly available
-
-                    return (
-                      <tr key={item.id || index} className="border-t">
-                        <td className="p-2">{item.description}</td>
-                        <td className="p-2 text-right">{itemQuantity}</td>
-                        {/* Conditionally show internal financial cells */}
-                        {detailViewMode === 'internal' && (
-                          <>
-                            <td className="p-2 text-right">{formatCurrency(itemCost)}</td>
-                            <td className="p-2 text-right">
-                              {itemMarkupPercent !== undefined ? `${itemMarkupPercent}%` : 'N/A'}
-                            </td>
-                          </>
-                        )}
-                        <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                        {/* Conditionally show internal financial cells */}
-                        {detailViewMode === 'internal' && (
-                          <>
-                            <td className="p-2 text-right">{formatCurrency(itemMargin)}</td>
-                            <td className="p-2 text-right">{`${itemMarginPercent.toFixed(1)}%`}</td>
-                          </>
-                        )}
-                        <td className="p-2 text-right">{formatCurrency(itemTotalPrice)}</td>
-                      </tr>
-                    );
-                  })}
-
-                  {/* Summary rows - Conditional Rendering based on view mode */}
-                  <tr className="border-t">
-                    {/* Adjust colspan based on view mode */}
-                    <td
-                      colSpan={detailViewMode === 'internal' ? 6 : 3}
-                      className="p-2 text-right font-medium"
-                    >
-                      Subtotal:
-                    </td>
-                    <td className="p-2 text-right">{formatCurrency(subtotal)}</td>
-                  </tr>
-
-                  {/* Internal Only Rows */}
-                  {detailViewMode === 'internal' && (
-                    <>
-                      {/* Total Cost */}
-                      <tr className="border-t border-dashed">
-                        {/* Adjust colspan based on view mode */}
-                        <td colSpan={6} className="p-2 text-right text-sm text-muted-foreground">
-                          Total Cost:
-                        </td>
-                        <td className="p-2 text-right text-sm text-muted-foreground">
-                          {hasItemData ? formatCurrency(totalCost) : 'Calculating...'}
-                        </td>
-                      </tr>
-                      {/* Gross Margin */}
-                      <tr className="border-t border-dashed">
-                        {/* Adjust colspan based on view mode */}
-                        <td colSpan={6} className="p-2 text-right text-sm text-muted-foreground">
-                          Gross Margin:
-                        </td>
-                        <td className="p-2 text-right text-sm text-muted-foreground">
-                          {hasItemData ? formatCurrency(grossMargin) : 'Calculating...'}
-                        </td>
-                      </tr>
-                      {/* Gross Margin Percentage */}
-                      <tr>
-                        {/* Adjust colspan based on view mode */}
-                        <td
-                          colSpan={6}
-                          className="p-2 pt-0 text-right text-xs text-muted-foreground"
-                        >
-                          Gross Margin %:
-                        </td>
-                        <td className="p-2 pt-0 text-right text-xs text-muted-foreground">
-                          {hasItemData ? `${grossMarginPercentage.toFixed(1)}%` : 'Calculating...'}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-
-                  {/* Always Visible Rows */}
-                  <tr>
-                    {/* Adjust colspan based on view mode */}
-                    <td
-                      colSpan={detailViewMode === 'internal' ? 6 : 3}
-                      className="p-2 text-right text-muted-foreground"
-                    >
-                      Contingency ({data.contingency_percentage || 0}%):
-                    </td>
-                    <td className="p-2 text-right text-muted-foreground">
-                      {formatCurrency(contingencyAmount)}
-                    </td>
-                  </tr>
-                  <tr className="bg-muted/50">
-                    {/* Adjust colspan based on view mode */}
-                    <td
-                      colSpan={detailViewMode === 'internal' ? 6 : 3}
-                      className="p-2 text-right font-medium"
-                    >
-                      Total:
-                    </td>
-                    <td className="p-2 text-right font-medium">{formatCurrency(total)}</td>
-                  </tr>
-                </tbody>
-              </table>
+      {/* Location Information */}
+      {(data.sitelocationaddress || data.sitelocationcity || data.sitelocationstate) && (
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 font-montserrat">Location</h3>
+            <div className="text-sm font-opensans">
+              {data.sitelocationaddress && <div>{data.sitelocationaddress}</div>}
+              <div>
+                {data.sitelocationcity && `${data.sitelocationcity}, `}
+                {data.sitelocationstate && `${data.sitelocationstate} `}
+                {data.sitelocationzip && data.sitelocationzip}
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job Description */}
+      {data.job_description && (
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 font-montserrat">Description</h3>
+            <p className="text-sm whitespace-pre-wrap font-opensans">{data.job_description}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
