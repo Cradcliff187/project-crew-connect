@@ -169,8 +169,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             )}
           </TabsContent>
 
-          <TabsContent value="versions" className="flex-1 overflow-auto">
-            <div className="h-full bg-white p-6">
+          <TabsContent value="versions" className="flex-1 overflow-auto bg-white p-6">
+            <div>
               <h3 className="text-sm font-medium mb-3">Version History</h3>
               <p className="text-sm text-muted-foreground">
                 Version {document.version || 1}
@@ -179,8 +179,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="related" className="flex-1 overflow-auto">
-            <div className="h-full bg-white p-6">
+          <TabsContent value="related" className="flex-1 overflow-auto bg-white p-6">
+            <div className="space-y-2">
               <h3 className="text-sm font-medium mb-3">Related Documents</h3>
 
               {relatedDocuments.map(doc => (
@@ -203,8 +203,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="details" className="flex-1 overflow-auto bg-white">
-            <div className="h-full p-6 space-y-6">
+          <TabsContent value="details" className="flex-1 overflow-auto bg-white p-6">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold mb-4">Document Details</h3>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
