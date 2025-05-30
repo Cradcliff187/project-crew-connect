@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Calendar as CalendarIcon, List, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ProjectMilestones from '../milestones/ProjectMilestones';
 import ProjectCalendarView from '../calendar/ProjectCalendarView';
@@ -71,45 +72,55 @@ export default function ProjectScheduleTab({ projectId, projectName }: ProjectSc
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Project Schedule</h2>
-        <div className="flex space-x-2">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setSchedulingOpen(true)}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule New Item
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={viewMode === 'list' ? 'bg-muted' : ''}
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4 mr-2" />
-            List View
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={viewMode === 'calendar' ? 'bg-muted' : ''}
-            onClick={() => setViewMode('calendar')}
-          >
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            Calendar View
-          </Button>
-        </div>
-      </div>
-
-      {viewMode === 'list' ? (
-        <ProjectMilestones projectId={projectId} />
-      ) : (
-        <ProjectCalendarView projectId={projectId} />
-      )}
+    <>
+      <Card className="shadow-sm border border-gray-200">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-montserrat flex items-center">
+              <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
+              Project Schedule & Milestones
+            </CardTitle>
+            <div className="flex space-x-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setSchedulingOpen(true)}
+                className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule New
+              </Button>
+              <div className="flex rounded-md shadow-sm">
+                <Button
+                  variant={viewMode === 'list' ? 'secondary' : 'outline'}
+                  size="sm"
+                  className={`rounded-r-none font-opensans ${viewMode === 'list' ? 'shadow-none' : ''}`}
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  List
+                </Button>
+                <Button
+                  variant={viewMode === 'calendar' ? 'secondary' : 'outline'}
+                  size="sm"
+                  className={`rounded-l-none border-l-0 font-opensans ${viewMode === 'calendar' ? 'shadow-none' : ''}`}
+                  onClick={() => setViewMode('calendar')}
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {viewMode === 'list' ? (
+            <ProjectMilestones projectId={projectId} />
+          ) : (
+            <ProjectCalendarView projectId={projectId} />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Unified Scheduling Dialog */}
       <UnifiedSchedulingDialog
@@ -123,6 +134,6 @@ export default function ProjectScheduleTab({ projectId, projectName }: ProjectSc
         onSave={handleScheduleNew}
         onCancel={() => setSchedulingOpen(false)}
       />
-    </div>
+    </>
   );
 }

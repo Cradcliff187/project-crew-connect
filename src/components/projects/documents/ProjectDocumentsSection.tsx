@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Plus, FileText } from 'lucide-react';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import DocumentsGrid from '@/components/documents/DocumentsGrid';
 import DocumentsDataTable from '@/components/documents/DocumentsDataTable';
@@ -98,38 +100,53 @@ export default function ProjectDocumentsSection({
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium font-montserrat">Project Documents</h3>
-        <div className="flex items-center gap-2">
-          <DocumentViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-          <Button
-            onClick={() => setUploadOpen(true)}
-            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Document
-          </Button>
-        </div>
-      </div>
-
-      {viewType === 'grid' ? (
-        <DocumentsGrid
-          documents={documents}
-          isLoading={isLoading}
-          emptyMessage="No project documents found"
-          emptyDescription="Upload documents for this project such as photos, contracts or specifications."
-          getActions={getDocumentActions}
-          onDocumentClick={handleViewDocument}
-        />
-      ) : (
-        <DocumentsDataTable
-          documents={documents}
-          isLoading={isLoading}
-          getActions={getDocumentActions}
-          emptyMessage="No project documents found"
-        />
-      )}
+    <>
+      <Card className="shadow-sm border border-gray-200">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-lg font-montserrat flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                Project Documents
+              </CardTitle>
+              {documents.length > 0 && (
+                <Badge variant="secondary" className="font-opensans">
+                  {documents.length}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <DocumentViewToggle viewType={viewType} onViewTypeChange={setViewType} />
+              <Button
+                onClick={() => setUploadOpen(true)}
+                className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Document
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {viewType === 'grid' ? (
+            <DocumentsGrid
+              documents={documents}
+              isLoading={isLoading}
+              emptyMessage="No project documents found"
+              emptyDescription="Upload documents for this project such as photos, contracts or specifications."
+              getActions={getDocumentActions}
+              onDocumentClick={handleViewDocument}
+            />
+          ) : (
+            <DocumentsDataTable
+              documents={documents}
+              isLoading={isLoading}
+              getActions={getDocumentActions}
+              emptyMessage="No project documents found"
+            />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Document Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
@@ -140,7 +157,6 @@ export default function ProjectDocumentsSection({
           <EnhancedDocumentUpload
             entityType="PROJECT"
             entityId={projectId}
-            entityName={projectName}
             onSuccess={() => {
               setUploadOpen(false);
               fetchDocuments();
@@ -157,6 +173,6 @@ export default function ProjectDocumentsSection({
           onOpenChange={open => !open && closeViewer()}
         />
       )}
-    </div>
+    </>
   );
 }

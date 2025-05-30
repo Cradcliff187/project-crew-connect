@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { GradientCard } from '@/components/ui/GradientCard';
 import { AlertCircle, CheckCircle2, DollarSign, PieChart, TrendingUp } from 'lucide-react';
 
 interface BudgetOverviewProps {
@@ -35,100 +34,76 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
     }).format(amount);
   };
 
-  // Determine status color and icon
-  const getStatusInfo = (status: string) => {
-    switch (status) {
+  // Determine status variant for gradient card
+  const getStatusVariant = (): 'green' | 'yellow' | 'red' | 'blue' => {
+    switch (budgetStatus) {
       case 'critical':
-        return {
-          color: 'text-red-500',
-          bgColor: 'bg-red-100',
-          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        };
+        return 'red';
       case 'warning':
-        return {
-          color: 'text-amber-500',
-          bgColor: 'bg-amber-100',
-          icon: <AlertCircle className="h-5 w-5 text-amber-500" />,
-        };
+        return 'yellow';
       case 'on_track':
-        return {
-          color: 'text-green-500',
-          bgColor: 'bg-green-100',
-          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-        };
+        return 'green';
       default:
-        return {
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-100',
-          icon: <PieChart className="h-5 w-5 text-gray-500" />,
-        };
+        return 'blue';
     }
   };
 
-  const { color, bgColor, icon } = getStatusInfo(budgetStatus);
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (budgetStatus) {
+      case 'critical':
+      case 'warning':
+        return AlertCircle;
+      case 'on_track':
+        return CheckCircle2;
+      default:
+        return PieChart;
+    }
+  };
 
-  // Determine progress color
-  const progressColor =
-    budgetStatus === 'critical'
-      ? 'bg-red-500'
-      : budgetStatus === 'warning'
-        ? 'bg-amber-500'
-        : 'bg-green-500';
+  // Format status text
+  const formatStatus = () => {
+    if (budgetStatus === 'not_set') return 'Not Set';
+    return budgetStatus.charAt(0).toUpperCase() + budgetStatus.slice(1).replace('_', ' ');
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total Budget</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-[#0485ea]" />
-            <span className="text-2xl font-bold">{formatCurrency(totalBudget)}</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            (Items: {formatCurrency(originalSellingPrice)} + Contingency:{' '}
-            {formatCurrency(originalContingency || 0)})
-          </p>
-        </CardContent>
-      </Card>
+      <GradientCard
+        title="Total Budget"
+        value={formatCurrency(totalBudget)}
+        icon={DollarSign}
+        variant="blue"
+        subtitle={`Items: ${formatCurrency(originalSellingPrice)} + Contingency: ${formatCurrency(originalContingency || 0)}`}
+      />
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Current Expenses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2 text-[#0485ea]" />
-            <span className="text-2xl font-bold">{formatCurrency(currentExpenses)}</span>
-          </div>
-          <div className="mt-2">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>{percentUsed}% of budget used</span>
-              <span>{formatCurrency(remaining)} remaining</span>
-            </div>
-            <Progress value={percentUsed} className={progressColor} />
-          </div>
-        </CardContent>
-      </Card>
+      <GradientCard
+        title="Current Expenses"
+        value={formatCurrency(currentExpenses)}
+        icon={TrendingUp}
+        variant={percentUsed > 90 ? 'red' : percentUsed > 75 ? 'yellow' : 'green'}
+        subtitle={`${formatCurrency(remaining)} remaining`}
+        trend={{
+          value: percentUsed,
+          label: 'of budget used',
+        }}
+      />
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Budget Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            {icon}
-            <div className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${color} ${bgColor}`}>
-              {budgetStatus === 'not_set'
-                ? 'Not Set'
-                : budgetStatus.charAt(0).toUpperCase() + budgetStatus.slice(1).replace('_', ' ')}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <GradientCard
+        title="Budget Status"
+        value={formatStatus()}
+        icon={getStatusIcon()}
+        variant={getStatusVariant()}
+        subtitle={
+          budgetStatus === 'critical'
+            ? 'Over budget'
+            : budgetStatus === 'warning'
+              ? 'Near limit'
+              : budgetStatus === 'on_track'
+                ? 'Within budget'
+                : 'Budget not configured'
+        }
+      />
     </div>
   );
 };
