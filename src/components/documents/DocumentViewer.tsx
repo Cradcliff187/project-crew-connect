@@ -42,13 +42,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const isImage = document.file_type?.startsWith('image/');
   const isPdf = document.file_type === 'application/pdf';
 
-  // Debug logging
-  console.log('DocumentViewer - document:', document);
-  console.log('DocumentViewer - document.url:', document.url);
-  console.log('DocumentViewer - isImage:', isImage);
-  console.log('DocumentViewer - file_type:', document.file_type);
-  console.log('DocumentViewer - activeTab:', activeTab);
-
   const handleDownload = () => {
     if (!document?.url) return;
 
@@ -211,60 +204,160 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </TabsContent>
 
           <TabsContent value="details" className="flex-1 overflow-auto bg-gray-100 p-4">
-            <div className="bg-white rounded-md shadow-sm p-4 animate-fade-in">
-              <h3 className="text-sm font-medium mb-3">Document Details</h3>
+            <div className="bg-white rounded-md shadow-sm p-6 space-y-6 animate-fade-in">
+              <h3 className="text-lg font-semibold mb-4">Document Details</h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground">Basic Information</h4>
-                  <ul className="mt-2 space-y-1">
-                    <li className="text-sm flex justify-between">
-                      <span>File name:</span>
-                      <span className="font-medium">{document.file_name}</span>
-                    </li>
-                    <li className="text-sm flex justify-between">
-                      <span>File type:</span>
-                      <span className="font-medium">{document.file_type || 'Unknown'}</span>
-                    </li>
-                    <li className="text-sm flex justify-between">
-                      <span>Size:</span>
-                      <span className="font-medium">{formatFileSize(document.file_size || 0)}</span>
-                    </li>
-                    <li className="text-sm flex justify-between">
-                      <span>Created:</span>
-                      <span className="font-medium">{formatDate(document.created_at)}</span>
-                    </li>
-                  </ul>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Basic Information</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">File name:</span>
+                        <span className="text-sm font-medium text-gray-900 break-all max-w-[60%] text-right">
+                          {document.file_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">File type:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {document.file_type || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">Size:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {formatFileSize(document.file_size || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">Uploaded:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {formatDate(document.created_at)}
+                        </span>
+                      </div>
+                      {document.version && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Version:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {document.version}
+                            {document.is_latest_version && (
+                              <span className="ml-2 text-xs text-green-600">(Latest)</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground">
-                    Associated Information
-                  </h4>
-                  <ul className="mt-2 space-y-1">
-                    <li className="text-sm flex justify-between">
-                      <span>Entity type:</span>
-                      <span className="font-medium capitalize">
-                        {document.entity_type?.toLowerCase().replace('_', ' ')}
-                      </span>
-                    </li>
-                    {document.category && (
-                      <li className="text-sm flex justify-between">
-                        <span>Category:</span>
-                        <span className="font-medium capitalize">
-                          {document.category?.replace('_', ' ')}
+                {/* Associated Information Section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                      Associated Information
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">Entity type:</span>
+                        <span className="text-sm font-medium text-gray-900 capitalize">
+                          {document.entity_type?.toLowerCase().replace('_', ' ')}
                         </span>
-                      </li>
-                    )}
-                    {document.tags && document.tags.length > 0 && (
-                      <li className="text-sm flex justify-between">
-                        <span>Tags:</span>
-                        <span className="font-medium">{document.tags.join(', ')}</span>
-                      </li>
-                    )}
-                  </ul>
+                      </div>
+                      {document.entity_id && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">
+                            {document.entity_type === 'PROJECT' ? 'Project:' : 'Entity ID:'}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {document.entity_type === 'PROJECT' && (document as any).project_name
+                              ? (document as any).project_name
+                              : document.entity_id}
+                          </span>
+                        </div>
+                      )}
+                      {document.entity_type === 'PROJECT' && (document as any).customer_id && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Customer ID:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {(document as any).customer_id}
+                          </span>
+                        </div>
+                      )}
+                      {document.category && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Category:</span>
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {document.category?.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      )}
+                      {document.is_expense !== undefined && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Is Expense:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {document.is_expense ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      )}
+                      {document.expense_date && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Expense Date:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatDate(document.expense_date)}
+                          </span>
+                        </div>
+                      )}
+                      {document.amount !== null && document.amount !== undefined && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Amount:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            ${document.amount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {document.vendor_id && (
+                        <div className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="text-sm text-gray-600">Vendor ID:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {document.vendor_id}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Additional Details Section */}
+              {(document.notes || document.tags?.length > 0) && (
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  {document.notes && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Notes</h4>
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                        {document.notes}
+                      </p>
+                    </div>
+                  )}
+                  {document.tags && document.tags.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Tags</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {document.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

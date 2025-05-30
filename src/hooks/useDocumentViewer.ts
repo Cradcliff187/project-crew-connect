@@ -39,16 +39,36 @@ export function useDocumentViewer(options?: DocumentViewerOptions) {
         return;
       }
 
-      console.log('useDocumentViewer - fetched document:', data);
-      console.log('useDocumentViewer - storage_path:', data.storage_path);
+      // Fetch additional context based on entity type
+      const additionalInfo: any = {};
+
+      if (data.entity_type === 'PROJECT' && data.entity_id) {
+        const { data: projectData } = await supabase
+          .from('projects')
+          .select('projectid, projectname, customerid')
+          .eq('projectid', data.entity_id)
+          .single();
+
+        if (projectData) {
+          additionalInfo.project_name = projectData.projectname;
+          additionalInfo.customer_id = projectData.customerid;
+        }
+      } else if (data.entity_type === 'EXPENSE' && data.entity_id) {
+        const { data: expenseData } = await supabase
+          .from('expenses')
+          .select('id, amount, expense_date, vendor_id, description')
+          .eq('id', data.entity_id)
+          .single();
+
+        if (expenseData) {
+          additionalInfo.expense_info = expenseData;
+        }
+      }
 
       // Generate a signed URL for the document (expires in 1 hour)
       const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
         .createSignedUrl(data.storage_path, 3600); // 1 hour expiration
-
-      console.log('useDocumentViewer - urlData:', urlData);
-      console.log('useDocumentViewer - urlError:', urlError);
 
       if (urlError) {
         console.error('Error generating signed URL:', urlError);
@@ -59,9 +79,8 @@ export function useDocumentViewer(options?: DocumentViewerOptions) {
       const documentWithUrl: Document = {
         ...data,
         url: urlData.signedUrl,
+        ...additionalInfo,
       };
-
-      console.log('useDocumentViewer - documentWithUrl:', documentWithUrl);
 
       setCurrentDocument(documentWithUrl);
       setIsViewerOpen(true);
