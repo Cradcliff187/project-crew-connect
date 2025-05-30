@@ -1,13 +1,21 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Calendar, DollarSign, Activity, User } from 'lucide-react';
+import {
+  Pencil,
+  Calendar,
+  DollarSign,
+  Activity,
+  User,
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+} from 'lucide-react';
 import StatusBadge from '@/components/common/status/StatusBadge';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import TimelineDisplay, { TimelinePoint } from '@/components/ui/TimelineDisplay';
 import HealthIndicator from '@/components/ui/HealthIndicator';
-import StatCard from '@/components/ui/StatCard';
-import TrendIndicator from '@/components/ui/TrendIndicator';
+import { GradientCard } from '@/components/ui/GradientCard';
 import { Database } from '@/integrations/supabase/types';
 import { differenceInDays } from 'date-fns';
 
@@ -122,14 +130,55 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <GradientCard
+          title="Contract Value"
+          value={formatCurrency(contractValue)}
+          icon={DollarSign}
+          variant="blue"
+          subtitle={contractValue > 0 ? 'Active' : 'Not Set'}
+        />
+
+        <GradientCard
+          title="Budget"
+          value={formatCurrency(budget)}
+          icon={TrendingUp}
+          variant="green"
+          subtitle={`${formatCurrency(remaining)} remaining`}
+          trend={
+            budgetProgress > 100
+              ? { value: -budgetProgress + 100, label: 'over budget' }
+              : undefined
+          }
+        />
+
+        <GradientCard
+          title="Spent to Date"
+          value={formatCurrency(spent)}
+          icon={Clock}
+          variant={budgetProgress > 100 ? 'red' : budgetProgress > 85 ? 'yellow' : 'purple'}
+          subtitle={budget > 0 ? `${Math.min(Math.round(budgetProgress), 100)}% of budget` : 'N/A'}
+        />
+
+        <GradientCard
+          title="Est. Gross Profit"
+          value={formatCurrency(estimatedGrossProfit)}
+          icon={TrendingUp}
+          variant={estimatedGrossProfit < 0 ? 'red' : 'green'}
+          subtitle={`${Math.round(gpPercentage)}% margin`}
+        />
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left Column: Project Details */}
         <div className="md:col-span-5 space-y-6">
           {/* Description Card */}
-          <Card>
+          <Card className="shadow-sm border border-gray-200">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium font-montserrat">
+              <CardTitle className="text-base font-medium font-montserrat flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-blue-600" />
                 Project Description
               </CardTitle>
             </CardHeader>
@@ -141,9 +190,14 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                   <p className="text-sm text-muted-foreground font-opensans">
                     No description has been added yet.
                   </p>
-                  <Button variant="ghost" size="sm" className="mt-2" onClick={onEditClick}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 font-opensans hover:bg-blue-50"
+                    onClick={onEditClick}
+                  >
                     <Pencil className="h-3.5 w-3.5 mr-1" />
-                    <span className="font-opensans">Add Description</span>
+                    Add Description
                   </Button>
                 </div>
               )}
@@ -151,10 +205,10 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           </Card>
 
           {/* Key Dates Card */}
-          <Card>
+          <Card className="shadow-sm border border-gray-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-medium flex items-center font-montserrat">
-                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                <Calendar className="h-5 w-5 mr-2 text-blue-600" />
                 Key Dates
               </CardTitle>
             </CardHeader>
@@ -185,65 +239,13 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           </Card>
         </div>
 
-        {/* Right Column: Financial & Health */}
+        {/* Right Column: Project Health */}
         <div className="md:col-span-7 space-y-6">
-          {/* Financial Snapshot Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium flex items-center font-montserrat">
-                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                Financial Snapshot
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <StatCard
-                  label="Contract Value"
-                  value={formatCurrency(contractValue)}
-                  badge={
-                    contractValue > 0 ? { text: 'Active' } : { text: 'Not Set', variant: 'outline' }
-                  }
-                />
-
-                <StatCard
-                  label="Budget"
-                  value={formatCurrency(budget)}
-                  secondaryLabel="Remaining"
-                  secondaryValue={formatCurrency(remaining)}
-                  badge={
-                    budgetProgress > 100
-                      ? { text: 'Over Budget', variant: 'destructive' }
-                      : undefined
-                  }
-                />
-
-                <StatCard
-                  label="Spent to Date"
-                  value={formatCurrency(spent)}
-                  secondaryLabel="of Budget"
-                  secondaryValue={
-                    budget > 0 ? `${Math.min(Math.round(budgetProgress), 100)}%` : 'N/A'
-                  }
-                  trend={spent > budget ? 'down' : 'up'}
-                  trendValue={spent > 0 ? budgetProgress : 0}
-                />
-
-                <StatCard
-                  label="Est. Gross Profit"
-                  value={formatCurrency(estimatedGrossProfit)}
-                  secondaryLabel="Margin"
-                  secondaryValue={`${Math.round(gpPercentage)}%`}
-                  valueClassName={estimatedGrossProfit < 0 ? 'text-destructive' : undefined}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Project Health Card */}
-          <Card>
+          <Card className="shadow-sm border border-gray-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center font-montserrat">
-                <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
+                <Activity className="h-5 w-5 mr-2 text-blue-600" />
                 Project Health
               </CardTitle>
             </CardHeader>
@@ -278,6 +280,35 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                   },
                 ]}
               />
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions Card */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center font-montserrat">
+                <AlertTriangle className="h-5 w-5 mr-2 text-blue-600" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={onEditClick}
+                  variant="outline"
+                  className="w-full font-opensans hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Project
+                </Button>
+                <Button
+                  onClick={onAddItemClick}
+                  className="w-full bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

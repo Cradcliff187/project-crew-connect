@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import PageTransition from '@/components/layout/PageTransition';
+import { PageLayout } from '@/components/ui/PageLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import {
@@ -23,6 +23,7 @@ import {
   CheckCircle,
   AlertCircle,
   MoreHorizontal,
+  Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -254,7 +255,7 @@ const ProjectDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -262,62 +263,106 @@ const ProjectDetail = () => {
 
   if (error) {
     return (
-      <PageTransition>
-        <div className="space-y-4">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-destructive">Error Loading Project</h1>
-                <p className="mt-2 text-muted-foreground">
-                  {(error as Error).message || 'Could not load project data'}
-                </p>
-                <Button onClick={() => refetch()} className="mt-4">
-                  Retry
+      <PageLayout title="Error Loading Project" icon={AlertCircle}>
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center">
+              <p className="mt-2 text-muted-foreground">
+                {(error as Error).message || 'Could not load project data'}
+              </p>
+              <div className="mt-4 space-x-2">
+                <Button variant="outline" onClick={() => navigate(-1)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Go Back
                 </Button>
+                <Button onClick={() => refetch()}>Retry</Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </PageTransition>
+            </div>
+          </CardContent>
+        </Card>
+      </PageLayout>
     );
   }
 
   if (!isLoading && !project) {
     return (
-      <PageTransition>
-        <div className="space-y-4">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Card>
-            <CardContent className="py-8 text-center">
-              <h1 className="text-2xl font-bold text-destructive">Project Not Found</h1>
-              <p className="mt-2 text-muted-foreground">
-                The requested project (ID: {projectId}) could not be found.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </PageTransition>
+      <PageLayout title="Project Not Found" icon={AlertCircle}>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="mt-2 text-muted-foreground">
+              The requested project (ID: {projectId}) could not be found.
+            </p>
+            <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </PageLayout>
     );
   }
 
+  // Determine budget status for badge
+  const getBudgetStatusBadge = () => {
+    const { budgetStatus } = overviewData;
+    switch (budgetStatus) {
+      case 'critical':
+        return { text: 'Over Budget', variant: 'destructive' as const };
+      case 'warning':
+        return { text: 'Near Budget', variant: 'secondary' as const };
+      case 'on_track':
+        return { text: 'On Track', variant: 'default' as const };
+      default:
+        return { text: 'Active', variant: 'outline' as const };
+    }
+  };
+
   return (
-    <PageTransition>
+    <PageLayout
+      title={project.projectname}
+      subtitle={`${customer?.customername || 'No customer assigned'} • ID: ${project.projectid}`}
+      icon={Building2}
+      badge={getBudgetStatusBadge()}
+    >
       <div className="space-y-6">
-        <ProjectHeader
-          project={project}
-          customerName={customer?.customername || null}
-          customerId={customer?.customerid || null}
-          onAddExpenseClick={handleAddExpenseClick}
-          onAddChangeOrderClick={handleAddChangeOrderClick}
-          onAddDocumentClick={handleAddDocumentClick}
-        />
+        {/* Action Buttons Row */}
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/projects/${project.projectid}/edit`)}
+            className="font-opensans"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleAddExpenseClick}
+            className="bg-[#0485ea] hover:bg-[#0375d1] font-opensans"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Expense
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAddChangeOrderClick}
+            className="font-opensans"
+          >
+            <FilePlus className="h-4 w-4 mr-2" />
+            Change Order
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAddDocumentClick}
+            className="font-opensans"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Add Document
+          </Button>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-6 w-full rounded-lg border p-1">
@@ -433,7 +478,7 @@ const ProjectDetail = () => {
           </Dialog>
         )}
       </div>
-    </PageTransition>
+    </PageLayout>
   );
 };
 

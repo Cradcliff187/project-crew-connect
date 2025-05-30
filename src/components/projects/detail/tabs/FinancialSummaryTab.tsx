@@ -27,6 +27,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { GradientCard } from '@/components/ui/GradientCard';
+import { Progress } from '@/components/ui/progress';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  AlertCircle,
+  Calculator,
+  Receipt,
+  CreditCard,
+  Percent,
+  Wallet,
+  FileText,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Define types based on generated Supabase types
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -171,283 +186,348 @@ const FinancialSummaryTab: React.FC<FinancialSummaryTabProps> = ({
   return (
     <TooltipProvider>
       <AlertDialog open={!!discountToDelete} onOpenChange={() => setDiscountToDelete(null)}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Column 1 */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Summary</CardTitle>
-                <CardDescription>Contract value tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Original Contract</dt>
-                    <dd>{formatCurrency(originalContractValue)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Approved COs (+)</dt>
-                    <dd>{formatCurrency(totalCoRevenueImpact)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>Current Contract</dt>
-                    <dd>{formatCurrency(currentContractValue)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Discounts (-)</dt>
-                    <dd className="text-orange-600">{formatCurrency(totalDiscounts)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>
-                      Expected Revenue
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground ml-1 inline-block cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Current Contract Value minus Discounts. Actual revenue depends on
-                            invoicing.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </dt>
-                    <dd>{formatCurrency(expectedRevenue)}</dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
+        <div className="space-y-6">
+          {/* Key Financial Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <GradientCard
+              title="Contract Value"
+              value={formatCurrency(currentContractValue)}
+              icon={DollarSign}
+              variant="blue"
+              subtitle={`${formatCurrency(currentContractValue + totalCoRevenueImpact)} with changes`}
+            />
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Contingency</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Budgeted</dt>
-                    <dd>{formatCurrency(budgetedContingency)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Used (-)</dt>
-                    <dd>{formatCurrency(contingencyUsed)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>Remaining</dt>
-                    <dd className={`${contingencyRemaining < 0 ? 'text-red-600' : ''}`}>
-                      {formatCurrency(contingencyRemaining)}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
+            <GradientCard
+              title="Total Cost"
+              value={formatCurrency(currentBudget)}
+              icon={Calculator}
+              variant={currentBudget > currentContractValue ? 'red' : 'purple'}
+              subtitle={`Budget: ${formatCurrency(currentBudget)}`}
+              trend={
+                currentBudget > 0
+                  ? {
+                      value: ((currentBudget - currentContractValue) / currentBudget) * 100,
+                      label: currentBudget > currentContractValue ? 'over budget' : 'under budget',
+                    }
+                  : undefined
+              }
+            />
+
+            <GradientCard
+              title="Gross Profit"
+              value={formatCurrency(estimatedGrossProfit)}
+              icon={TrendingUp}
+              variant={estimatedGrossProfit < 0 ? 'red' : 'green'}
+              subtitle={`${((estimatedGrossProfit / currentContractValue) * 100).toFixed(1)}% margin`}
+              trend={
+                estimatedGrossProfit > 0
+                  ? {
+                      value: (estimatedGrossProfit / currentContractValue) * 100,
+                      label: 'profit margin',
+                    }
+                  : undefined
+              }
+            />
+
+            <GradientCard
+              title="Completion"
+              value={`${((actualExpenses / currentBudget) * 100).toFixed(0)}%`}
+              icon={Progress as any}
+              variant={
+                currentContractValue > 0
+                  ? actualExpenses > currentBudget
+                    ? 'yellow'
+                    : 'blue'
+                  : 'blue'
+              }
+              subtitle="Cost progress"
+            />
           </div>
 
-          {/* Column 2 */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Budget Summary</CardTitle>
-                <CardDescription>Cost tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Original Budget</dt>
-                    <dd>{formatCurrency(originalBudget)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Approved COs (+)</dt>
-                    <dd>{formatCurrency(totalCoCostImpact)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>Current Budget</dt>
-                    <dd>{formatCurrency(currentBudget)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Actual Expenses (-)</dt>
-                    <dd>{formatCurrency(actualExpenses)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>Cost Variance</dt>
-                    <dd className={`${costVariance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {formatCurrency(costVariance)}
-                      <span className="text-xs text-muted-foreground ml-1">
-                        {costVariance >= 0 ? '(Under)' : '(Over)'}
-                      </span>
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Profit Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Estimated GP</dt>
-                    <dd>{formatCurrency(estimatedGrossProfit)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">
-                      Expected Actual GP
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground ml-1 inline-block cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Expected Revenue minus Actual Expenses. Actual GP depends on final
-                            invoiced revenue.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </dt>
-                    <dd>{formatCurrency(expectedActualGrossProfit)}</dd>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <dt>
-                      Expected Variance
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground ml-1 inline-block cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Difference between Expected Actual GP and Estimated GP.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </dt>
-                    <dd
-                      className={`${expectedProfitVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
-                    >
-                      {formatCurrency(expectedProfitVariance)}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Column 3 */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Change Orders{' '}
-                  <span className="text-muted-foreground text-sm">
-                    ({approvedChangeOrders.length} Approved)
-                  </span>
+          {/* Revenue & Cost Breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Breakdown Card */}
+            <Card className="shadow-sm border border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center font-montserrat">
+                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                  Revenue Breakdown
                 </CardTitle>
-                <CardDescription>Summary of approved financial impacts.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex justify-between text-sm font-medium mb-3 border-b pb-2">
-                  <span>Total Cost Impact:</span>
-                  <span>{formatCurrency(totalCoCostImpact)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium mb-3 border-b pb-2">
-                  <span>Total Revenue Impact:</span>
-                  <span>{formatCurrency(totalCoRevenueImpact)}</span>
-                </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground font-opensans">
+                      Base Contract
+                    </span>
+                    <span className="font-medium font-montserrat">
+                      {formatCurrency(originalContractValue)}
+                    </span>
+                  </div>
 
-                {approvedChangeOrders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No approved change orders impacting financials.
-                  </p>
-                ) : (
-                  <ScrollArea className="h-[150px]">
-                    <div className="space-y-3 pr-2">
-                      {approvedChangeOrders.map(co => (
-                        <div key={co.id} className="text-xs border-b pb-2 last:border-b-0">
-                          <p className="font-medium truncate" title={co.title || 'Untitled'}>
-                            {co.title || 'Untitled'}
-                          </p>
-                          <div className="flex justify-between text-muted-foreground mt-1">
-                            <span>Cost: {formatCurrency(co.cost_impact || 0)}</span>
-                            <span>Revenue: {formatCurrency(co.revenue_impact || 0)}</span>
-                          </div>
-                        </div>
-                      ))}
+                  {totalCoRevenueImpact !== 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground font-opensans">
+                        Change Orders ({approvedChangeOrders.length})
+                      </span>
+                      <span
+                        className={cn(
+                          'font-medium font-montserrat',
+                          totalCoRevenueImpact >= 0 ? 'text-green-600' : 'text-red-600'
+                        )}
+                      >
+                        {totalCoRevenueImpact >= 0 ? '+' : ''}
+                        {formatCurrency(totalCoRevenueImpact)}
+                      </span>
                     </div>
-                  </ScrollArea>
-                )}
+                  )}
+
+                  {totalDiscounts > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground font-opensans">
+                        Discounts ({discounts.length})
+                      </span>
+                      <span className="text-red-600 font-medium font-montserrat">
+                        -{formatCurrency(totalDiscounts)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium font-opensans">Total Revenue</span>
+                      <span className="font-bold text-lg font-montserrat">
+                        {formatCurrency(currentContractValue + totalCoRevenueImpact)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle>Discounts</CardTitle>
-                  <CardDescription>Project-level discounts applied.</CardDescription>
-                </div>
-                <Button size="sm" variant="outline" onClick={handleAddDiscountClick}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Discount
-                </Button>
+            {/* Cost Breakdown Card */}
+            <Card className="shadow-sm border border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center font-montserrat">
+                  <Calculator className="h-5 w-5 mr-2 text-purple-600" />
+                  Cost Breakdown
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex justify-between text-sm font-medium mb-3 border-b pb-2">
-                  <span>Total Applied:</span>
-                  <span className="font-medium text-orange-600">
-                    {formatCurrency(totalDiscounts)}
-                  </span>
-                </div>
-                {discounts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No discounts applied yet.
-                  </p>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto pr-1">
-                    <Table className="text-xs">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="px-2 py-1">Date</TableHead>
-                          <TableHead className="px-2 py-1">Description</TableHead>
-                          <TableHead className="text-right px-2 py-1">Amount</TableHead>
-                          <TableHead className="w-[40px] px-1 py-1"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {discounts.map(discount => (
-                          <TableRow key={discount.id}>
-                            <TableCell className="px-2 py-1">
-                              {formatDate(discount.applied_date)}
-                            </TableCell>
-                            <TableCell className="px-2 py-1 break-words">
-                              {discount.description || '-'}
-                            </TableCell>
-                            <TableCell className="text-right px-2 py-1">
-                              {formatCurrency(discount.amount)}
-                            </TableCell>
-                            <TableCell className="px-1 py-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-red-500 hover:text-red-700 h-6 w-6"
-                                      onClick={() => setDiscountToDelete(discount)}
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Delete Discount</TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground font-opensans">
+                      Budget (Estimated)
+                    </span>
+                    <span className="font-medium font-montserrat">
+                      {formatCurrency(currentBudget)}
+                    </span>
                   </div>
-                )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground font-opensans">
+                      Actual Expenses
+                    </span>
+                    <span
+                      className={cn(
+                        'font-medium font-montserrat',
+                        actualExpenses > currentBudget ? 'text-red-600' : 'text-green-600'
+                      )}
+                    >
+                      {formatCurrency(actualExpenses)}
+                    </span>
+                  </div>
+
+                  {totalCoCostImpact !== 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground font-opensans">
+                        Change Order Impact
+                      </span>
+                      <span
+                        className={cn(
+                          'font-medium font-montserrat',
+                          totalCoCostImpact > 0 ? 'text-red-600' : 'text-green-600'
+                        )}
+                      >
+                        {totalCoCostImpact > 0 ? '+' : ''}
+                        {formatCurrency(Math.abs(totalCoCostImpact))}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium font-opensans">Total Cost</span>
+                      <span
+                        className={cn(
+                          'font-bold text-lg font-montserrat',
+                          currentBudget > currentContractValue ? 'text-red-600' : ''
+                        )}
+                      >
+                        {formatCurrency(currentBudget)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Progress
+                    value={Math.min((actualExpenses / currentBudget) * 100, 100)}
+                    className="h-2 mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground text-center font-opensans">
+                    {((actualExpenses / currentBudget) * 100).toFixed(0)}% of budget used
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Progress Overview */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center font-montserrat">
+                <Info className="h-5 w-5 mr-2 text-blue-600" />
+                Financial Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Budget vs Actual */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium font-opensans">Budget Utilization</span>
+                  <span className="text-sm text-muted-foreground font-opensans">
+                    {formatCurrency(actualExpenses)} / {formatCurrency(currentBudget)}
+                  </span>
+                </div>
+                <Progress
+                  value={Math.min((actualExpenses / currentBudget) * 100, 100)}
+                  className={cn(
+                    'h-3',
+                    actualExpenses > currentBudget ? 'bg-red-100' : 'bg-gray-100'
+                  )}
+                />
+                {actualExpenses > currentBudget && (
+                  <p className="text-xs text-red-600 font-opensans">
+                    {(actualExpenses - currentBudget).toFixed(1)}% over budget
+                  </p>
+                )}
+              </div>
+
+              {/* Revenue Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium font-opensans">Revenue Progress</span>
+                  <span className="text-sm text-muted-foreground font-opensans">
+                    {formatCurrency(actualExpenses)} cost vs{' '}
+                    {formatCurrency(currentContractValue + totalCoRevenueImpact)} revenue
+                  </span>
+                </div>
+                <Progress
+                  value={Math.min(
+                    (actualExpenses / (currentContractValue + totalCoRevenueImpact)) * 100,
+                    100
+                  )}
+                  className="h-3"
+                />
+              </div>
+
+              {/* Profit Margin Indicator */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium font-opensans">Profit Margin</span>
+                  <span
+                    className={cn(
+                      'text-lg font-bold font-montserrat',
+                      estimatedGrossProfit < 0
+                        ? 'text-red-600'
+                        : estimatedGrossProfit < 10
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
+                    )}
+                  >
+                    {((estimatedGrossProfit / currentContractValue) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full transition-all duration-300',
+                      estimatedGrossProfit < 0
+                        ? 'bg-red-500'
+                        : estimatedGrossProfit < 10
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                    )}
+                    style={{
+                      width: `${Math.min(Math.max((estimatedGrossProfit / currentContractValue) * 100, 0), 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Alerts */}
+          {(actualExpenses > currentBudget && actualExpenses > 0) || estimatedGrossProfit < 10 ? (
+            <Card
+              className={cn(
+                'shadow-sm',
+                actualExpenses > currentBudget
+                  ? 'border-red-200 bg-red-50'
+                  : 'border-yellow-200 bg-yellow-50'
+              )}
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center font-montserrat">
+                  <AlertCircle
+                    className={cn(
+                      'h-5 w-5 mr-2',
+                      actualExpenses > currentBudget ? 'text-red-600' : 'text-yellow-600'
+                    )}
+                  />
+                  Financial Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {actualExpenses > currentBudget && actualExpenses > 0 && (
+                    <li className="flex items-start gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-red-600 mt-1.5 flex-shrink-0" />
+                      <span className="text-sm text-red-700 font-opensans">
+                        Project is {(actualExpenses - currentBudget).toFixed(1)}% over budget
+                      </span>
+                    </li>
+                  )}
+                  {actualExpenses > 0 && actualExpenses <= currentBudget && (
+                    <li className="flex items-start gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-yellow-600 mt-1.5 flex-shrink-0" />
+                      <span className="text-sm text-yellow-700 font-opensans">
+                        Budget utilization is at{' '}
+                        {((actualExpenses / currentBudget) * 100).toFixed(0)}%
+                      </span>
+                    </li>
+                  )}
+                  {estimatedGrossProfit < 10 && estimatedGrossProfit >= 0 && (
+                    <li className="flex items-start gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-yellow-600 mt-1.5 flex-shrink-0" />
+                      <span className="text-sm text-yellow-700 font-opensans">
+                        Low profit margin of{' '}
+                        {((estimatedGrossProfit / currentContractValue) * 100).toFixed(1)}%
+                      </span>
+                    </li>
+                  )}
+                  {estimatedGrossProfit < 0 && (
+                    <li className="flex items-start gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-red-600 mt-1.5 flex-shrink-0" />
+                      <span className="text-sm text-red-700 font-opensans">
+                        Project is operating at a loss (-
+                        {((estimatedGrossProfit / currentContractValue) * 100).toFixed(1)}% margin)
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         {/* Add Discount Dialog Instance */}
