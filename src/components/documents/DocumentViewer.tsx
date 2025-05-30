@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X, FileText, Share2, Info, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -70,6 +71,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <span className="sr-only">Close</span>
             </Button>
           </div>
+          <DialogDescription className="sr-only">
+            View and manage document {document.file_name}
+          </DialogDescription>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">

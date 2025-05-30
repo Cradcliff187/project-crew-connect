@@ -12,7 +12,13 @@ import { toast } from '@/hooks/use-toast';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import DocumentViewer from '@/components/documents/DocumentViewer';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface ProjectDocumentsSectionProps {
   projectId: string;
@@ -153,6 +159,10 @@ export default function ProjectDocumentsSection({
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="font-montserrat">Upload Project Document</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Select and upload documents for this project. Supported formats include images, PDFs,
+              and office documents.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedDocumentUpload
             entityType="PROJECT"
