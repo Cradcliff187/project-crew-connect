@@ -10,9 +10,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import StandardizedDocumentUpload from '@/components/documents/StandardizedDocumentUpload';
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
@@ -35,7 +35,6 @@ export default function VendorDocumentsSection({
   const [viewerOpen, setViewerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const { isAboveMd } = useBreakpoint('md');
   const { toast } = useToast();
 
   const fetchDocuments = useCallback(async () => {

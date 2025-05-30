@@ -1,5 +1,7 @@
 // Export document components for easier imports
 export { default as DocumentViewerDialog } from './DocumentViewerDialog';
+export { default as DocumentViewerContent } from './DocumentViewerContent';
+export { default as DocumentViewer } from './DocumentViewer'; // Deprecated alias
 export { default as ReceiptUploadDialog } from './ReceiptUploadDialog';
 export { default as EnhancedDocumentUpload } from './EnhancedDocumentUpload';
 export { default as DocumentDetailView } from './DocumentDetailView';

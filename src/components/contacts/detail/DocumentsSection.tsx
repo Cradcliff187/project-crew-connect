@@ -5,7 +5,13 @@ import { Plus, Upload, X, Loader2, FileText } from 'lucide-react';
 import { Contact } from '@/pages/Contacts';
 import { fetchContactDocuments } from './util/contactDocuments';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import DocumentList from '@/components/documents/DocumentList';
 import { useQueryClient } from '@tanstack/react-query';
@@ -135,6 +141,10 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({ contact, onDocument
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Upload Document for {contact.name}</DialogTitle>
+            <DialogDescription>
+              Upload documents related to this contact such as contracts, certifications, or
+              correspondence.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedDocumentUpload
             entityType={'CONTACT' as EntityType}

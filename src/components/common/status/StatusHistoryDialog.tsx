@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import StatusHistoryView from './StatusHistoryView';
 import { StatusOption } from './UniversalStatusControl';
@@ -71,6 +77,9 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Status History</DialogTitle>
+          <DialogDescription>
+            View the complete history of status changes for this {entityType.toLowerCase()}.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">

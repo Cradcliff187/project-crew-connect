@@ -2,11 +2,17 @@ import React, { useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
 import DocumentCard from './DocumentCard';
-import DocumentViewer from './DocumentViewer';
+import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 import { Database } from '@/integrations/supabase/types';
 
 type DocumentRow = Database['public']['Tables']['documents']['Row'];
@@ -94,6 +100,10 @@ const DocumentsSection = memo(
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Upload Document</DialogTitle>
+              <DialogDescription>
+                Upload and categorize your document for this{' '}
+                {entityType.toLowerCase().replace('_', ' ')}.
+              </DialogDescription>
             </DialogHeader>
             <EnhancedDocumentUpload
               entityType={entityType}
@@ -104,20 +114,11 @@ const DocumentsSection = memo(
           </DialogContent>
         </Dialog>
 
-        <Dialog open={!!viewDocument} onOpenChange={open => !open && setViewDocument(null)}>
-          <DialogContent className="sm:max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle>{viewDocument?.file_name}</DialogTitle>
-            </DialogHeader>
-            {viewDocument && (
-              <DocumentViewer
-                document={viewDocument}
-                open={!!viewDocument}
-                onOpenChange={open => !open && setViewDocument(null)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <DocumentViewerDialog
+          document={viewDocument}
+          open={!!viewDocument}
+          onOpenChange={open => !open && setViewDocument(null)}
+        />
       </Card>
     );
   }

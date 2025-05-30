@@ -10,7 +10,13 @@ import { toast } from '@/hooks/use-toast';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import DocumentViewer from '@/components/documents/DocumentViewer';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface WorkOrderDocumentsSectionProps {
   workOrderId: string;
@@ -136,11 +142,14 @@ export default function WorkOrderDocumentsSection({
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="font-montserrat">Upload Work Order Document</DialogTitle>
+            <DialogDescription>
+              Upload documents related to this work order such as invoices, receipts, or
+              specifications.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedDocumentUpload
             entityType="WORK_ORDER"
             entityId={workOrderId}
-            entityName={workOrderTitle}
             onSuccess={() => {
               setUploadOpen(false);
               fetchDocuments();
