@@ -47,16 +47,20 @@ export const useDocumentVersions = (documentId?: string) => {
 
       // Process versions to get public URLs
       const versionsWithUrls = await Promise.all(
-        (versionsData || []).map(async version => {
-          // Get the public URL for the document
-          const { data: urlData } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(version.storage_path);
+        versionsData.map(async version => {
+          if (version.storage_path) {
+            const { data: urlData, error: urlError } = await supabase.storage
+              .from('construction_documents')
+              .createSignedUrl(version.storage_path, 3600); // 1 hour expiration
 
-          return {
-            ...version,
-            file_url: urlData.publicUrl,
-          } as Document;
+            if (urlError) {
+              console.error('Error generating signed URL:', urlError);
+              return { ...version, url: null };
+            }
+
+            return { ...version, url: urlData?.signedUrl || null };
+          }
+          return { ...version, url: null };
         })
       );
 
@@ -93,10 +97,16 @@ export const useDocumentVersions = (documentId?: string) => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('construction_documents').getPublicUrl(filePath);
+      // Get signed URL
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('construction_documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiration
+
+      if (urlError) {
+        console.error('Error generating signed URL:', urlError);
+      }
+
+      const url = urlData?.signedUrl || null;
 
       // Create document record with parent_document_id reference
       const documentData = {
@@ -132,7 +142,7 @@ export const useDocumentVersions = (documentId?: string) => {
         success: true,
         document: {
           ...newVersion,
-          file_url: publicUrl,
+          url: url,
         } as Document,
       };
     } catch (error: any) {

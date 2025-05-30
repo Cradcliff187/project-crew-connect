@@ -24,17 +24,25 @@ export const useRecentDocuments = () => {
       }
 
       // Process the documents to get URLs
-      const docsWithUrls = await Promise.all(
+      const documentsWithUrls = await Promise.all(
         data.map(async doc => {
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('construction_documents').getPublicUrl(doc.storage_path);
+          if (doc.storage_path) {
+            const { data: urlData, error: urlError } = await supabase.storage
+              .from('construction_documents')
+              .createSignedUrl(doc.storage_path, 3600); // 1 hour expiration
 
-          return { ...doc, url: publicUrl };
+            if (urlError) {
+              console.error('Error generating signed URL:', urlError);
+              return { ...doc, url: null };
+            }
+
+            return { ...doc, url: urlData?.signedUrl || null };
+          }
+          return { ...doc, url: null };
         })
       );
 
-      setRecentDocuments(docsWithUrls);
+      setRecentDocuments(documentsWithUrls);
     } catch (error: any) {
       console.error('Error fetching recent documents:', error);
       toast({

@@ -39,14 +39,21 @@ export function useDocumentSharing() {
         .single();
 
       if (docError) throw new Error(`Error fetching document: ${docError.message}`);
-      if (!docData) throw new Error('Document not found');
+      if (!docData || !docData.storage_path) {
+        throw new Error('Document not found or missing storage path');
+      }
 
-      // Get the document URL
-      const { data: urlData } = await supabase.storage
+      // Generate a signed URL for sharing
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
-        .getPublicUrl(docData.storage_path);
+        .createSignedUrl(docData.storage_path, 3600); // 1 hour expiration
 
-      if (!urlData.publicUrl) throw new Error('Could not generate document URL');
+      if (urlError) {
+        console.error('Error generating signed URL:', urlError);
+        throw new Error('Failed to generate document URL');
+      }
+
+      const shareUrl = urlData?.signedUrl || '';
 
       // Send the email with document attachment
       // Note: In a real implementation, we would call a Supabase Edge Function to send the email
