@@ -16,20 +16,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash } from 'lucide-react';
 import BudgetItemFormDialog from './BudgetItemFormDialog';
+import { Database } from '@/integrations/supabase/types';
 
-interface BudgetItem {
-  id: string;
-  project_id: string;
-  category: string;
-  description: string;
-  estimated_amount: number;
-  actual_amount: number;
-  created_at: string;
-  vendor_id?: string;
-  subcontractor_id?: string;
-  vendorname?: string;
-  subname?: string;
-}
+// Use the database type and extend it with vendor/subcontractor names
+type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'] & {
+  vendorname?: string | null;
+  subname?: string | null;
+};
 
 interface BudgetItemsProps {
   projectId: string;
@@ -79,14 +72,14 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
 
           // Get subcontractor name if subcontractor_id exists
           if (item.subcontractor_id) {
-            const { data: subData } = await supabase
+            const { data: subData, error: subError } = await supabase
               .from('subcontractors')
-              .select('subname')
+              .select('company_name')
               .eq('subid', item.subcontractor_id)
               .single();
 
-            if (subData) {
-              subcontractorName = subData.subname;
+            if (!subError && subData) {
+              subcontractorName = (subData as { company_name: string }).company_name;
             }
           }
 
@@ -269,12 +262,10 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
         {showFormDialog && (
           <BudgetItemFormDialog
             projectId={projectId}
-            item={selectedItem}
+            budgetItem={selectedItem}
+            open={showFormDialog}
+            onOpenChange={setShowFormDialog}
             onSave={handleItemSaved}
-            onCancel={() => {
-              setShowFormDialog(false);
-              setSelectedItem(null);
-            }}
           />
         )}
       </CardContent>

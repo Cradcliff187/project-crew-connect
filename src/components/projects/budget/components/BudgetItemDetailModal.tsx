@@ -26,7 +26,7 @@ type BudgetItemWithDetails = Database['public']['Tables']['project_budget_items'
   cost_code_id?: string | null;
   category_id?: string | null;
   vendors?: { vendorname: string | null } | null;
-  subcontractors?: { subname: string | null } | null;
+  subcontractors?: { company_name: string | null } | null;
   document_id?: string | null;
 };
 
@@ -65,7 +65,7 @@ const BudgetItemDetailModal: React.FC<BudgetItemDetailModalProps> = ({
   const costVariance = estTotalCost - actualCost;
 
   const vendorName = item.vendors?.vendorname;
-  const subcontractorName = item.subcontractors?.subname;
+  const subcontractorName = item.subcontractors?.company_name;
   const documentId = item.document_id;
 
   return (

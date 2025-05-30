@@ -15,8 +15,13 @@ import { formatDate, formatFileSize, cn } from '@/lib/utils';
 // Use generated type alias
 type DocumentRow = Database['public']['Tables']['documents']['Row'];
 
+// Extend DocumentRow to include the url property that's added dynamically
+type DocumentWithUrl = DocumentRow & {
+  url?: string;
+};
+
 interface DocumentViewerProps {
-  document: DocumentRow | null;
+  document: DocumentWithUrl | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -73,19 +78,17 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, open, onOpenC
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto bg-gray-50 min-h-[400px] flex items-center justify-center">
-          {/* TODO: Get public URL for preview using storage_path */}
-          {isImage && document.storage_path ? (
+        <div className="flex-1 overflow-y-auto min-h-0 bg-gray-50 flex items-center justify-center p-6">
+          {/* Use actual document.url for preview */}
+          {isImage && document.url ? (
             <img
-              // src={document.url} // Replace with dynamically generated URL if possible
-              src={`/placeholder-preview/${document.storage_path}`}
+              src={document.url}
               alt={document.file_name || 'Preview'}
               className="max-w-full max-h-[70vh] object-contain"
             />
-          ) : isPdf && document.storage_path ? (
+          ) : isPdf && document.url ? (
             <iframe
-              // src={document.url} // Replace with dynamically generated URL if possible
-              src={`/placeholder-preview/${document.storage_path}`}
+              src={document.url}
               title={document.file_name || 'Preview'}
               className="w-full h-full min-h-[500px]"
             />

@@ -92,7 +92,7 @@ export const useProjectExpenses = (projectId: string) => {
           created_at,
           expense_type,
           project_budget_items ( id, category ),
-          time_entries ( date_worked, start_time, end_time, hours_worked, notes, employees (first_name, last_name) )
+          time_entries!fk_expenses_time_entry ( date_worked, start_time, end_time, hours_worked, notes, employees!time_entries_employee_id_fkey (first_name, last_name) )
         `
         )
         .eq('entity_id', projectId)

@@ -8,9 +8,14 @@ import { Database } from '@/integrations/supabase/types';
 // Use generated type alias
 type DocumentRow = Database['public']['Tables']['documents']['Row'];
 
+// Extend DocumentRow to include the url property that's added dynamically
+type DocumentWithUrl = DocumentRow & {
+  url?: string;
+};
+
 interface DocumentCardProps {
-  document: DocumentRow;
-  onViewDocument: (document: DocumentRow) => void;
+  document: DocumentWithUrl;
+  onViewDocument: (document: DocumentWithUrl) => void;
 }
 
 const DocumentCard = ({ document, onViewDocument }: DocumentCardProps) => {
@@ -44,19 +49,15 @@ const DocumentCard = ({ document, onViewDocument }: DocumentCardProps) => {
                 className="text-primary border-primary/30 hover:bg-primary/10"
                 asChild
                 // Disable if URL is missing
-                disabled={!document.storage_path}
+                disabled={!document.url}
               >
-                {/* Generate URL dynamically or ensure it's passed if needed */}
-                {/* Assuming a function getPublicUrl exists or needs to be created */}
-                {/* For now, let's just disable if no path */}
+                {/* Use actual document URL */}
                 <a
-                  href={
-                    document.storage_path ? `/placeholder-download/${document.storage_path}` : '#'
-                  }
+                  href={document.url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-disabled={!document.storage_path}
-                  onClick={e => !document.storage_path && e.preventDefault()}
+                  aria-disabled={!document.url}
+                  onClick={e => !document.url && e.preventDefault()}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Download

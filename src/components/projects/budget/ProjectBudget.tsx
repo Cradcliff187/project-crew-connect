@@ -53,7 +53,7 @@ type BudgetItemWithDetails = BudgetItem & {
   category_id?: string | null; // If available
   // Keep joined vendor/sub data
   vendors?: { vendorname: string | null } | null;
-  subcontractors?: { subname: string | null } | null;
+  subcontractors?: { company_name: string | null } | null;
   document_id?: string | null; // Already included
 };
 
@@ -90,7 +90,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
         vendor_id, subcontractor_id,
         created_at, updated_at, document_id,
         vendors ( vendorname ),
-        subcontractors ( subname )
+        subcontractors ( company_name )
       `;
 
       const [projectResult, budgetItemsResult] = await Promise.all([

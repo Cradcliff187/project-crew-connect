@@ -43,13 +43,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const handleDownload = () => {
     if (!document?.url) return;
 
-    // Create a temporary anchor element to trigger download
-    const a = window.document.createElement('a');
-    a.href = document.url;
-    a.download = document.file_name;
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
+    // Open the signed URL directly for download
+    window.open(document.url, '_blank');
   };
 
   return (
