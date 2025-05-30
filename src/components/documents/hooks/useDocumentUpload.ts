@@ -80,10 +80,16 @@ export const useDocumentUpload = (
         throw new Error(`Document error: ${documentError.message}`);
       }
 
-      // Get public URL for the uploaded file
-      const { data: publicUrlData } = supabase.storage
+      // Get the signed URL
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600); // 1 hour expiration
+
+      if (urlError) {
+        console.error('Error generating signed URL:', urlError);
+      }
+
+      const url = urlData?.signedUrl || null;
 
       // Call success callback if provided
       if (options?.onSuccess) {
@@ -98,7 +104,7 @@ export const useDocumentUpload = (
       // Return the document with public URL
       return {
         ...document,
-        url: publicUrlData.publicUrl,
+        url: url,
       };
     } catch (err: any) {
       console.error('Error uploading document:', err);

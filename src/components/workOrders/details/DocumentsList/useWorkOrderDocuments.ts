@@ -64,21 +64,29 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       const allDocs = [...(directDocs || []), ...expenseDocs];
 
       // Get storage URLs for each document
-      const docsWithUrls = await Promise.all(
+      const documentsWithUrls = await Promise.all(
         allDocs.map(async doc => {
-          const { data: urlData } = await supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
+          if (doc.storage_path) {
+            const { data: urlData, error: urlError } = await supabase.storage
+              .from('construction_documents')
+              .createSignedUrl(doc.storage_path, 3600); // 1 hour expiration
 
-          return {
-            ...doc,
-            url: urlData.publicUrl,
-            is_receipt: doc.is_expense || doc.category === 'receipt',
-          } as WorkOrderDocument;
+            if (urlError) {
+              console.error('Error generating signed URL:', urlError);
+              return { ...doc, url: null };
+            }
+
+            return {
+              ...doc,
+              url: urlData?.signedUrl || null,
+              is_receipt: doc.is_expense || doc.category === 'receipt',
+            } as WorkOrderDocument;
+          }
+          return { ...doc, url: null };
         })
       );
 
-      setDocuments(docsWithUrls);
+      setDocuments(documentsWithUrls);
     } catch (error: any) {
       console.error('Error fetching work order documents:', error);
       setError(error.message);

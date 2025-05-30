@@ -192,31 +192,25 @@ const TimeEntryReceiptUpload: React.FC<TimeEntryReceiptUploadProps> = ({
       if (error) throw error;
 
       // Transform the data to include document URLs
-      const docsWithUrls = await Promise.all(
-        (data || []).map(async doc => {
-          let publicUrl = '';
-
-          try {
-            const { data: urlData } = supabase.storage
+      const receiptsWithUrls = await Promise.all(
+        data.map(async doc => {
+          if (doc.storage_path) {
+            const { data: urlData, error: urlError } = await supabase.storage
               .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
+              .createSignedUrl(doc.storage_path, 3600); // 1 hour expiration
 
-            publicUrl = urlData.publicUrl;
-          } catch (err) {
-            console.error('Error getting public URL:', err);
+            if (urlError) {
+              console.error('Error generating signed URL:', urlError);
+              return { ...doc, url: null };
+            }
+
+            return { ...doc, url: urlData?.signedUrl || null };
           }
-
-          return {
-            ...doc,
-            url: publicUrl,
-            file_url: publicUrl,
-            is_latest_version: doc.is_latest_version ?? true,
-            mime_type: doc.file_type || 'application/octet-stream',
-          } as Document;
+          return { ...doc, url: null };
         })
       );
 
-      setDocuments(docsWithUrls);
+      setDocuments(receiptsWithUrls);
     } catch (err) {
       console.error('Error in time entry receipts fetch:', err);
       toast({

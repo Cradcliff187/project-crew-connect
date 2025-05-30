@@ -169,8 +169,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             )}
           </TabsContent>
 
-          <TabsContent value="versions" className="flex-1 overflow-auto bg-gray-100 p-4">
-            <div className="bg-white rounded-md shadow-sm p-4 animate-fade-in">
+          <TabsContent value="versions" className="overflow-auto p-4">
+            <div className="bg-white rounded-md shadow-sm p-4">
               <h3 className="text-sm font-medium mb-3">Version History</h3>
               <p className="text-sm text-muted-foreground">
                 Version {document.version || 1}
@@ -179,8 +179,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="related" className="flex-1 overflow-auto bg-gray-100 p-4">
-            <div className="bg-white rounded-md shadow-sm p-4 space-y-2 animate-fade-in">
+          <TabsContent value="related" className="overflow-auto p-4">
+            <div className="bg-white rounded-md shadow-sm p-4 space-y-2">
               <h3 className="text-sm font-medium mb-3">Related Documents</h3>
 
               {relatedDocuments.map(doc => (
@@ -203,8 +203,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="details" className="flex-1 overflow-auto bg-gray-100 p-4">
-            <div className="bg-white rounded-md shadow-sm p-6 space-y-6 animate-fade-in">
+          <TabsContent value="details" className="overflow-auto p-4">
+            <div className="bg-white rounded-md shadow-sm p-6 space-y-6">
               <h3 className="text-lg font-semibold mb-4">Document Details</h3>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
