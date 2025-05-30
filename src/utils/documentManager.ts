@@ -26,11 +26,11 @@ export async function getEntityDocuments(
       (documents || []).map(async doc => {
         const { data } = await supabase.storage
           .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
+          .createSignedUrl(doc.storage_path, 3600);
 
         return {
           ...doc,
-          url: data.publicUrl,
+          url: data.signedUrl,
         } as Document;
       })
     );
@@ -115,11 +115,11 @@ export async function getRecentEntityDocuments(
       (documents || []).map(async doc => {
         const { data } = await supabase.storage
           .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
+          .createSignedUrl(doc.storage_path, 3600);
 
         return {
           ...doc,
-          url: data.publicUrl,
+          url: data.signedUrl,
         } as Document;
       })
     );
@@ -294,5 +294,34 @@ export async function forceDeleteDocument(documentId: string): Promise<{
       success: false,
       message: 'An error occurred while deleting the document',
     };
+  }
+}
+
+export async function getDocumentUrl(documentId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('storage_path')
+      .eq('document_id', documentId)
+      .single();
+
+    if (error || !data?.storage_path) {
+      console.error('Error fetching document:', error);
+      return null;
+    }
+
+    const { data: signedUrlData, error: urlError } = await supabase.storage
+      .from('construction_documents')
+      .createSignedUrl(data.storage_path, 3600); // 1 hour expiration
+
+    if (urlError) {
+      console.error('Error generating signed URL:', urlError);
+      return null;
+    }
+
+    return signedUrlData?.signedUrl || null;
+  } catch (error) {
+    console.error('Error in getDocumentUrl:', error);
+    return null;
   }
 }

@@ -39,15 +39,20 @@ export function useDocumentViewer(options?: DocumentViewerOptions) {
         return;
       }
 
-      // Get the URL for the document
-      const { data: urlData } = await supabase.storage
+      // Generate a signed URL for the document (expires in 1 hour)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
-        .getPublicUrl(data.storage_path);
+        .createSignedUrl(data.storage_path, 3600); // 1 hour expiration
+
+      if (urlError) {
+        console.error('Error generating signed URL:', urlError);
+        throw urlError;
+      }
 
       // Combine the data
       const documentWithUrl: Document = {
         ...data,
-        url: urlData.publicUrl,
+        url: urlData.signedUrl,
       };
 
       setCurrentDocument(documentWithUrl);

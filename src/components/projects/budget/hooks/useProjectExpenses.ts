@@ -234,14 +234,28 @@ export const useProjectExpenses = (projectId: string) => {
       if (error) throw error;
       if (!data) throw new Error('Document not found');
 
-      // Fixed: The createSignedUrl method returns { data: { publicUrl: string } } without an error property
-      const { data: urlData } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(data.storage_path);
+      // Create a function to view the document
+      const viewUrl = await (async () => {
+        if (data) {
+          // Use createSignedUrl for private storage
+          const { data: signedUrlData, error: urlError } = await supabase.storage
+            .from('construction_documents')
+            .createSignedUrl(data.storage_path, 3600); // 1 hour expiration
 
-      // No need to check for storageError since getPublicUrl doesn't have an error return
-      window.open(urlData.publicUrl, '_blank');
-      return true;
+          if (urlError) {
+            console.error('Error generating signed URL:', urlError);
+            return null;
+          }
+
+          return signedUrlData?.signedUrl || null;
+        }
+        return null;
+      })();
+
+      if (viewUrl) {
+        window.open(viewUrl, '_blank');
+        return true;
+      }
     } catch (error: any) {
       console.error('Error accessing document:', error);
       toast({
