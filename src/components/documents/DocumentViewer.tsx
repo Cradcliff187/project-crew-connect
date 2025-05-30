@@ -60,8 +60,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <DialogTitle className="text-lg font-semibold text-[#0485ea]">
               {document.file_name}
             </DialogTitle>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-gray-100 hover:text-gray-700"
+              onClick={() => onOpenChange(false)}
+            >
               <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
             </Button>
           </div>
 

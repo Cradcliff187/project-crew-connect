@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Eye, Trash2 } from 'lucide-react';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import DocumentsGrid from '@/components/documents/DocumentsGrid';
 import DocumentsDataTable from '@/components/documents/DocumentsDataTable';
@@ -88,12 +88,12 @@ export default function ProjectDocumentsSection({
 
   const getDocumentActions = (document: Document) => [
     {
-      icon: <Plus className="h-4 w-4" />,
+      icon: <Eye className="h-4 w-4" />,
       label: 'View',
       onClick: () => handleViewDocument(document),
     },
     {
-      icon: <Plus className="h-4 w-4" />,
+      icon: <Trash2 className="h-4 w-4" />,
       label: 'Delete',
       onClick: () => handleDeleteDocument(document),
     },
