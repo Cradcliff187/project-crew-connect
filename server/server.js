@@ -88,6 +88,13 @@ console.log('----------------------------------------');
 // --- Configuration ---
 const PORT = process.env.PORT || process.env.SERVER_PORT || 8080; // Use PORT first (Cloud Run standard), then SERVER_PORT, then default to 8080
 
+// Dynamic base URL for redirects (for production deployment)
+const BASE_URL =
+  process.env.NODE_ENV === 'production'
+    ? process.env.PRODUCTION_URL ||
+      `https://${process.env.SERVICE_NAME || 'project-crew-connect'}-${process.env.PROJECT_ID || 'PROJECT_ID'}.${process.env.CLOUD_RUN_REGION || 'europe-west1'}.run.app`
+    : 'http://localhost:8080';
+
 // Constants
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -206,7 +213,7 @@ app.get('/auth/google/callback', async (req, res) => {
         if (err) {
           console.error('[/auth/google/callback] Error saving session:', err);
           return res.redirect(
-            `http://localhost:8080/settings?auth_error=session_save_failed&message=${encodeURIComponent(err.message)}`
+            `${BASE_URL}/settings?auth_error=session_save_failed&message=${encodeURIComponent(err.message)}`
           );
         }
         console.log(
@@ -216,11 +223,11 @@ app.get('/auth/google/callback', async (req, res) => {
           '[/auth/google/callback] Session data POST-SAVE (from current req object):',
           JSON.stringify(req.session, null, 2)
         );
-        res.redirect('http://localhost:8080/settings?auth_success=true');
+        res.redirect(`${BASE_URL}/settings?auth_success=true`);
       });
     } else {
       console.error('[/auth/google/callback] Could not retrieve user email from Google userInfo.');
-      res.redirect('http://localhost:8080/settings?auth_error=email_missing');
+      res.redirect(`${BASE_URL}/settings?auth_error=email_missing`);
     }
   } catch (error) {
     console.error(
@@ -229,7 +236,7 @@ app.get('/auth/google/callback', async (req, res) => {
       error.stack
     );
     res.redirect(
-      `http://localhost:8080/settings?auth_error=callback_exception&message=${encodeURIComponent(error.message)}`
+      `${BASE_URL}/settings?auth_error=callback_exception&message=${encodeURIComponent(error.message)}`
     );
   }
 });
