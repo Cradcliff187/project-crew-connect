@@ -1,54 +1,46 @@
 # Google Cloud Build configuration for Cloud Run deployment
-# Force Docker build (not buildpacks)
+# Simplified for reliable deployment
 steps:
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
-      [
-        'build',
-        '-f',
-        'Dockerfile',
-        '-t',
-        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
-        '-t',
-        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:latest',
-        '.',
-      ]
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+      - '.'
 
   # Step 2: Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
-      [
-        'push',
-        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
-      ]
+      - 'push'
+      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
-      [
-        'run',
-        'deploy',
-        'project-crew-connect',
-        '--image',
-        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
-        '--region',
-        'us-east5',
-        '--platform',
-        'managed',
-        '--allow-unauthenticated',
-        '--port',
-        '8080',
-        '--memory',
-        '2Gi',
-        '--cpu',
-        '2',
-        '--max-instances',
-        '10',
-        '--set-env-vars',
-        'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=project-crew-connect,CLOUD_RUN_REGION=us-east5,SUPABASE_URL=https://zrxezqllmpdlhiudutme.supabase.co,SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ,SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY,SUPABASE_PROJECT_ID=zrxezqllmpdlhiudutme,GOOGLE_CLIENT_ID=1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com,GOOGLE_CLIENT_SECRET=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,GOOGLE_CALENDAR_PROJECT=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com,GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com,WEBHOOK_URL=https://zrxezqllmpdlhiudutme.functions.supabase.co/calendarWebhook',
-        '--quiet',
-      ]
+      - 'run'
+      - 'deploy'
+      - 'project-crew-connect'
+      - '--image'
+      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+      - '--region'
+      - 'us-east5'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=project-crew-connect,CLOUD_RUN_REGION=us-east5,SUPABASE_URL=https://zrxezqllmpdlhiudutme.supabase.co,SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ,SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY,SUPABASE_PROJECT_ID=zrxezqllmpdlhiudutme,GOOGLE_CLIENT_ID=1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com,GOOGLE_CLIENT_SECRET=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,GOOGLE_CALENDAR_PROJECT=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com,GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com,WEBHOOK_URL=https://zrxezqllmpdlhiudutme.functions.supabase.co/calendarWebhook'
+      - '--quiet'
 
 # Build options
 options:
@@ -60,5 +52,4 @@ timeout: '1200s'
 
 # Images to be pushed to Artifact Registry
 images:
-  - 'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA'
-  - 'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:latest'
+  - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
