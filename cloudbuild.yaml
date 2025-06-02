@@ -1,25 +1,52 @@
-# Google Cloud Build configuration for automated deployment
+# Google Cloud Build configuration for Cloud Run deployment
 steps:
-  # Step 1: Install dependencies
-  - name: 'node:18'
-    entrypoint: 'npm'
-    args: ['install']
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA',
+        '-t',
+        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest',
+        '.',
+      ]
 
-  # Step 2: Build the frontend
-  - name: 'node:18'
-    entrypoint: 'npm'
-    args: ['run', 'build']
-    env:
-      - 'NODE_ENV=production'
-      - 'VITE_API_BASE_URL=https://${_SERVICE_NAME}-dot-${PROJECT_ID}.uc.r.appspot.com/api'
+  # Step 2: Push the Docker image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA']
 
-  # Step 3: Deploy to App Engine
+  # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['app', 'deploy', '--quiet']
+    args:
+      [
+        'run',
+        'deploy',
+        '${_SERVICE_NAME}',
+        '--image',
+        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA',
+        '--region',
+        '${_REGION}',
+        '--platform',
+        'managed',
+        '--allow-unauthenticated',
+        '--port',
+        '8080',
+        '--memory',
+        '2Gi',
+        '--cpu',
+        '2',
+        '--max-instances',
+        '10',
+        '--set-env-vars',
+        'NODE_ENV=production,SERVER_PORT=8080,SUPABASE_URL=https://zrxezqllmpdlhiudutme.supabase.co,SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ,SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY,SUPABASE_PROJECT_ID=zrxezqllmpdlhiudutme,GOOGLE_CLIENT_ID=1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com,GOOGLE_CLIENT_SECRET=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,GOOGLE_CALENDAR_PROJECT=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com,GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com,WEBHOOK_URL=https://zrxezqllmpdlhiudutme.functions.supabase.co/calendarWebhook',
+        '--quiet',
+      ]
 
 # Substitutions for dynamic values
 substitutions:
-  _SERVICE_NAME: 'akc-revisions' # Change this to your preferred service name
+  _SERVICE_NAME: 'project-crew-connect'
+  _REGION: 'us-east5'
 
 # Build options
 options:
@@ -28,3 +55,8 @@ options:
 
 # Build timeout
 timeout: '1200s'
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'

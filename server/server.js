@@ -86,7 +86,7 @@ console.log('----------------------------------------');
 // --- End Debugging ---
 
 // --- Configuration ---
-const PORT = process.env.SERVER_PORT || 3000; // Default to 3000 if not specified
+const PORT = process.env.PORT || process.env.SERVER_PORT || 8080; // Use PORT first (Cloud Run standard), then SERVER_PORT, then default to 8080
 
 // Constants
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -1589,6 +1589,29 @@ app.post('/api/ocr/process-receipt', async (req, res) => {
       details: error.message,
     });
   }
+});
+
+// --- Serve Static Files for Production ---
+// Serve static files from the parent directory's dist folder
+app.use(express.static(path.join(__dirname, '..', 'dist')));
+
+// Health check endpoint (required for Cloud Run)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Catch-all handler for SPA routing - serve index.html for non-API routes
+app.get('*', (req, res, next) => {
+  // Skip API routes and serve index.html for everything else
+  if (
+    req.path.startsWith('/api/') ||
+    req.path.startsWith('/auth/') ||
+    req.path.startsWith('/test/')
+  ) {
+    return next();
+  }
+
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
 // --- Start Server ---
