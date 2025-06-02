@@ -1,20 +1,27 @@
 # Google Cloud Build configuration for Cloud Run deployment
+# Force Docker build (not buildpacks)
 steps:
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       [
         'build',
+        '-f',
+        'Dockerfile',
         '-t',
-        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA',
+        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
         '-t',
-        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest',
+        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:latest',
         '.',
       ]
 
-  # Step 2: Push the Docker image to Container Registry
+  # Step 2: Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA']
+    args:
+      [
+        'push',
+        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
+      ]
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -22,11 +29,11 @@ steps:
       [
         'run',
         'deploy',
-        '${_SERVICE_NAME}',
+        'project-crew-connect',
         '--image',
-        'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA',
+        'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA',
         '--region',
-        '${_REGION}',
+        'us-east5',
         '--platform',
         'managed',
         '--allow-unauthenticated',
@@ -43,11 +50,6 @@ steps:
         '--quiet',
       ]
 
-# Substitutions for dynamic values
-substitutions:
-  _SERVICE_NAME: 'project-crew-connect'
-  _REGION: 'us-east5'
-
 # Build options
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -56,7 +58,7 @@ options:
 # Build timeout
 timeout: '1200s'
 
-# Images to be pushed to Container Registry
+# Images to be pushed to Artifact Registry
 images:
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
+  - 'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:$COMMIT_SHA'
+  - 'us-east5-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/project-crew-connect:latest'
