@@ -19,8 +19,14 @@ import {
 import { Loader2 } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
 import DocumentCard from '@/components/common/documents/DocumentCard';
-import DocumentViewer from '@/components/common/documents/DocumentViewer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import DocumentViewer from '@/components/documents/DocumentViewer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
 import DocumentViewToggle, { DocumentViewType } from '@/components/documents/DocumentViewToggle';
@@ -306,26 +312,23 @@ const Documents = () => {
         </PageTransition>
 
         {/* Document Viewer Dialog */}
-        <Dialog open={!!viewDocument} onOpenChange={open => !open && setViewDocument(null)}>
-          <DialogContent className="sm:max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle className="font-montserrat">{viewDocument?.file_name}</DialogTitle>
-            </DialogHeader>
-            {viewDocument && (
-              <DocumentViewer
-                document={viewDocument}
-                open={!!viewDocument}
-                onOpenChange={open => !open && setViewDocument(null)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        {viewDocument && (
+          <DocumentViewer
+            document={viewDocument}
+            open={!!viewDocument}
+            onOpenChange={open => !open && setViewDocument(null)}
+          />
+        )}
 
         {/* Upload Dialog */}
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="font-montserrat">Upload New Document</DialogTitle>
+              <DialogDescription>
+                Select and upload a new document to the system. You can categorize it by type and
+                entity.
+              </DialogDescription>
             </DialogHeader>
             <EnhancedDocumentUpload
               onSuccess={() => {

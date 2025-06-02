@@ -10,7 +10,7 @@ import {
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { Receipt, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import DocumentViewer from '@/components/common/documents/DocumentViewer';
+import DocumentViewer from '@/components/documents/DocumentViewer';
 
 interface ReceiptUploadDialogProps {
   open: boolean;

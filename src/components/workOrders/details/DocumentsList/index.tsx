@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType, Document } from '@/components/documents/schemas/documentSchema';
-import DocumentViewer from '@/components/common/documents/DocumentViewer';
+import DocumentViewer from '@/components/documents/DocumentViewer';
 import { useWorkOrderDocuments } from './useWorkOrderDocuments';
-import { WorkOrderDocument } from './types';
 import DocumentsTableContent from './DocumentsTableContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
@@ -18,7 +17,7 @@ interface WorkOrderDocumentsListProps {
 const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) => {
   const { documents, loading, fetchDocuments } = useWorkOrderDocuments(workOrderId);
   const [showUploadForm, setShowUploadForm] = useState(false);
-  const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
+  const [viewDocument, setViewDocument] = useState<Document | null>(null);
 
   // Toggle document upload form
   const toggleUploadForm = () => {
@@ -32,7 +31,7 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   };
 
   // Handle view document
-  const handleViewDocument = (doc: WorkOrderDocument) => {
+  const handleViewDocument = (doc: Document) => {
     setViewDocument(doc);
   };
 
@@ -101,7 +100,7 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
             <DocumentVersionHistoryCard
               documentId={viewDocument.document_id}
               onVersionChange={document => {
-                handleViewDocument(document as unknown as WorkOrderDocument);
+                handleViewDocument(document);
               }}
             />
           </div>
