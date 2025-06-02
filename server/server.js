@@ -92,7 +92,7 @@ const PORT = process.env.PORT || process.env.SERVER_PORT || 8080; // Use PORT fi
 const BASE_URL =
   process.env.NODE_ENV === 'production'
     ? process.env.PRODUCTION_URL ||
-      `https://${process.env.SERVICE_NAME || 'project-crew-connect'}-${process.env.PROJECT_ID || 'PROJECT_ID'}.${process.env.CLOUD_RUN_REGION || 'europe-west1'}.run.app`
+      `https://${process.env.SERVICE_NAME || 'project-crew-connect'}-${process.env.PROJECT_ID || 'PROJECT_ID'}.${process.env.CLOUD_RUN_REGION || 'us-east5'}.run.app`
     : 'http://localhost:8080';
 
 // Constants
