@@ -1,5 +1,11 @@
-# Google Cloud Build configuration for Cloud Run deployment
-# Simplified for reliable deployment
+# Google Cloud Build configuration for secure Cloud Run deployment
+# Uses Secret Manager for sensitive data instead of hardcoding
+
+substitutions:
+  _SERVICE_NAME: project-crew-connect
+  _REGION: us-east5
+  _IMAGE_NAME: us-east5-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/${_SERVICE_NAME}
+
 steps:
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
@@ -8,28 +14,31 @@ steps:
       - '-f'
       - 'Dockerfile'
       - '-t'
-      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+      - '${_IMAGE_NAME}:${COMMIT_SHA}'
+      - '-t'
+      - '${_IMAGE_NAME}:latest'
       - '.'
 
   # Step 2: Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+      - '--all-tags'
+      - '${_IMAGE_NAME}'
 
-  # Step 3: Deploy to Cloud Run
+  # Step 3: Deploy to Cloud Run with secrets from Secret Manager
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
       - 'deploy'
-      - 'project-crew-connect'
+      - '${_SERVICE_NAME}'
       - '--image'
-      - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+      - '${_IMAGE_NAME}:${COMMIT_SHA}'
       - '--region'
-      - 'us-east5'
+      - '${_REGION}'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated'
+      - '--no-allow-unauthenticated' # Requires authentication
       - '--port'
       - '8080'
       - '--memory'
@@ -38,18 +47,42 @@ steps:
       - '2'
       - '--max-instances'
       - '10'
+      - '--min-instances'
+      - '1' # Keep at least one instance warm
+      - '--service-account'
+      - '${_SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com'
       - '--set-env-vars'
-      - 'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=project-crew-connect,CLOUD_RUN_REGION=us-east5,SUPABASE_URL=https://zrxezqllmpdlhiudutme.supabase.co,SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ,SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY,SUPABASE_PROJECT_ID=zrxezqllmpdlhiudutme,GOOGLE_CLIENT_ID=1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com,GOOGLE_CLIENT_SECRET=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,GOOGLE_CALENDAR_PROJECT=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com,GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com,WEBHOOK_URL=https://zrxezqllmpdlhiudutme.functions.supabase.co/calendarWebhook'
+      - 'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=${_SERVICE_NAME},CLOUD_RUN_REGION=${_REGION}'
+      - '--update-secrets'
+      - 'SUPABASE_URL=supabase-url:latest'
+      - '--update-secrets'
+      - 'SUPABASE_ANON_KEY=supabase-anon-key:latest'
+      - '--update-secrets'
+      - 'SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest'
+      - '--update-secrets'
+      - 'GOOGLE_CLIENT_ID=google-client-id:latest'
+      - '--update-secrets'
+      - 'GOOGLE_CLIENT_SECRET=google-client-secret:latest'
+      - '--update-secrets'
+      - 'GOOGLE_CALENDAR_PROJECT=google-calendar-project:latest'
+      - '--update-secrets'
+      - 'GOOGLE_CALENDAR_WORK_ORDER=google-calendar-work-order:latest'
+      - '--update-secrets'
+      - 'WEBHOOK_URL=webhook-url:latest'
+      - '--update-secrets'
+      - 'GOOGLE_MAPS_API_KEY=google-maps-api-key:latest'
       - '--quiet'
 
 # Build options
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
+  substitution_option: 'ALLOW_LOOSE'
 
 # Build timeout
 timeout: '1200s'
 
 # Images to be pushed to Artifact Registry
 images:
-  - 'us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest'
+  - '${_IMAGE_NAME}:${COMMIT_SHA}'
+  - '${_IMAGE_NAME}:latest'

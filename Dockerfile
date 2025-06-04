@@ -12,14 +12,14 @@ COPY tailwind.config.ts ./
 COPY postcss.config.js ./
 COPY components.json ./
 
-# Copy server package files
-COPY server/package*.json ./server/
-
 # Install frontend dependencies
 RUN npm install
 
-# Install server dependencies
-RUN cd server && npm install
+# Copy server directory (for server dependencies if any)
+COPY server/ ./server/
+
+# Install server dependencies if server has its own package.json
+RUN if [ -f server/package.json ]; then cd server && npm install && cd ..; fi
 
 # Copy source code
 COPY . .
@@ -27,8 +27,7 @@ COPY . .
 # Build the frontend for production
 RUN npm run build
 
-# Set working directory to server
-WORKDIR /app/server
+# The built files should be in 'dist' directory
 
 # Expose port 8080 (Cloud Run default)
 EXPOSE 8080
@@ -37,5 +36,5 @@ EXPOSE 8080
 ENV PORT=8080
 ENV NODE_ENV=production
 
-# Start the server
+# Start the server from root directory
 CMD ["node", "server.js"]
