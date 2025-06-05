@@ -37,4 +37,4 @@ ENV PORT=8080
 ENV NODE_ENV=production
 
 # Start the server from root directory
-CMD ["node", "server.js"]
+CMD ["node", "server.cjs"]

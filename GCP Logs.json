@@ -1,0 +1,3862 @@
+[
+  {
+    "textPayload": "starting build \"fcd431a2-6de3-490a-a7c6-3632cd931b9c\"\n",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-0",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.350083654Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "MAIN",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "FETCHSOURCE",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-1",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.350103364Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "MAIN",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: Using 'master' as the name for the initial branch. This default branch name",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-2",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866530675Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: is subject to change. To configure the initial branch name to use in all",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-3",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866547726Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: of your new repositories, which will suppress this warning, call:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-4",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866549366Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-5",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866550655Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: \tgit config --global init.defaultBranch <name>",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-6",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866551986Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-7",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866552916Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "gsutil:STDERR",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-8",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866554006Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: 'development'. The just-created branch can be renamed via this command:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-9",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866555106Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "gsutil:STDERR",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-10",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866556316Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "gsutil:STDERR",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "hint: \tgit branch -m <name>",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-11",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.866557986Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "gsutil:STDERR",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "Initialized empty Git repository in /workspace/.git/",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-12",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:50.868990929Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDOUT"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:51.407686615Z"
+  },
+  {
+    "textPayload": "From https://github.com/Cradcliff187/project-crew-connect",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-13",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.499688274Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": " * branch            d588849d3ddc7b558eee1cb926e27df82ed21c46 -> FETCH_HEAD",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-14",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.499703754Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDERR"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "HEAD is now at d588849 Setup secure Cloud Build configuration with Secret Manager integration",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-15",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.586038705Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDOUT"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "GitCommit:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-16",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.586572706Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "gsutil:STDOUT"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "d588849d3ddc7b558eee1cb926e27df82ed21c46",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-17",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.587620717Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "gsutil:STDOUT",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "BUILD",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-18",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:51.809510823Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "MAIN"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "Starting Step #0",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-19",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:52.336932062Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "MAIN"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "Step #0: Already have image (with digest): gcr.io/cloud-builders/docker",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-20",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:52.344825544Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:52.375536492Z"
+  },
+  {
+    "textPayload": "Step #0: Sending build context to Docker daemon  6.676MB\r\r",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-21",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:53.154869830Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:53.377760997Z"
+  },
+  {
+    "textPayload": "Step #0: Step 1/17 : FROM node:18-slim",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-22",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:53.163538393Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:53.377760997Z"
+  },
+  {
+    "textPayload": "Step #0: 18-slim: Pulling from library/node",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-23",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.112685710Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:54.371642790Z"
+  },
+  {
+    "textPayload": "Step #0: 61320b01ae5e: Already exists",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-24",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.430107620Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b98d3ae1ab80: Pulling fs layer",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-25",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.438392643Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b1831021e35a: Pulling fs layer",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-26",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.438408403Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: c768ab8cba73: Pulling fs layer",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-27",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.438408993Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: 8c994cf49dd1: Pulling fs layer",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-28",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.438409443Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: 8c994cf49dd1: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-29",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.438409983Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b98d3ae1ab80: Verifying Checksum",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-30",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.802724214Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b98d3ae1ab80: Download complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-31",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.802742044Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: c768ab8cba73: Verifying Checksum",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-32",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.830008125Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: c768ab8cba73: Download complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-33",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.830181386Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b98d3ae1ab80: Pull complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-34",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:54.860144261Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b1831021e35a: Verifying Checksum",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-35",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:55.103578910Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b1831021e35a: Download complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-36",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:55.103592030Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: 8c994cf49dd1: Verifying Checksum",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-37",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:55.131450732Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: 8c994cf49dd1: Download complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-38",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:55.131465232Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:55.378520110Z"
+  },
+  {
+    "textPayload": "Step #0: b1831021e35a: Pull complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-39",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.026581467Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0: c768ab8cba73: Pull complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-40",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.129508693Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0: 8c994cf49dd1: Pull complete",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-41",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.188201712Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0: Digest: sha256:f9ab18e354e6855ae56ef2b290dd225c1e51a564f87584b9bd21dd651838830e",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-42",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.204517536Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0: Status: Downloaded newer image for node:18-slim",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-43",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.210669666Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 101e0128c8ea",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-44",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.213607270Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0: Step 2/17 : WORKDIR /app",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-45",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.213619920Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:56.370278666Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 3d714e02db2d",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-46",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.596563700Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container 3d714e02db2d",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-47",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.667567968Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> df77c2097c20",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-48",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.667580837Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 3/17 : COPY package*.json ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-49",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.667581428Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> e3617794c0b0",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-50",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.813638339Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 4/17 : COPY tsconfig*.json ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-51",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:56.813654859Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 169eb2667075",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-52",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.000659832Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 5/17 : COPY vite.config.ts ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-53",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.000677182Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 9b776e5d0264",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-54",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.101954255Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 6/17 : COPY tailwind.config.ts ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-55",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.101969795Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 3bce11905a2d",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-56",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.199001582Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 7/17 : COPY postcss.config.js ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-57",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.199014872Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> e3caaa358581",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-58",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.294432496Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0: Step 8/17 : COPY components.json ./",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-59",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.294445636Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:57.370129664Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> b1a370d66dfe",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-60",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.393458656Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:58.368890104Z"
+  },
+  {
+    "textPayload": "Step #0: Step 9/17 : RUN npm install",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-61",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.393476326Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:58.368890104Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 140e9402de75",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-62",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:02:57.423329941Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:02:58.368890104Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[91mnpm warn deprecated lodash.get@4.4.2: This package is deprecated. Use the optional chaining (?.) operator instead.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-63",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:01.776229621Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:02.371675845Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0m\u001b[91mnpm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-64",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:02.185084484Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:02.371675845Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0m\u001b[91mnpm warn deprecated glob@8.1.0: Glob versions prior to v9 are no longer supported",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-65",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:04.896342299Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:05.371982747Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0m",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-66",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.809458206Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: added 850 packages, and audited 851 packages in 17s",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-67",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.809472816Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-68",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.809473776Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: 188 packages are looking for funding",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-69",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.809474776Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0:   run `npm fund` for details",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-70",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.809475586Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-71",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826687190Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: 3 moderate severity vulnerabilities",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-72",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826709990Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-73",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826710900Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: To address all issues, run:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-74",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826712010Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0:   npm audit fix",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-75",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826718590Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-76",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826719050Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: Run `npm audit` for details.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-77",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.826719690Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[91mnpm notice",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-78",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.827948212Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: npm notice New major version of npm available! 10.8.2 -> 11.4.1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-79",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.827961182Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-80",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.827962262Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: npm notice To update run: npm install -g npm@11.4.1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-81",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.827962762Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: npm notice",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-82",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:14.827963072Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:15.355100673Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0mRemoving intermediate container 140e9402de75",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-83",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.420811690Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> d05867a397a5",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-84",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.420831450Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0: Step 10/17 : COPY server/ ./server/",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-85",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.420832150Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 6715de4b771e",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-86",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.559060003Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0: Step 11/17 : RUN if [ -f server/package.json ]; then cd server && npm install && cd ..; fi",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-87",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.559071483Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 0a8a6340d302",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-88",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:27.587142513Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:28.375924490Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-89",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.187492632Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: added 140 packages, and audited 141 packages in 3s",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-90",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.187516772Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-91",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.187517423Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: 20 packages are looking for funding",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-92",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.187518203Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0:   run `npm fund` for details",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-93",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.187518703Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-94",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195851394Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: 6 vulnerabilities (3 low, 3 high)",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-95",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195866834Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-96",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195867454Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: To address issues that do not require attention, run:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-97",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195868234Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0:   npm audit fix",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-98",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195868874Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-99",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195869224Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: To address all issues, run:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-100",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195869904Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0:   npm audit fix --force",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-101",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195875334Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-102",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195875714Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: Run `npm audit` for details.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-103",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:31.195876134Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:31.353768019Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container 0a8a6340d302",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-104",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:33.735993750Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 7a5288cc9aaa",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-105",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:33.736004870Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0: Step 12/17 : COPY . .",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-106",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:33.736010800Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> f29c312f04a9",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-107",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.249393409Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0: Step 13/17 : RUN npm run build",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-108",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.249409938Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 7779afc23f14",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-109",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.279955881Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:34.352496711Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-110",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.678061399Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: > vite_react_shadcn_ts@0.0.0 build",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-111",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.678080498Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: > tsc && vite build",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-112",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.678081489Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-113",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:34.678081758Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: vite v5.4.10 building for production...",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-114",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:35.070396168Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: transforming...",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-115",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:35.130399272Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:35.353673451Z"
+  },
+  {
+    "textPayload": "Step #0: ✓ 4710 modules transformed.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-116",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:50.863675987Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:51.372699231Z"
+  },
+  {
+    "textPayload": "Step #0: rendering chunks...",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-117",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:51.634199809Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:52.354081696Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[91m[plugin:vite:reporter] [plugin vite:reporter] ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-118",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.309235382Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:52.354081696Z"
+  },
+  {
+    "textPayload": "Step #0: (!) /app/src/integrations/supabase/client.ts is dynamically imported by /app/src/components/estimates/components/estimate-items/useEstimateItemData.ts but also statically imported by /app/src/components/activeWork/hooks/useActiveWorkData.tsx, /app/src/components/changeOrders/ChangeOrderDialog.tsx, /app/src/components/changeOrders/ChangeOrderItems.tsx, /app/src/components/changeOrders/FinancialAnalysisTab.tsx, /app/src/components/changeOrders/WorkOrderChangeOrdersList.tsx, /app/src/components/common/AssigneeSelector.tsx, /app/src/components/common/status/StatusHistoryDialog.tsx, /app/src/components/common/status/UniversalStatusControl.tsx, /app/src/components/contacts/ContactActivitySection.tsx, /app/src/components/contacts/detail/RelationshipsSection.tsx, /app/src/components/contacts/detail/util/contactDocuments.ts, /app/src/components/contacts/detail/util/contactInteractions.ts, /app/src/components/contacts/detail/util/contactPerformance.ts, /app/src/components/contacts/detail/util/contactRelationships.ts, /app/src/components/contacts/detail/util/contactTransitions.ts, /app/src/components/contacts/hooks/useContact.ts, /app/src/components/documents/DocumentDeleteDialog.tsx, /app/src/components/documents/DocumentVersionHistoryCard.tsx, /app/src/components/documents/RelatedDocuments.tsx, /app/src/components/documents/StandardizedDocumentUpload.tsx, /app/src/components/documents/components/BudgetItemSelector.tsx, /app/src/components/documents/components/EntitySelector.tsx, /app/src/components/documents/hooks/useDocumentManager.ts, /app/src/components/documents/hooks/useDocumentSharing.ts, /app/src/components/documents/hooks/useEstimateDocuments.ts, /app/src/components/documents/services/DocumentUploader.ts, /app/src/components/documents/vendor-selector/VendorSearchCombobox.tsx, /app/src/components/employees/EmployeeForm.tsx, /app/src/components/estimates/components/EstimateRow.tsx, /app/src/components/estimates/components/RevisionPDFViewer.tsx, /app/src/components/estimates/components/form-steps/SummaryStep.tsx, /app/src/components/estimates/detail/EstimateEmailTab.tsx, /app/src/components/estimates/detail/RevisionFinancialComparison.tsx, /app/src/components/estimates/detail/dialogs/DocumentShareDialog.tsx, /app/src/components/estimates/detail/dialogs/EmailTemplateFormDialog.tsx, /app/src/components/estimates/detail/dialogs/EstimateConvertDialog.tsx, /app/src/components/estimates/detail/dialogs/EstimateRevisionDialog.tsx, /app/src/components/estimates/details/EstimateRevisionsTab.tsx, /app/src/components/estimates/email/EmailConfigurationCard.tsx, /app/src/components/estimates/email/EmailTemplatesManager.tsx, /app/src/components/estimates/hooks/useEstimateDetails.tsx, /app/src/components/estimates/hooks/useEstimateFormData.ts, /app/src/components/estimates/hooks/useEstimateSubmit.ts, /app/src/components/estimates/hooks/useEstimates.tsx, /app/src/components/estimates/hooks/usePdfGeneration.tsx, /app/src/components/layout/Header.tsx, /app/src/components/projects/ProjectEdit.tsx, /app/src/components/projects/budget/BudgetFormDialog.tsx, /app/src/components/projects/budget/BudgetItemFormDialog.tsx, /app/src/components/projects/budget/ProjectBudget.tsx, /app/src/components/projects/budget/hooks/useExpenseForm.ts, /app/src/components/projects/budget/hooks/useProjectExpenses.ts, /app/src/components/projects/createWizard/Step1_ProjectCustomerInfo.tsx, /app/src/components/projects/createWizard/Step2_BudgetLineItems.tsx, /app/src/components/projects/detail/ChangeOrdersList/index.tsx, /app/src/components/projects/documents/ProjectDocumentsSection.tsx, /app/src/components/projects/hooks/useProjectSubmit.ts, /app/src/components/projects/milestones/hooks/useMilestones.tsx, /app/src/components/projects/schedule/hooks/useScheduleItems.tsx, /app/src/components/subcontractors/SpecialtyDialog.tsx, /app/src/components/subcontractors/SpecialtyMultiSelect.tsx, /app/src/components/subcontractors/detail/SpecialtiesSection.tsx, /app/src/components/subcontractors/detail/hooks/useSubcontractorAssociatedData.ts, /app/src/components/subcontractors/detail/useSubcontractorData.ts, /app/src/components/subcontractors/hooks/useSpecialties.ts, /app/src/components/subcontractors/hooks/useSubcontractorSpecialties.ts, /app/src/components/subcontractors/hooks/useSubcontractors.ts, /app/src/components/subcontractors/useSubcontractorSubmit.ts, /app/src/components/time-entries/QuickLogWizard.tsx, /app/src/components/time-entries/receipts/TimeEntryReceiptUpload.tsx, /app/src/components/vendors/VendorSelectDialog.tsx, /app/src/components/vendors/detail/VendorDetail.tsx, /app/src/components/vendors/detail/hooks/useVendorDocuments.ts, /app/src/components/vendors/hooks/useVendorAssociatedData.ts, /app/src/components/vendors/useVendorSubmit.ts, /app/src/components/workOrders/WorkOrderDetails.tsx, /app/src/components/workOrders/WorkOrderDocumentsSection.tsx, /app/src/components/workOrders/details/DocumentsList/useWorkOrderDocuments.ts, /app/src/components/workOrders/details/hooks/useWorkOrderDetail.ts, /app/src/components/workOrders/details/hooks/useWorkOrderProgress.ts, /app/src/components/workOrders/dialog/hooks/useLocationCreate.ts, /app/src/components/workOrders/dialog/hooks/useWorkOrderData.ts, /app/src/components/workOrders/dialog/hooks/useWorkOrderSubmit.ts, /app/src/components/workOrders/expenses/hooks/useExpenseOperations.tsx, /app/src/components/workOrders/expenses/hooks/useExpenses.tsx, /app/src/components/workOrders/expenses/hooks/useExpensesFetch.tsx, /app/src/components/workOrders/expenses/hooks/useReceiptOperations.tsx, /app/src/components/workOrders/hooks/useWorkOrderTimelogs.ts, /app/src/components/workOrders/materials/hooks/useMaterialOperations.tsx, /app/src/components/workOrders/materials/hooks/useMaterialsFetch.tsx, /app/src/components/workOrders/materials/hooks/useReceiptOperations.tsx, /app/src/components/workOrders/materials/hooks/useVendors.tsx, /app/src/components/workOrders/timelogs/components/TimelogAddSheet.tsx, /app/src/contexts/AuthContext.tsx, /app/src/hooks/useDocumentViewer.ts, /app/src/hooks/useEmployees.ts, /app/src/hooks/useRoleBasedTimeEntries.ts, /app/src/pages/AdminTimeEntries.tsx, /app/src/pages/Contacts.tsx, /app/src/pages/CustomerDetail.tsx, /app/src/pages/Customers.tsx, /app/src/pages/Documents.tsx, /app/src/pages/Employees.tsx, /app/src/pages/EstimateDetailPage.tsx, /app/src/pages/FieldUserDashboard.tsx, /app/src/pages/ProjectDetail.tsx, /app/src/pages/Projects.tsx, /app/src/pages/Settings.tsx, /app/src/pages/Vendors.tsx, /app/src/pages/WorkOrders.tsx, /app/src/scripts/db-validations.ts, /app/src/services/discountService.ts, /app/src/services/estimateService.ts, /app/src/utils/documentManager.ts, /app/src/utils/reportUtils.ts, dynamic import will not move module into another chunk.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-119",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.309255212Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:52.354081696Z"
+  },
+  {
+    "textPayload": "Step #0: ",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-120",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.309255892Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:52.354081696Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0mcomputing gzip size...",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-121",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.387604690Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/index.html                              1.24 kB │ gzip:   0.63 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-122",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477237555Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/index-C7z06MpW.css             104.71 kB │ gzip:  17.59 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-123",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477255295Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/browser-Dmpde2NP.js              0.30 kB │ gzip:   0.25 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-124",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477256035Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/purify.es-D-QPbZEk.js           21.82 kB │ gzip:   8.60 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-125",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477256525Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/index.es-BEBK3eSy.js           149.98 kB │ gzip:  51.25 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-126",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477256855Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/html2canvas.esm-CBrSDip1.js    201.42 kB │ gzip:  48.03 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-127",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477382515Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: dist/assets/index-DcuED4gA.js            2,941.76 kB │ gzip: 807.48 kB",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-128",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477391445Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[91m",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-129",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477392015Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: (!) Some chunks are larger than 500 kB after minification. Consider:",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-130",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477392445Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: - Using dynamic import() to code-split the application",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-131",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477393395Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-132",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477394135Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-133",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477394555Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: \u001b[0m✓ built in 17.38s",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-134",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.477739875Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container 7779afc23f14",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-135",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.869051415Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> bc7ba6e31126",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-136",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.869068635Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Step 14/17 : EXPOSE 8080",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-137",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.869069515Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in ad3b267edeac",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-138",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.898113233Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container ad3b267edeac",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-139",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.966854795Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> dd12ad801653",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-140",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.966871325Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Step 15/17 : ENV PORT=8080",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-141",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.966872465Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 389fa8c18549",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-142",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:52.994816332Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container 389fa8c18549",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-143",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.059832162Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 76254d03619c",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-144",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.059848402Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Step 16/17 : ENV NODE_ENV=production",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-145",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.059849292Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in a404e5ec3c0c",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-146",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.087169588Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container a404e5ec3c0c",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-147",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.160071913Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> eea9c05d4f70",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-148",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.160083724Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Step 17/17 : CMD [\"node\", \"server.js\"]",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-149",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.160084593Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> Running in 21c89862e475",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-150",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.188917261Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Removing intermediate container 21c89862e475",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-151",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.255166121Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0:  ---> 7b791837c1f8",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-152",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.255178732Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Successfully built 7b791837c1f8",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-153",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.285483230Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #0",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Successfully tagged us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:d588849d3ddc7b558eee1cb926e27df82ed21c46",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-154",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.295548096Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Step #0: Successfully tagged us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect:latest",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-155",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.302364630Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #0"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:53.355879663Z"
+  },
+  {
+    "textPayload": "Finished Step #0",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-156",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.521966185Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "MAIN",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Starting Step #1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-157",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.522059825Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "MAIN"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: Already have image (with digest): gcr.io/cloud-builders/docker",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-158",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.523186515Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: The push refers to repository [us-east5-docker.pkg.dev/crm-live-458710/cloud-run-source-deploy/project-crew-connect]",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-159",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.908295731Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: ebd0b1cd6f6a: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-160",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973825022Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 000fe391fe9a: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-161",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973838692Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 1c7eb1ce97ca: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-162",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973839732Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 58424a6edf1a: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-163",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973839982Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 9d675959b1cc: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-164",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973840282Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 5d463f73dfe0: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-165",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973840552Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: be1866e7964b: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-166",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973840832Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: b1551831721a: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-167",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973841022Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 80fdcf49aae0: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-168",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973841272Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: f1d013826fac: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-169",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973841542Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 5b6d47ee7380: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-170",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973841702Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: b0a40a3fb707: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-171",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973841872Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: e1e93a4fa4fd: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-172",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973842052Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 9b95ddc8a140: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-173",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973842342Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: cd1cd7c2e57b: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-174",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973842502Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 206f13f5e317: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-175",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973842682Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: ace34d1d784c: Preparing",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-176",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973842942Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 9b95ddc8a140: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-177",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973843112Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 5b6d47ee7380: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-178",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973843302Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: cd1cd7c2e57b: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-179",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973843782Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: be1866e7964b: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-180",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973843972Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: b1551831721a: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-181",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973844162Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: e1e93a4fa4fd: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-182",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973844352Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: f1d013826fac: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-183",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973844782Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 5d463f73dfe0: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-184",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973844972Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: ace34d1d784c: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-185",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:53.973845162Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 206f13f5e317: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-186",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.228768258Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: b0a40a3fb707: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-187",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.228781358Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: 80fdcf49aae0: Waiting",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-188",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.228782308Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "Step #1"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Step #1: denied: Permission \"artifactregistry.repositories.uploadArtifacts\" denied on resource \"projects/crm-live-458710/locations/us-east5/repositories/cloud-run-source-deploy\" (or it may not exist)",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-189",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.228844678Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "Step #1",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.354814342Z"
+  },
+  {
+    "textPayload": "Finished Step #1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-190",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03",
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.433304603Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "MAIN"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.520575564Z"
+  },
+  {
+    "textPayload": "ERROR",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-191",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "project_id": "crm-live-458710",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.433387673Z",
+    "severity": "INFO",
+    "labels": {
+      "build_step": "MAIN",
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.520575564Z"
+  },
+  {
+    "textPayload": "ERROR: build step 1 \"gcr.io/cloud-builders/docker\" failed: step exited with non-zero status: 1",
+    "insertId": "fcd431a2-6de3-490a-a7c6-3632cd931b9c-192",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "crm-live-458710",
+        "build_id": "fcd431a2-6de3-490a-a7c6-3632cd931b9c",
+        "build_trigger_id": "7f488016-313b-438f-8a1a-7657f4698e03"
+      }
+    },
+    "timestamp": "2025-06-05T15:03:54.433410943Z",
+    "severity": "INFO",
+    "labels": {
+      "build_tags": "trigger-7f488016-313b-438f-8a1a-7657f4698e03",
+      "build_step": "MAIN"
+    },
+    "logName": "projects/crm-live-458710/logs/cloudbuild",
+    "receiveTimestamp": "2025-06-05T15:03:54.520575564Z"
+  }
+]
