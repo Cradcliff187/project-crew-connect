@@ -20,6 +20,25 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', port });
 });
 
+// Temporary Google Calendar auth endpoints
+// TODO: These need to be properly implemented with session management and Google OAuth
+app.get('/api/auth/status', (req, res) => {
+  // For now, return not authenticated to prevent the HTML error
+  res.json({ authenticated: false });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Logout endpoint not implemented in production' });
+});
+
+app.get('/auth/google', (req, res) => {
+  // This should redirect to Google OAuth, but for now just return an error
+  res.status(501).json({
+    error: 'Google Calendar integration not yet implemented in production',
+    message: 'This feature is coming soon',
+  });
+});
+
 // Google Maps API proxy endpoints
 app.get('/api/maps/autocomplete', async (req, res) => {
   try {
