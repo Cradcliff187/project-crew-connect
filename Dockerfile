@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -19,16 +19,17 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
-# Install necessary global packages
-RUN npm install -g serve
-
 # Set working directory
 WORKDIR /app
 
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
 
 # Copy the production server file
 COPY server-production.cjs ./
