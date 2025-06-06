@@ -7,9 +7,18 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 8080;
 
+console.log('Starting production server...');
+console.log('Port:', port);
+console.log('Google Maps API Key configured:', !!process.env.GOOGLE_MAPS_API_KEY);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', port });
+});
 
 // Google Maps API proxy endpoints
 app.get('/api/maps/autocomplete', async (req, res) => {
@@ -95,8 +104,25 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Start the server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Production server is running on port ${port}`);
-  console.log(`API endpoints available at /api/maps/*`);
+// Error handling
+process.on('uncaughtException', error => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Start the server
+app
+  .listen(port, '0.0.0.0', () => {
+    console.log(`Production server is running on port ${port}`);
+    console.log(`API endpoints available at /api/maps/*`);
+    console.log(`Health check available at /health`);
+  })
+  .on('error', err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
