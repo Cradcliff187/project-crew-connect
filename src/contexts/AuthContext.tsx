@@ -178,11 +178,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signInWithGoogle = async () => {
     try {
-      // Use the correct production URL explicitly
-      const redirectUrl =
-        window.location.hostname === 'localhost'
-          ? `${window.location.origin}/auth/callback`
-          : 'https://project-crew-connect-dbztoro5pq-ul.a.run.app/auth/callback';
+      // Use dynamic redirect URL based on current location
+      const redirectUrl = `${window.location.origin}/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
