@@ -4,40 +4,46 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// Import Google Calendar auth module
+const { setupGoogleCalendarAuth } = require('./server-google-calendar-auth.cjs');
+// Import body parser setup
+const { setupBodyParser, setupDebugEndpoints } = require('./server-body-parser-fix.cjs');
+
 const app = express();
 const port = process.env.PORT || 8080;
 
 console.log('Starting production server...');
 console.log('Port:', port);
 console.log('Google Maps API Key configured:', !!process.env.GOOGLE_MAPS_API_KEY);
+console.log('Google Client ID configured:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('Google Client Secret configured:', !!process.env.GOOGLE_CLIENT_SECRET);
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(
+  cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  })
+);
+
+// Set up proper body parsing with logging
+setupBodyParser(app);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', port });
 });
 
-// Temporary Google Calendar auth endpoints
-// TODO: These need to be properly implemented with session management and Google OAuth
-app.get('/api/auth/status', (req, res) => {
-  // For now, return not authenticated to prevent the HTML error
-  res.json({ authenticated: false });
-});
+// Set up Google Calendar authentication
+setupGoogleCalendarAuth(app);
 
-app.post('/api/auth/logout', (req, res) => {
-  res.json({ success: true, message: 'Logout endpoint not implemented in production' });
-});
-
-app.get('/auth/google', (req, res) => {
-  // This should redirect to Google OAuth, but for now just return an error
-  res.status(501).json({
-    error: 'Google Calendar integration not yet implemented in production',
-    message: 'This feature is coming soon',
-  });
-});
+// Set up debug endpoints (remove in production)
+if (process.env.NODE_ENV !== 'production') {
+  setupDebugEndpoints(app);
+  console.log('Debug endpoints enabled at /api/debug/*');
+}
 
 // Google Maps API proxy endpoints
 app.get('/api/maps/autocomplete', async (req, res) => {

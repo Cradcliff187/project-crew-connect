@@ -27,16 +27,16 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, watchE
       name="vendor_type"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Payee Category</FormLabel>
+          <FormLabel>Payee Type</FormLabel>
           <Select onValueChange={field.onChange} value={field.value || ''}>
             <FormControl>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select payee category" />
+                <SelectValue placeholder="Select payee type" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               <SelectItem value="vendor">Vendor</SelectItem>
-              <SelectItem value="subcontractor">Independent Contractor</SelectItem>
+              <SelectItem value="subcontractor">Subcontractor</SelectItem>
               <SelectItem value="none">None</SelectItem>
             </SelectContent>
           </Select>

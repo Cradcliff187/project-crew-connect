@@ -37,7 +37,7 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, onChan
       name="metadata.vendorType"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Payee Category</FormLabel>
+          <FormLabel>Payee Type</FormLabel>
           <Select
             onValueChange={value => {
               // First update the vendor type
@@ -59,12 +59,12 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, onChan
                   !field.value && 'text-muted-foreground'
                 )}
               >
-                <SelectValue placeholder="Select payee category" />
+                <SelectValue placeholder="Select payee type" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               <SelectItem value="vendor">Vendor</SelectItem>
-              <SelectItem value="subcontractor">Independent Contractor</SelectItem>
+              <SelectItem value="subcontractor">Subcontractor</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
