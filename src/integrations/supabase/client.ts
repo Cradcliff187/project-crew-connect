@@ -19,21 +19,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     },
   },
 });
-
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('[Supabase Auth]', event, session);
-  if (event === 'INITIAL_SESSION') {
-    // Handle initial session if needed
-    console.log('[Supabase Auth] Initial session:', session);
-  } else if (event === 'SIGNED_IN') {
-    console.log('[Supabase Auth] User signed in:', session?.user?.email);
-  } else if (event === 'SIGNED_OUT') {
-    console.log('[Supabase Auth] User signed out');
-  } else if (event === 'TOKEN_REFRESHED') {
-    console.log('[Supabase Auth] Token refreshed:', session?.user?.email);
-  } else if (event === 'USER_UPDATED') {
-    console.log('[Supabase Auth] User updated:', session?.user?.email);
-  } else if (event === 'PASSWORD_RECOVERY') {
-    console.log('[Supabase Auth] Password recovery event');
-  }
-});

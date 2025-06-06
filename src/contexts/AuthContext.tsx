@@ -23,6 +23,9 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Debug flag - set to false in production
+const DEBUG_AUTH = process.env.NODE_ENV === 'development';
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -33,6 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [isRoleFetching, setIsRoleFetching] = useState(false);
   const [lastFetchedUserId, setLastFetchedUserId] = useState<string | null>(null);
+  const [lastAuthEvent, setLastAuthEvent] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -123,6 +127,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, currentSession: Session | null) => {
+        // Prevent duplicate processing of the same event
+        const eventKey = `${_event}-${currentSession?.user?.id || 'none'}`;
+        if (lastAuthEvent === eventKey && _event !== 'TOKEN_REFRESHED') {
+          return;
+        }
+        setLastAuthEvent(eventKey);
+
+        if (DEBUG_AUTH) {
+          console.log('[AuthContext] Auth event:', _event, currentSession?.user?.email);
+        }
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
@@ -163,10 +178,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signInWithGoogle = async () => {
     try {
+      // Use the correct production URL explicitly
+      const redirectUrl =
+        window.location.hostname === 'localhost'
+          ? `${window.location.origin}/auth/callback`
+          : 'https://project-crew-connect-dbztoro5pq-ul.a.run.app/auth/callback';
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
       if (error) throw error;

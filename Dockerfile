@@ -1,40 +1,40 @@
-# Use Node.js 18 as base image
-FROM node:18-slim
+# Use Node.js 20 Alpine as the base image
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy root package files for frontend dependencies
+# Copy package files
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY vite.config.ts ./
-COPY tailwind.config.ts ./
-COPY postcss.config.js ./
-COPY components.json ./
 
-# Install frontend dependencies
-RUN npm install
-
-# Copy server directory (for server dependencies if any)
-COPY server/ ./server/
-
-# Install server dependencies if server has its own package.json
-RUN if [ -f server/package.json ]; then cd server && npm install && cd ..; fi
+# Install dependencies
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
-# Build the frontend for production
+# Build the application
 RUN npm run build
 
-# The built files should be in 'dist' directory
+# Production stage
+FROM node:20-alpine
 
-# Expose port 8080 (Cloud Run default)
+# Install necessary global packages
+RUN npm install -g serve
+
+# Set working directory
+WORKDIR /app
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Copy the production server file
+COPY server-production.cjs ./
+
+# Expose port 8080
 EXPOSE 8080
 
-# Set environment variable for port
-ENV PORT=8080
-ENV NODE_ENV=production
-
-# Start the server from root directory
-CMD ["node", "server.cjs"]
+# Start the production server
+CMD ["node", "server-production.cjs"]
