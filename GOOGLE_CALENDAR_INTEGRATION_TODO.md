@@ -116,3 +116,17 @@ app.get('/api/auth/status', (req, res) => {
 - [ ] Day 3: Add calendar API endpoints
 - [ ] Day 4: Testing and deployment
 - [ ] Day 5: Production verification and monitoring
+
+## Priority Projects
+
+### 1. Payee Selection Schema Fix ✅ SOLUTION CREATED
+
+**Issue**: Subcontractor queries fail with 400 error - `column subcontractors.subname does not exist`
+
+- **Root Cause**: Frontend expects `subname` but database has `company_name`
+- **Impact**: 25+ files, 100+ lines of code
+- **Solution**: Created migration `supabase/migrations/20250111_add_subname_alias.sql`
+- **Status**: Ready to deploy - adds `subname` as generated column alias
+- **Documentation**: See `PAYEE_SELECTION_SCHEMA_INVENTORY.md` and `PAYEE_SELECTION_IMPACT_MAP.md`
+
+### 2. Google Calendar Integration

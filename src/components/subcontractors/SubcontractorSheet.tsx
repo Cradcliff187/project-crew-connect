@@ -41,7 +41,10 @@ const SubcontractorSheet = ({
       }
     : undefined;
 
-  console.log('Processed form data:', formData);
+  // Only log when there's actual data to process
+  if (formData) {
+    console.log('Processing existing subcontractor data:', formData);
+  }
 
   const handleSuccess = () => {
     onOpenChange(false); // Close sheet

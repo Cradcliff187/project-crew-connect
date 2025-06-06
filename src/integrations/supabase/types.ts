@@ -2384,6 +2384,7 @@ export type Database = {
           status: string | null;
           subid: string;
           subname: string | null;
+          company_name: string | null;
           tax_id: string | null;
           total_completed_amount: number | null;
           updated_at: string;
@@ -2416,6 +2417,7 @@ export type Database = {
           status?: string | null;
           subid: string;
           subname?: string | null;
+          company_name?: string | null;
           tax_id?: string | null;
           total_completed_amount?: number | null;
           updated_at?: string;
@@ -2448,6 +2450,7 @@ export type Database = {
           status?: string | null;
           subid?: string;
           subname?: string | null;
+          company_name?: string | null;
           tax_id?: string | null;
           total_completed_amount?: number | null;
           updated_at?: string;

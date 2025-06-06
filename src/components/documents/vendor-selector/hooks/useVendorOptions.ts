@@ -41,16 +41,21 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
       // Fetch subcontractors
       const { data: subcontractors, error: subError } = await supabase
         .from('subcontractors')
-        .select('subid, subname')
-        .order('subname');
+        .select('subid, company_name')
+        .order('company_name');
 
       if (subError) {
         console.error('Error fetching subcontractors:', subError);
-        throw subError;
+        return;
       }
 
+      const mappedSubcontractors = (subcontractors || []).map(sub => ({
+        subid: sub.subid,
+        subname: sub.company_name, // Map for backward compatibility
+      }));
+
       setVendorOptions(vendors || []);
-      setSubcontractorOptions(subcontractors || []);
+      setSubcontractorOptions(mappedSubcontractors);
     } catch (error) {
       console.error('Error fetching vendors/subcontractors:', error);
     } finally {

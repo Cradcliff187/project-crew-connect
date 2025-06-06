@@ -24,31 +24,20 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, watchE
   return (
     <FormField
       control={control}
-      name="metadata.vendorType"
+      name="vendor_type"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Vendor Type</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value || 'vendor'}>
+          <FormLabel>Payee Category</FormLabel>
+          <Select onValueChange={field.onChange} value={field.value || ''}>
             <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select vendor type" />
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select payee category" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {vendorTypes.map(type => (
-                <SelectItem
-                  key={type}
-                  value={type}
-                  disabled={
-                    watchExpenseType &&
-                    ((type === 'vendor' && !expenseTypeRequiresVendor(watchExpenseType)) ||
-                      (type === 'subcontractor' &&
-                        !expenseTypeAllowsSubcontractor(watchExpenseType)))
-                  }
-                >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
-              ))}
+              <SelectItem value="vendor">Vendor</SelectItem>
+              <SelectItem value="subcontractor">Independent Contractor</SelectItem>
+              <SelectItem value="none">None</SelectItem>
             </SelectContent>
           </Select>
           <FormMessage />

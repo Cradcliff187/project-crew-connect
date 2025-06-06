@@ -67,16 +67,18 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
         }
         // Fetch subcontractors from subcontractors table
         else if (vendorType === 'subcontractor') {
-          const { data: subData, error: subError } = await supabase
+          // TODO: Database has 'company_name' but TypeScript types expect 'subname'
+          // This mismatch needs to be resolved in the database or type definitions
+          const { data, error } = await supabase
             .from('subcontractors')
             .select('subid, subname, status')
             .ilike('subname', `%${query}%`)
             .order('subname', { ascending: true })
             .limit(10);
 
-          if (subError) throw subError;
+          if (error) throw error;
 
-          vendors = (subData || []).map(item => ({
+          vendors = (data || []).map(item => ({
             id: item.subid,
             name: item.subname,
             status: item.status,
@@ -122,11 +124,12 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
           if (error) throw error;
           vendorName = data?.vendorname || '';
         } else if (vendorType === 'subcontractor') {
+          // TODO: Database has 'company_name' but TypeScript types expect 'subname'
           const { data, error } = await supabase
             .from('subcontractors')
             .select('subname')
             .eq('subid', value)
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
           vendorName = data?.subname || '';

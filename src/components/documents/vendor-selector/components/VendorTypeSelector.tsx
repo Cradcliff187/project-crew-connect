@@ -9,12 +9,14 @@ import {
 } from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { DocumentUploadFormValues } from '../../schemas/documentSchema';
+import { cn } from '@/lib/utils';
 
 interface VendorTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
+  onChange?: (value: 'vendor' | 'subcontractor' | 'none') => void;
 }
 
-const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
+const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, onChange }) => {
   // Get controller for the vendorId field outside of the render function
   const vendorIdController = useController({
     control,
@@ -35,23 +37,34 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
       name="metadata.vendorType"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Vendor Type</FormLabel>
+          <FormLabel>Payee Category</FormLabel>
           <Select
-            value={field.value}
             onValueChange={value => {
+              // First update the vendor type
               field.onChange(value);
               // Reset the vendor ID when changing type
               handleVendorTypeChange(value);
+              // Then call the parent onChange handler if provided
+              if (onChange) {
+                onChange(value as 'vendor' | 'subcontractor' | 'none');
+              }
             }}
+            value={field.value || ''}
           >
             <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select vendor type" />
+              <SelectTrigger
+                className={cn(
+                  'bg-white',
+                  field.value && 'text-foreground',
+                  !field.value && 'text-muted-foreground'
+                )}
+              >
+                <SelectValue placeholder="Select payee category" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="vendor">Material Vendor</SelectItem>
-              <SelectItem value="subcontractor">Subcontractor</SelectItem>
+              <SelectItem value="vendor">Vendor</SelectItem>
+              <SelectItem value="subcontractor">Independent Contractor</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
