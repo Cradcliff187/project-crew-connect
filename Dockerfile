@@ -1,16 +1,15 @@
-# Use Node.js 20 Alpine as the base image
+# Build stage
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev dependencies for build)
+# Install ALL dependencies for building
 RUN npm ci
 
-# Copy source code
+# Copy all source files
 COPY . .
 
 # Build the application
@@ -19,23 +18,29 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Install production dependencies directly in the final image
 COPY package*.json ./
-
-# Install only production dependencies
 RUN npm ci --only=production
 
-# Copy built files from builder stage
+# Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy the production server file
+# Copy the production server
 COPY server-production.cjs ./
 
-# Expose port 8080
+# Create a simple test to verify files exist
+RUN ls -la && \
+    test -f server-production.cjs && \
+    test -d dist && \
+    echo "Files verified"
+
+# Expose port
 EXPOSE 8080
 
-# Start the production server
+# Set environment variable for port
+ENV PORT=8080
+
+# Start the server
 CMD ["node", "server-production.cjs"]
