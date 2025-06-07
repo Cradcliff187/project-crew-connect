@@ -19,40 +19,69 @@ const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
 ];
 
-// In-memory session storage (should be replaced with Redis or database in production)
-const sessions = new Map();
+// Use Supabase for session storage in production, fallback to in-memory for development
+let sessionStore;
 
-// Session management functions
-function createSession(userId, tokens) {
-  const sessionId = crypto.randomBytes(32).toString('hex');
-  sessions.set(sessionId, {
-    userId,
-    tokens,
-    createdAt: Date.now(),
-  });
-  return sessionId;
+if (process.env.NODE_ENV === 'production' && process.env.SUPABASE_URL) {
+  // Use Supabase session storage in production
+  try {
+    sessionStore = require('./server-supabase-session-store.cjs');
+    console.log('Using Supabase session storage');
+  } catch (error) {
+    console.error('Failed to load Supabase session storage:', error);
+    // Fallback to in-memory
+    sessionStore = createInMemoryStore();
+  }
+} else {
+  // Use in-memory storage for development
+  sessionStore = createInMemoryStore();
+  console.log('Using in-memory session storage (development mode)');
 }
 
-function getSession(sessionId) {
-  return sessions.get(sessionId);
-}
+// In-memory storage fallback
+function createInMemoryStore() {
+  const sessions = new Map();
 
-function deleteSession(sessionId) {
-  sessions.delete(sessionId);
-}
-
-// Clean up expired sessions (older than 24 hours)
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [sessionId, session] of sessions.entries()) {
-      if (now - session.createdAt > 24 * 60 * 60 * 1000) {
-        sessions.delete(sessionId);
+  // Clean up expired sessions
+  setInterval(
+    () => {
+      const now = Date.now();
+      for (const [sessionId, session] of sessions.entries()) {
+        if (now - session.createdAt > 24 * 60 * 60 * 1000) {
+          sessions.delete(sessionId);
+        }
       }
-    }
-  },
-  60 * 60 * 1000
-); // Run every hour
+    },
+    60 * 60 * 1000
+  );
+
+  return {
+    createSession: (userId, tokens) => {
+      const sessionId = crypto.randomBytes(32).toString('hex');
+      sessions.set(sessionId, {
+        userId,
+        tokens,
+        createdAt: Date.now(),
+      });
+      return Promise.resolve(sessionId);
+    },
+    getSession: sessionId => Promise.resolve(sessions.get(sessionId)),
+    updateSession: (sessionId, updates) => {
+      const session = sessions.get(sessionId);
+      if (session) {
+        Object.assign(session, updates);
+      }
+      return Promise.resolve(session);
+    },
+    deleteSession: sessionId => {
+      sessions.delete(sessionId);
+      return Promise.resolve();
+    },
+  };
+}
+
+// Use the session store functions
+const { createSession, getSession, updateSession, deleteSession } = sessionStore;
 
 // OAuth endpoints
 function setupGoogleCalendarAuth(app) {

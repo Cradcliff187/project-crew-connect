@@ -39,10 +39,12 @@ app.get('/health', (req, res) => {
 // Set up Google Calendar authentication
 setupGoogleCalendarAuth(app);
 
-// Set up debug endpoints (remove in production)
+// Debug endpoints are disabled in production for security
 if (process.env.NODE_ENV !== 'production') {
   setupDebugEndpoints(app);
   console.log('Debug endpoints enabled at /api/debug/*');
+} else {
+  console.log('Debug endpoints disabled (production mode)');
 }
 
 // Google Maps API proxy endpoints
