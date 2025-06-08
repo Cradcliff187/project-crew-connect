@@ -38,7 +38,7 @@ steps:
       - '${_REGION}'
       - '--platform'
       - 'managed'
-      - '--no-allow-unauthenticated' # Requires authentication
+      - '--allow-unauthenticated' # Allows public access to the service
       - '--port'
       - '8080'
       - '--memory'
