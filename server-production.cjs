@@ -4,10 +4,6 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-// Import Google Calendar auth module
-const { setupGoogleCalendarAuth } = require('./server-google-calendar-auth.cjs');
-// Import body parser setup
-const { setupBodyParser, setupDebugEndpoints } = require('./server-body-parser-fix.cjs');
 // Import additional API endpoints
 const { setupAdditionalEndpoints } = require('./server-api-endpoints.cjs');
 
@@ -30,27 +26,26 @@ app.use(
   })
 );
 
-// Set up proper body parsing with logging
-setupBodyParser(app);
+// Set up body parsing
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', port });
 });
 
-// Set up Google Calendar authentication
-setupGoogleCalendarAuth(app);
+// Google Calendar routes placeholder
+app.get('/api/auth/google', (req, res) => {
+  res.status(501).json({ message: 'Google Calendar auth not implemented yet' });
+});
+
+app.get('/api/auth/google/callback', (req, res) => {
+  res.status(501).json({ message: 'Google Calendar callback not implemented yet' });
+});
 
 // Set up additional API endpoints
 setupAdditionalEndpoints(app);
-
-// Debug endpoints are disabled in production for security
-if (process.env.NODE_ENV !== 'production') {
-  setupDebugEndpoints(app);
-  console.log('Debug endpoints enabled at /api/debug/*');
-} else {
-  console.log('Debug endpoints disabled (production mode)');
-}
 
 // Google Maps API proxy endpoints
 app.get('/api/maps/autocomplete', async (req, res) => {
