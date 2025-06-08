@@ -86,22 +86,31 @@ const { createSession, getSession, updateSession, deleteSession } = sessionStore
 // OAuth endpoints
 function setupGoogleCalendarAuth(app) {
   // Session middleware
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     const sessionId = req.headers.cookie?.match(/session=([^;]+)/)?.[1];
     if (sessionId) {
-      req.session = getSession(sessionId);
+      try {
+        req.session = await getSession(sessionId);
+      } catch (error) {
+        console.error('Session middleware error:', error);
+      }
     }
     next();
   });
 
   // Check authentication status
-  app.get('/api/auth/status', (req, res) => {
-    if (req.session && req.session.tokens) {
-      res.json({
-        authenticated: true,
-        userId: req.session.userId,
-      });
-    } else {
+  app.get('/api/auth/status', async (req, res) => {
+    try {
+      if (req.session && req.session.tokens) {
+        res.json({
+          authenticated: true,
+          userId: req.session.userId,
+        });
+      } else {
+        res.json({ authenticated: false });
+      }
+    } catch (error) {
+      console.error('Auth status error:', error);
       res.json({ authenticated: false });
     }
   });
@@ -133,7 +142,7 @@ function setupGoogleCalendarAuth(app) {
       const { data: userInfo } = await oauth2.userinfo.get();
 
       // Create session
-      const sessionId = createSession(userInfo.email, tokens);
+      const sessionId = await createSession(userInfo.email, tokens);
 
       // Set session cookie
       res.cookie('session', sessionId, {
@@ -152,13 +161,18 @@ function setupGoogleCalendarAuth(app) {
   });
 
   // Logout endpoint
-  app.post('/api/auth/logout', (req, res) => {
-    const sessionId = req.headers.cookie?.match(/session=([^;]+)/)?.[1];
-    if (sessionId) {
-      deleteSession(sessionId);
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      const sessionId = req.headers.cookie?.match(/session=([^;]+)/)?.[1];
+      if (sessionId) {
+        await deleteSession(sessionId);
+      }
+      res.clearCookie('session');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Failed to logout' });
     }
-    res.clearCookie('session');
-    res.json({ success: true });
   });
 
   // Calendar API endpoints
