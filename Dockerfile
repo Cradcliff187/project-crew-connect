@@ -29,11 +29,17 @@ COPY --from=builder /app/dist ./dist
 
 # Copy the production server and dependencies
 COPY server-production.cjs ./
+COPY server-google-calendar-auth.cjs ./
+COPY server-body-parser-fix.cjs ./
+COPY server-supabase-session-store.cjs ./
 COPY server-api-endpoints.cjs ./
 
 # Create a simple test to verify files exist
 RUN ls -la && \
     test -f server-production.cjs && \
+    test -f server-google-calendar-auth.cjs && \
+    test -f server-body-parser-fix.cjs && \
+    test -f server-supabase-session-store.cjs && \
     test -f server-api-endpoints.cjs && \
     test -d dist && \
     echo "Files verified"
