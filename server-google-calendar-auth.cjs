@@ -22,6 +22,16 @@ const SCOPES = [
 
 // This function will now create a new client for each request
 const getOauth2Client = () => {
+  console.log('[OAuth Diagnose] Instantiating new OAuth2 client.');
+  console.log(`[OAuth Diagnose] GOOGLE_CLIENT_ID loaded: ${!!process.env.GOOGLE_CLIENT_ID}`);
+  console.log(`[OAuth Diagnose] GOOGLE_CLIENT_ID value: ${process.env.GOOGLE_CLIENT_ID}`);
+  console.log(
+    `[OAuth Diagnose] GOOGLE_CLIENT_SECRET loaded: ${!!process.env.GOOGLE_CLIENT_SECRET}`
+  );
+  console.log(
+    `[OAuth Diagnose] GOOGLE_CLIENT_SECRET length: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0}`
+  );
+  console.log(`[OAuth Diagnose] redirectUri value: ${redirectUri}`);
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -127,13 +137,14 @@ function setupGoogleCalendarAuth(app) {
 
   // Initiate OAuth flow (support both routes)
   const handleOAuthStart = (req, res) => {
+    console.log('[OAuth Diagnose] Initiating OAuth flow...');
     const oauth2Client = getOauth2Client(); // Create client just-in-time
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
       prompt: 'consent',
     });
-    console.log('Generated Auth URL:', authUrl);
+    console.log('[OAuth Diagnose] Generated Auth URL:', authUrl);
     res.redirect(authUrl);
   };
 
@@ -143,22 +154,34 @@ function setupGoogleCalendarAuth(app) {
   // Handle OAuth callback (support both routes)
   const handleOAuthCallback = async (req, res) => {
     const { code } = req.query;
+    console.log(
+      `[OAuth Diagnose] Received callback with code: ${code ? 'A code was received' : 'No code received'}`
+    );
 
     if (!code) {
+      console.error('[OAuth Diagnose] Error: No code received in callback query string.');
       return res.redirect('/?error=no_code');
     }
 
     try {
+      console.log('[OAuth Diagnose] Attempting to get token with code...');
       const oauth2Client = getOauth2Client(); // Create client just-in-time
       const { tokens } = await oauth2Client.getToken(code);
+      console.log('[OAuth Diagnose] Successfully retrieved tokens.');
       oauth2Client.setCredentials(tokens);
 
       // Get user info
+      console.log('[OAuth Diagnose] Attempting to get user info...');
       const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
       const { data: userInfo } = await oauth2.userinfo.get();
+      console.log('[OAuth Diagnose] Successfully retrieved user info for:', userInfo.email);
 
       // Create session
+      console.log('[OAuth Diagnose] Creating session...');
       const sessionId = await createSession(userInfo.email, tokens);
+      console.log(
+        `[OAuth Diagnose] Session created with ID (last 5 chars): ...${sessionId.slice(-5)}`
+      );
 
       // Set session cookie
       res.cookie('session', sessionId, {
@@ -169,10 +192,13 @@ function setupGoogleCalendarAuth(app) {
       });
 
       // Redirect to calendar settings with success
+      console.log('[OAuth Diagnose] Redirecting to success page.');
       res.redirect('/settings/calendar?connected=true');
     } catch (error) {
-      console.error('OAuth callback error:', error);
-      res.redirect('/settings/calendar?error=auth_failed');
+      console.error('[OAuth Diagnose] FATAL OAUTH ERROR:', JSON.stringify(error, null, 2));
+      res.redirect(
+        `/settings/calendar?error=auth_failed&details=${encodeURIComponent(error.message)}`
+      );
     }
   };
 
