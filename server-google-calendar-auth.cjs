@@ -22,21 +22,39 @@ const SCOPES = [
 
 // This function will now create a new client for each request
 const getOauth2Client = () => {
-  console.log('[OAuth Diagnose] Instantiating new OAuth2 client.');
-  console.log(`[OAuth Diagnose] GOOGLE_CLIENT_ID loaded: ${!!process.env.GOOGLE_CLIENT_ID}`);
-  console.log(`[OAuth Diagnose] GOOGLE_CLIENT_ID value: ${process.env.GOOGLE_CLIENT_ID}`);
+  console.log('=== CREATING OAUTH2 CLIENT ===');
+  console.log('[OAuth] Environment variables check:');
+  console.log(`  - GOOGLE_CLIENT_ID exists: ${!!process.env.GOOGLE_CLIENT_ID}`);
+  console.log(`  - GOOGLE_CLIENT_ID value: ${process.env.GOOGLE_CLIENT_ID || 'UNDEFINED'}`);
+  console.log(`  - GOOGLE_CLIENT_SECRET exists: ${!!process.env.GOOGLE_CLIENT_SECRET}`);
   console.log(
-    `[OAuth Diagnose] GOOGLE_CLIENT_SECRET loaded: ${!!process.env.GOOGLE_CLIENT_SECRET}`
+    `  - GOOGLE_CLIENT_SECRET length: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0}`
   );
   console.log(
-    `[OAuth Diagnose] GOOGLE_CLIENT_SECRET length: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0}`
+    `  - GOOGLE_CLIENT_SECRET first 10 chars: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.substring(0, 10) + '...' : 'UNDEFINED'}`
   );
-  console.log(`[OAuth Diagnose] redirectUri value: ${redirectUri}`);
-  return new google.auth.OAuth2(
+  console.log(`  - redirectUri: ${redirectUri}`);
+
+  // Additional validation
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error('[OAuth] CRITICAL ERROR: GOOGLE_CLIENT_ID is undefined!');
+  }
+  if (!process.env.GOOGLE_CLIENT_SECRET) {
+    console.error('[OAuth] CRITICAL ERROR: GOOGLE_CLIENT_SECRET is undefined!');
+  }
+  if (!redirectUri) {
+    console.error('[OAuth] CRITICAL ERROR: redirectUri is undefined!');
+  }
+
+  console.log('[OAuth] Creating Google OAuth2 client with above credentials...');
+  const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     redirectUri
   );
+  console.log('[OAuth] OAuth2 client created successfully');
+  console.log('=== OAUTH2 CLIENT CREATED ===');
+  return client;
 };
 
 // Use Supabase for session storage in production, fallback to in-memory for development
@@ -137,14 +155,47 @@ function setupGoogleCalendarAuth(app) {
 
   // Initiate OAuth flow (support both routes)
   const handleOAuthStart = (req, res) => {
-    console.log('[OAuth Diagnose] Initiating OAuth flow...');
+    console.log('=== OAUTH FLOW START ===');
+    console.log('[OAuth] Timestamp:', new Date().toISOString());
+    console.log('[OAuth] Request URL:', req.url);
+    console.log('[OAuth] Request Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('[OAuth] User Agent:', req.get('User-Agent'));
+    console.log('[OAuth] Referer:', req.get('Referer'));
+
+    console.log('[OAuth] Creating OAuth2 client...');
     const oauth2Client = getOauth2Client(); // Create client just-in-time
-    const authUrl = oauth2Client.generateAuthUrl({
+
+    const authParams = {
       access_type: 'offline',
       scope: SCOPES,
       prompt: 'consent',
-    });
-    console.log('[OAuth Diagnose] Generated Auth URL:', authUrl);
+    };
+    console.log('[OAuth] Auth parameters:', JSON.stringify(authParams, null, 2));
+
+    const authUrl = oauth2Client.generateAuthUrl(authParams);
+    console.log('[OAuth] Generated full Auth URL:', authUrl);
+
+    // Parse and log URL components
+    try {
+      const urlObj = new URL(authUrl);
+      console.log('[OAuth] Auth URL host:', urlObj.host);
+      console.log('[OAuth] Auth URL pathname:', urlObj.pathname);
+      console.log('[OAuth] Auth URL search params:');
+      for (const [key, value] of urlObj.searchParams) {
+        if (key === 'client_id') {
+          console.log(`  ${key}: ${value}`);
+        } else if (key === 'redirect_uri') {
+          console.log(`  ${key}: ${value}`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+    } catch (e) {
+      console.error('[OAuth] Error parsing auth URL:', e);
+    }
+
+    console.log('[OAuth] Redirecting user to Google...');
+    console.log('=== OAUTH FLOW REDIRECT ===');
     res.redirect(authUrl);
   };
 
@@ -153,52 +204,116 @@ function setupGoogleCalendarAuth(app) {
 
   // Handle OAuth callback (support both routes)
   const handleOAuthCallback = async (req, res) => {
-    const { code } = req.query;
+    console.log('=== OAUTH CALLBACK START ===');
+    console.log('[OAuth] Callback timestamp:', new Date().toISOString());
+    console.log('[OAuth] Callback URL:', req.url);
+    console.log('[OAuth] Callback query params:', JSON.stringify(req.query, null, 2));
+    console.log('[OAuth] Callback headers:', JSON.stringify(req.headers, null, 2));
+
+    const { code, error, error_description, state } = req.query;
+
+    console.log('[OAuth] Extracted params:');
     console.log(
-      `[OAuth Diagnose] Received callback with code: ${code ? 'A code was received' : 'No code received'}`
+      '  - code:',
+      code ? `Present (${code.substring(0, 10)}...${code.substring(code.length - 10)})` : 'MISSING'
     );
+    console.log('  - error:', error || 'None');
+    console.log('  - error_description:', error_description || 'None');
+    console.log('  - state:', state || 'None');
+
+    if (error) {
+      console.error('[OAuth] GOOGLE RETURNED ERROR:', error);
+      console.error('[OAuth] ERROR DESCRIPTION:', error_description);
+      console.error('[OAuth] FULL CALLBACK URL:', req.url);
+      return res.redirect(
+        `/?error=google_error&details=${encodeURIComponent(error_description || error)}`
+      );
+    }
 
     if (!code) {
-      console.error('[OAuth Diagnose] Error: No code received in callback query string.');
+      console.error('[OAuth] CRITICAL: No authorization code received');
+      console.error('[OAuth] This indicates Google rejected the request before callback');
       return res.redirect('/?error=no_code');
     }
 
     try {
-      console.log('[OAuth Diagnose] Attempting to get token with code...');
+      console.log('[OAuth] Attempting to exchange code for tokens...');
       const oauth2Client = getOauth2Client(); // Create client just-in-time
-      const { tokens } = await oauth2Client.getToken(code);
-      console.log('[OAuth Diagnose] Successfully retrieved tokens.');
+
+      console.log('[OAuth] Making token request to Google...');
+      const tokenResponse = await oauth2Client.getToken(code);
+      const { tokens } = tokenResponse;
+
+      console.log('[OAuth] Token exchange successful!');
+      console.log('[OAuth] Received tokens:');
+      console.log(
+        '  - access_token:',
+        tokens.access_token ? `Present (${tokens.access_token.substring(0, 10)}...)` : 'MISSING'
+      );
+      console.log(
+        '  - refresh_token:',
+        tokens.refresh_token ? `Present (${tokens.refresh_token.substring(0, 10)}...)` : 'MISSING'
+      );
+      console.log('  - scope:', tokens.scope || 'Not provided');
+      console.log('  - token_type:', tokens.token_type || 'Not provided');
+      console.log('  - expiry_date:', tokens.expiry_date || 'Not provided');
+
       oauth2Client.setCredentials(tokens);
 
       // Get user info
-      console.log('[OAuth Diagnose] Attempting to get user info...');
+      console.log('[OAuth] Attempting to get user info...');
       const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-      const { data: userInfo } = await oauth2.userinfo.get();
-      console.log('[OAuth Diagnose] Successfully retrieved user info for:', userInfo.email);
+      const userInfoResponse = await oauth2.userinfo.get();
+      const { data: userInfo } = userInfoResponse;
+
+      console.log('[OAuth] User info retrieved successfully:');
+      console.log('  - email:', userInfo.email);
+      console.log('  - name:', userInfo.name);
+      console.log('  - verified_email:', userInfo.verified_email);
 
       // Create session
-      console.log('[OAuth Diagnose] Creating session...');
+      console.log('[OAuth] Creating session...');
       const sessionId = await createSession(userInfo.email, tokens);
-      console.log(
-        `[OAuth Diagnose] Session created with ID (last 5 chars): ...${sessionId.slice(-5)}`
-      );
+      console.log(`[OAuth] Session created successfully with ID: ...${sessionId.slice(-8)}`);
 
       // Set session cookie
-      res.cookie('session', sessionId, {
+      const cookieOptions = {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      });
+      };
+      console.log(
+        '[OAuth] Setting session cookie with options:',
+        JSON.stringify(cookieOptions, null, 2)
+      );
+      res.cookie('session', sessionId, cookieOptions);
 
       // Redirect to calendar settings with success
-      console.log('[OAuth Diagnose] Redirecting to success page.');
-      res.redirect('/settings/calendar?connected=true');
+      const successUrl = '/settings/calendar?connected=true';
+      console.log('[OAuth] Redirecting to success page:', successUrl);
+      console.log('=== OAUTH FLOW SUCCESS ===');
+      res.redirect(successUrl);
     } catch (error) {
-      console.error('[OAuth Diagnose] FATAL OAUTH ERROR:', JSON.stringify(error, null, 2));
-      res.redirect(
-        `/settings/calendar?error=auth_failed&details=${encodeURIComponent(error.message)}`
-      );
+      console.error('=== OAUTH FLOW ERROR ===');
+      console.error('[OAuth] FATAL ERROR occurred during token exchange or user info retrieval');
+      console.error('[OAuth] Error name:', error.name);
+      console.error('[OAuth] Error message:', error.message);
+      console.error('[OAuth] Error stack:', error.stack);
+      if (error.response) {
+        console.error('[OAuth] Error response status:', error.response.status);
+        console.error(
+          '[OAuth] Error response headers:',
+          JSON.stringify(error.response.headers, null, 2)
+        );
+        console.error('[OAuth] Error response data:', JSON.stringify(error.response.data, null, 2));
+      }
+      console.error('[OAuth] Full error object:', JSON.stringify(error, null, 2));
+      console.error('=== OAUTH ERROR END ===');
+
+      const errorUrl = `/settings/calendar?error=auth_failed&details=${encodeURIComponent(error.message)}`;
+      console.log('[OAuth] Redirecting to error page:', errorUrl);
+      res.redirect(errorUrl);
     }
   };
 
