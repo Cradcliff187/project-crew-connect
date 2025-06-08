@@ -14,18 +14,20 @@ console.log('OAuth Configuration:', {
   redirectUri: redirectUri,
 });
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri
-);
-
-// Scopes required for calendar operations
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
 ];
+
+// This function will now create a new client for each request
+const getOauth2Client = () => {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri
+  );
+};
 
 // Use Supabase for session storage in production, fallback to in-memory for development
 let sessionStore;
@@ -125,6 +127,7 @@ function setupGoogleCalendarAuth(app) {
 
   // Initiate OAuth flow (support both routes)
   const handleOAuthStart = (req, res) => {
+    const oauth2Client = getOauth2Client(); // Create client just-in-time
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
@@ -146,6 +149,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
 
@@ -199,6 +203,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -217,6 +222,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -244,6 +250,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -268,6 +275,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -294,6 +302,7 @@ function setupGoogleCalendarAuth(app) {
     }
 
     try {
+      const oauth2Client = getOauth2Client(); // Create client just-in-time
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
