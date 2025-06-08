@@ -5,11 +5,21 @@ const { google } = require('googleapis');
 const crypto = require('crypto');
 
 // OAuth2 Configuration
+// Support multiple possible redirect URIs
+const redirectUri =
+  process.env.GOOGLE_REDIRECT_URI ||
+  'https://project-crew-connect-1061142868787.us-east5.run.app/auth/google/callback';
+
+console.log('OAuth Configuration:', {
+  clientIdConfigured: !!(process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID),
+  clientSecretConfigured: !!(process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET),
+  redirectUri: redirectUri,
+});
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI ||
-    'https://project-crew-connect-1061142868787.us-east5.run.app/auth/google/callback'
+  redirectUri
 );
 
 // Scopes required for calendar operations
@@ -115,18 +125,21 @@ function setupGoogleCalendarAuth(app) {
     }
   });
 
-  // Initiate OAuth flow
-  app.get('/auth/google', (req, res) => {
+  // Initiate OAuth flow (support both routes)
+  const handleOAuthStart = (req, res) => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
       prompt: 'consent',
     });
     res.redirect(authUrl);
-  });
+  };
 
-  // Handle OAuth callback
-  app.get('/auth/google/callback', async (req, res) => {
+  app.get('/auth/google', handleOAuthStart);
+  app.get('/api/auth/google', handleOAuthStart);
+
+  // Handle OAuth callback (support both routes)
+  const handleOAuthCallback = async (req, res) => {
     const { code } = req.query;
 
     if (!code) {
@@ -158,7 +171,10 @@ function setupGoogleCalendarAuth(app) {
       console.error('OAuth callback error:', error);
       res.redirect('/settings/calendar?error=auth_failed');
     }
-  });
+  };
+
+  app.get('/auth/google/callback', handleOAuthCallback);
+  app.get('/api/auth/google/callback', handleOAuthCallback);
 
   // Logout endpoint
   app.post('/api/auth/logout', async (req, res) => {
