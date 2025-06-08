@@ -1,6 +1,8 @@
 // Body Parser Middleware with Enhanced Logging
 // This module provides middleware to properly parse and log request bodies
 
+const express = require('express');
+
 function setupBodyParser(app) {
   // Add body parsing middleware with error handling
   app.use(
