@@ -6,7 +6,7 @@ import { ensureSession } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 // API base URL for calling backend endpoints
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = '';
 
 export const useScheduleItems = (projectId: string) => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);

@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install ALL dependencies for building
-RUN npm ci
+RUN npm install --frozen-lockfile
 
 # Copy all source files
 COPY . .
@@ -22,17 +22,25 @@ WORKDIR /app
 
 # Install production dependencies directly in the final image
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --production
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy the production server
+# Copy the production server and dependencies
 COPY server-production.cjs ./
+COPY server-google-calendar-auth.cjs ./
+COPY server-body-parser-fix.cjs ./
+COPY server-supabase-session-store.cjs ./
+COPY server-api-endpoints.cjs ./
 
 # Create a simple test to verify files exist
 RUN ls -la && \
     test -f server-production.cjs && \
+    test -f server-google-calendar-auth.cjs && \
+    test -f server-body-parser-fix.cjs && \
+    test -f server-supabase-session-store.cjs && \
+    test -f server-api-endpoints.cjs && \
     test -d dist && \
     echo "Files verified"
 

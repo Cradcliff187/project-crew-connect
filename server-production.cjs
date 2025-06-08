@@ -8,6 +8,8 @@ require('dotenv').config();
 const { setupGoogleCalendarAuth } = require('./server-google-calendar-auth.cjs');
 // Import body parser setup
 const { setupBodyParser, setupDebugEndpoints } = require('./server-body-parser-fix.cjs');
+// Import additional API endpoints
+const { setupAdditionalEndpoints } = require('./server-api-endpoints.cjs');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -38,6 +40,9 @@ app.get('/health', (req, res) => {
 
 // Set up Google Calendar authentication
 setupGoogleCalendarAuth(app);
+
+// Set up additional API endpoints
+setupAdditionalEndpoints(app);
 
 // Debug endpoints are disabled in production for security
 if (process.env.NODE_ENV !== 'production') {

@@ -46,9 +46,7 @@ export async function fetchCalendarEvents(
   if (options.timeMax) queryParams.append('timeMax', options.timeMax);
   if (options.maxResults) queryParams.append('maxResults', options.maxResults.toString());
 
-  const response = await fetch(
-    `http://localhost:3000/api/calendar/events?${queryParams.toString()}`
-  );
+  const response = await fetch(`/api/calendar/events?${queryParams.toString()}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch calendar events: ${response.statusText}`);
@@ -64,7 +62,7 @@ export async function fetchCalendarEvents(
  */
 export async function createCalendarEvent(eventData: CalendarEventData) {
   try {
-    const response = await fetch(`http://localhost:3000/api/calendar/events`, {
+    const response = await fetch(`/api/calendar/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,7 +99,7 @@ export async function createMilestoneEvent(
     dueDate: string;
   }
 ) {
-  const response = await fetch(`http://localhost:3000/api/calendar/milestones/${milestoneId}`, {
+  const response = await fetch(`/api/calendar/milestones/${milestoneId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -130,7 +128,7 @@ export async function createWorkOrderEvent(
     location?: string;
   }
 ) {
-  const response = await fetch(`http://localhost:3000/api/calendar/workorders/${workOrderId}`, {
+  const response = await fetch(`/api/calendar/workorders/${workOrderId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -160,16 +158,13 @@ export async function createContactMeetingEvent(
     location?: string;
   }
 ) {
-  const response = await fetch(
-    `http://localhost:3000/api/calendar/contacts/meetings/${interactionId}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }
-  );
+  const response = await fetch(`/api/calendar/contacts/meetings/${interactionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -194,7 +189,7 @@ export async function createTimeEntryEvent(
     projectId?: string;
   }
 ) {
-  const response = await fetch(`http://localhost:3000/api/calendar/timeentries/${timeEntryId}`, {
+  const response = await fetch(`/api/calendar/timeentries/${timeEntryId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -218,7 +213,7 @@ export async function createTimeEntryEvent(
  */
 export async function updateCalendarEvent(eventId: string, eventData: Partial<CalendarEventData>) {
   try {
-    const response = await fetch(`http://localhost:3000/api/calendar/events/${eventId}`, {
+    const response = await fetch(`/api/calendar/events/${eventId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -249,7 +244,7 @@ export async function updateCalendarEvent(eventId: string, eventData: Partial<Ca
  */
 export async function deleteCalendarEvent(eventId: string) {
   try {
-    const response = await fetch(`http://localhost:3000/api/calendar/events/${eventId}`, {
+    const response = await fetch(`/api/calendar/events/${eventId}`, {
       method: 'DELETE',
     });
 
