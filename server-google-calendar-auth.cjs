@@ -130,6 +130,7 @@ function setupGoogleCalendarAuth(app) {
       scope: SCOPES,
       prompt: 'consent',
     });
+    console.log('Generated Auth URL:', authUrl);
     res.redirect(authUrl);
   };
 
