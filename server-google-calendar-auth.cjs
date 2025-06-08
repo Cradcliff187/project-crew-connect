@@ -6,9 +6,7 @@ const crypto = require('crypto');
 
 // OAuth2 Configuration
 // Support multiple possible redirect URIs
-const redirectUri =
-  process.env.GOOGLE_REDIRECT_URI ||
-  'https://project-crew-connect-1061142868787.us-east5.run.app/auth/google/callback';
+const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:8080/auth/google/callback';
 
 console.log('OAuth Configuration:', {
   clientIdConfigured: !!(process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID),
