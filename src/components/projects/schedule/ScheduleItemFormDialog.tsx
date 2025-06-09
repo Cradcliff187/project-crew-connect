@@ -185,51 +185,73 @@ const ScheduleItemFormDialog = ({
       calendar_integration_enabled: true, // Always enabled for project schedule items
     };
 
-    // Save the schedule item first
-    const success = await onSave(itemData);
+    try {
+      console.log('Creating schedule item in database...', itemData);
 
-    if (success) {
-      // Automatically create calendar event using intelligent system
+      // Step 1: Create schedule item in database FIRST using our new API
+      const response = await fetch('/api/schedule-items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(itemData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create schedule item');
+      }
+
+      const { data: createdItem } = await response.json();
+      console.log('Schedule item created successfully:', createdItem);
+
+      // Step 2: Sync with Google Calendar
       try {
-        const calendarResult = await EnhancedCalendarService.createEvent({
-          title: title.trim(),
-          description: description || undefined,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          entityType: 'schedule_item',
-          entityId: itemData.id || `temp-${Date.now()}`,
-          projectId: projectId,
-          assignees:
-            assignees?.map(a => ({
-              type: a.type as 'employee' | 'subcontractor',
-              id: a.id,
-              email: undefined, // Will be fetched automatically
-            })) || [],
-          userEmail: 'current-user@example.com', // TODO: Get from auth context
-          sendNotifications: sendInvite,
+        const syncResponse = await fetch(`/api/schedule-items/${createdItem.id}/sync-calendar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
         });
 
-        if (calendarResult.success) {
+        const syncResult = await syncResponse.json();
+
+        if (syncResult.success) {
           toast({
-            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
-            description: `Added to ${calendarResult.calendarSelection?.primaryCalendar.name}. ${calendarResult.invitesSent?.length || 0} invite(s) sent.`,
+            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created Successfully! 📅',
+            description: `Schedule item saved and synced to AJC Projects Calendar. Event ID: ${syncResult.eventId}`,
           });
         } else {
-          console.warn('Calendar sync failed:', calendarResult.errors);
           toast({
             title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
-            description: 'Item saved successfully, but calendar sync failed.',
+            description:
+              'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
+            variant: 'destructive',
           });
         }
-      } catch (calendarError) {
-        console.error('Calendar integration error:', calendarError);
+      } catch (syncError) {
+        console.warn('Calendar sync failed:', syncError);
         toast({
           title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
-          description: 'Item saved successfully, but calendar sync failed.',
+          description:
+            'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
+          variant: 'destructive',
         });
       }
 
+      // Notify parent component of successful save (for UI updates)
+      await onSave(itemData);
+
       onOpenChange(false); // Close dialog on successful save
+    } catch (error) {
+      console.error('Error creating schedule item:', error);
+      toast({
+        title: 'Failed to Create Schedule Item',
+        description: error instanceof Error ? error.message : 'Failed to create schedule item',
+        variant: 'destructive',
+      });
     }
   };
 
