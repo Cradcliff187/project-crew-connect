@@ -22,7 +22,7 @@ async function getProjectCalendarId(projectId: string): Promise<string> {
   console.log('📊 Fetching project from Supabase...');
   const { data: project, error } = await supabase
     .from('projects')
-    .select('calendar_id, name')
+    .select('calendar_id, projectname')
     .eq('projectid', projectId)
     .single();
 
@@ -43,15 +43,16 @@ async function getProjectCalendarId(projectId: string): Promise<string> {
   // 2. If no calendar_id, create a new Google Calendar
   console.log('🆕 No calendar_id found, creating new calendar for project...');
   console.log('📝 Calendar details:', {
-    summary: `Project: ${project.name}`,
+    summary: `Project: ${project.projectname}`,
     description: `Calendar for project ${projectId}`,
   });
 
   const response = await fetch('/api/google/create-calendar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
-      summary: `Project: ${project.name}`,
+      summary: `Project: ${project.projectname}`,
       description: `Calendar for project ${projectId}`,
     }),
   });
@@ -112,6 +113,7 @@ async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promis
   const response = await fetch('/api/google/create-event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(requestBody),
   });
 
@@ -284,6 +286,7 @@ export async function createWorkOrderEvent(workOrder: WorkOrderEvent): Promise<s
     const response = await fetch('/api/google/create-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         calendarId: targetCalendarId,
         summary: `WO: ${workOrder.title}`,
