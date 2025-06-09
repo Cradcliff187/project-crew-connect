@@ -2,6 +2,15 @@
 
 This repository contains the AKC Revisions application built with React, TypeScript, and Vite. It uses Supabase for database functionality and Google APIs for calendar integration.
 
+## 🚀 Production Status
+
+**✅ LIVE AND OPERATIONAL**: https://project-crew-connect-dbztoro5pq-ul.a.run.app
+
+- **Platform**: Google Cloud Run (Project: crm-live-458710)
+- **OAuth**: Fully configured and working
+- **Access**: Public access enabled
+- **Documentation**: See `PRODUCTION_SETUP_DOCUMENTATION.md` for complete details
+
 ## 🎯 **NEW DEVELOPERS START HERE**
 
 ### **📚 Essential Reading**

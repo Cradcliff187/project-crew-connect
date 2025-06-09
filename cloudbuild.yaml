@@ -68,6 +68,8 @@ steps:
       - '--update-secrets'
       - 'GOOGLE_CALENDAR_WORK_ORDER=google-calendar-work-order:latest'
       - '--update-secrets'
+      - 'GOOGLE_SERVICE_ACCOUNT_CREDENTIALS=google-service-account-credentials:latest'
+      - '--update-secrets'
       - 'WEBHOOK_URL=webhook-url:latest'
       - '--update-secrets'
       - 'GOOGLE_MAPS_API_KEY=google-maps-api-key:latest'

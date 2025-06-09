@@ -20,21 +20,35 @@ const session = require('express-session');
 // Initialize service account auth for background operations
 let serviceAccountAuth = null;
 try {
-  // First check specific environment variable, then fallback to the file in credentials directory
-  const credentialsPath =
-    process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
-    path.resolve(__dirname, '..', 'credentials/calendar-service-account.json');
-
-  if (fs.existsSync(credentialsPath)) {
-    console.log(`Loading service account credentials from: ${credentialsPath}`);
-    const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+  // First try environment variable with JSON credentials
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS) {
+    console.log('Loading service account credentials from environment variable');
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS);
     serviceAccountAuth = new google.auth.GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/calendar'],
     });
-    console.log('Google service account auth initialized successfully');
+    console.log('Google service account auth initialized from environment variable');
   } else {
-    console.warn('Google service account credentials file not found:', credentialsPath);
+    // Fallback to file for local development
+    const credentialsPath =
+      process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
+      path.resolve(__dirname, '..', 'credentials/calendar-service-account.json');
+
+    if (fs.existsSync(credentialsPath)) {
+      console.log(`Loading service account credentials from file: ${credentialsPath}`);
+      const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+      serviceAccountAuth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/calendar'],
+      });
+      console.log('Google service account auth initialized from file');
+    } else {
+      console.warn(
+        'Google service account credentials not found in environment or file:',
+        credentialsPath
+      );
+    }
   }
 } catch (error) {
   console.error('Error initializing Google service account auth:', error);
@@ -1073,6 +1087,11 @@ app.post('/api/calendar/events', requireAuth, async (req, res) => {
         ? await serviceAccountAuth.getClient()
         : req.googleClient;
 
+    console.log(`[Calendar API] Creating event on calendar: ${calendarId}`);
+    console.log(
+      `[Calendar API] Using ${calendarId !== 'primary' && serviceAccountAuth ? 'service account' : 'user OAuth'} authentication`
+    );
+
     const event = await calendarHelper.createEvent(authClient, eventData);
 
     res.json({
@@ -1470,14 +1489,16 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
     let syncStatus = 'success';
     let syncError = null;
 
-    // 5. Choose authentication client - prefer service account for background tasks
-    const authClient = serviceAccountAuth ? await serviceAccountAuth.getClient() : req.googleClient;
+    // 5. Choose authentication client - use service account for group calendars, user auth for personal
+    const authClient =
+      targetCalendarId !== 'primary' && serviceAccountAuth
+        ? await serviceAccountAuth.getClient()
+        : req.googleClient;
 
-    if (serviceAccountAuth) {
-      console.log('[Calendar Sync] Using service account authentication');
-    } else {
-      console.log('[Calendar Sync] Using user OAuth authentication');
-    }
+    console.log(`[Calendar Sync] Target calendar: ${targetCalendarId}`);
+    console.log(
+      `[Calendar Sync] Using ${targetCalendarId !== 'primary' && serviceAccountAuth ? 'service account' : 'user OAuth'} authentication`
+    );
 
     // 6. Call Consolidated Calendar Helper to sync the item
     try {

@@ -62,7 +62,7 @@ foreach ($traffic in $serviceInfo.status.traffic) {
 
 # Get recent logs
 Write-Host "`n📜 Recent Logs (last 20 entries):" -ForegroundColor Yellow
-gcloud run logs read --service $ServiceName --region $Region --limit 20 --format "value(timestamp,severity,textPayload)"
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=$ServiceName AND resource.labels.location=$Region" --limit=20 --format="table(timestamp,severity,textPayload)"
 
 # Check for common issues
 Write-Host "`n🔧 Checking for common issues..." -ForegroundColor Yellow
