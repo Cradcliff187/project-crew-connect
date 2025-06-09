@@ -404,17 +404,61 @@ function setupGoogleCalendarAuth(app) {
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-      const { calendarId = 'primary', ...eventData } = req.body;
+      const { calendarId = 'primary', ...rawEventData } = req.body;
+
+      // Transform the event data to match Google Calendar API format
+      const eventData = {
+        summary: rawEventData.title || rawEventData.summary,
+        description: rawEventData.description || '',
+        start: {
+          dateTime: rawEventData.startTime || rawEventData.start?.dateTime,
+          timeZone: rawEventData.timezone || rawEventData.start?.timeZone || 'America/New_York',
+        },
+        end: {
+          dateTime: rawEventData.endTime || rawEventData.end?.dateTime,
+          timeZone: rawEventData.timezone || rawEventData.end?.timeZone || 'America/New_York',
+        },
+      };
+
+      // Add optional fields if present
+      if (rawEventData.location) {
+        eventData.location = rawEventData.location;
+      }
+
+      if (rawEventData.attendees && Array.isArray(rawEventData.attendees)) {
+        eventData.attendees = rawEventData.attendees.map(attendee => ({
+          email: typeof attendee === 'string' ? attendee : attendee.email,
+        }));
+      }
+
+      // Add extended properties for tracking
+      if (rawEventData.entityType && rawEventData.entityId) {
+        eventData.extendedProperties = {
+          private: {
+            appSource: 'construction_management',
+            entityType: rawEventData.entityType,
+            entityId: rawEventData.entityId,
+          },
+        };
+      }
+
+      console.log('[Calendar] Creating event with data:', JSON.stringify(eventData, null, 2));
 
       const { data } = await calendar.events.insert({
         calendarId,
         requestBody: eventData,
+        sendNotifications: rawEventData.sendNotifications || false,
       });
 
+      console.log('[Calendar] Event created successfully:', data.id);
       res.json(data);
     } catch (error) {
       console.error('Create event error:', error);
-      res.status(500).json({ error: 'Failed to create event' });
+      console.error('Error details:', JSON.stringify(error.response?.data, null, 2));
+      res.status(500).json({
+        error: 'Failed to create event',
+        details: error.response?.data?.error?.message || error.message,
+      });
     }
   });
 
