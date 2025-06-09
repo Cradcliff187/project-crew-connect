@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AssigneeType } from '@/components/projects/milestones/hooks/useMilestones'; // Import AssigneeType
 import { ScheduleItem } from '@/types/schedule'; // Import from our types file
-import { EnhancedCalendarService } from '@/services/enhancedCalendarService';
+import { createScheduleItem } from '@/lib/calendarService'; // Use the new calendar service
 
 // Define the type for the assignee value
 type AssigneeValue =
@@ -186,60 +186,17 @@ const ScheduleItemFormDialog = ({
     };
 
     try {
-      console.log('Creating schedule item in database...', itemData);
+      console.log('Creating schedule item using new calendar service...', itemData);
 
-      // Step 1: Create schedule item in database FIRST using our new API
-      const response = await fetch('/api/schedule-items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(itemData),
-      });
+      // Use the new calendar service that handles everything
+      const createdItem = await createScheduleItem(itemData as ScheduleItem);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create schedule item');
-      }
-
-      const { data: createdItem } = await response.json();
       console.log('Schedule item created successfully:', createdItem);
 
-      // Step 2: Sync with Google Calendar
-      try {
-        const syncResponse = await fetch(`/api/schedule-items/${createdItem.id}/sync-calendar`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        const syncResult = await syncResponse.json();
-
-        if (syncResult.success) {
-          toast({
-            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created Successfully! 📅',
-            description: `Schedule item saved and synced to AJC Projects Calendar. Event ID: ${syncResult.eventId}`,
-          });
-        } else {
-          toast({
-            title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
-            description:
-              'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
-            variant: 'destructive',
-          });
-        }
-      } catch (syncError) {
-        console.warn('Calendar sync failed:', syncError);
-        toast({
-          title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created',
-          description:
-            'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: editingItem ? 'Schedule Item Updated' : 'Schedule Item Created Successfully! 📅',
+        description: `Schedule item saved and synced to project calendar. Event ID: ${createdItem.google_event_id}`,
+      });
 
       // Notify parent component of successful save (for UI updates)
       await onSave(itemData);

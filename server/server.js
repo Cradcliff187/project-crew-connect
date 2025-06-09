@@ -663,513 +663,6 @@ app.get('/api/maps/placedetails', async (req, res) => {
 
 // TODO: Identify address fields and document Autocomplete mapping (Task 4)
 
-// ------ CALENDAR API ENDPOINTS -------
-
-// Get all calendar events for the authenticated user
-app.get('/api/calendar/events', requireAuth, async (req, res) => {
-  try {
-    console.log(`Fetching calendar events for user: ${req.userEmail}`);
-
-    // Optional query parameters for filtering
-    const timeMin = req.query.timeMin || new Date().toISOString();
-    const timeMax = req.query.timeMax;
-    const maxResults = parseInt(req.query.maxResults) || 50;
-
-    const options = {
-      timeMin,
-      maxResults,
-      singleEvents: true,
-      orderBy: 'startTime',
-    };
-
-    if (timeMax) {
-      options.timeMax = timeMax;
-    }
-
-    const data = await calendarHelper.listEvents(req.googleClient, options);
-    res.json({
-      success: true,
-      events: data.items,
-      nextSyncToken: data.nextSyncToken,
-    });
-  } catch (error) {
-    console.error('Error fetching calendar events:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'fetch_error',
-        status,
-      },
-    });
-  }
-});
-
-// Create a calendar event for a project milestone
-app.post('/api/calendar/milestones/:milestoneId', requireAuth, async (req, res) => {
-  try {
-    const { milestoneId } = req.params;
-    const { projectId, title, description, dueDate } = req.body;
-
-    console.log(`Creating calendar event for milestone ${milestoneId}, project ${projectId}`);
-
-    // Create the calendar event
-    const eventData = {
-      title: title || `Project Milestone`,
-      description: description || '',
-      startTime: dueDate,
-      entityType: 'project_milestone',
-      entityId: milestoneId,
-    };
-
-    const calendarEvent = await calendarHelper.createEvent(req.googleClient, eventData);
-
-    // TODO: Store the event ID in your database for future reference
-    console.log('Created calendar event with ID:', calendarEvent.id);
-
-    res.json({
-      success: true,
-      event: calendarEvent,
-      eventId: calendarEvent.id,
-      message: 'Milestone added to Google Calendar',
-    });
-  } catch (error) {
-    console.error('Error creating calendar event for milestone:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'milestone_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Create a calendar event for a work order
-app.post('/api/calendar/workorders/:workOrderId', requireAuth, async (req, res) => {
-  try {
-    const { workOrderId } = req.params;
-    const { title, description, scheduledDate, dueByDate, location } = req.body;
-
-    console.log(`Creating calendar event for work order ${workOrderId}`);
-
-    // Create the calendar event
-    const eventData = {
-      title: title || `Work Order`,
-      description: description || '',
-      startTime: scheduledDate,
-      endTime: dueByDate,
-      location: location || '',
-      entityType: 'work_order',
-      entityId: workOrderId,
-    };
-
-    const calendarEvent = await calendarHelper.createEvent(req.googleClient, eventData);
-
-    // TODO: Store the event ID in your database for future reference
-    console.log('Created calendar event with ID:', calendarEvent.id);
-
-    res.json({
-      success: true,
-      event: calendarEvent,
-      eventId: calendarEvent.id,
-      message: 'Work order added to Google Calendar',
-    });
-  } catch (error) {
-    console.error('Error creating calendar event for work order:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'work_order_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Create a calendar event for a contact meeting
-app.post('/api/calendar/contacts/meetings/:interactionId', requireAuth, async (req, res) => {
-  try {
-    const { interactionId } = req.params;
-    const {
-      contactName,
-      subject,
-      notes,
-      scheduledDate,
-      duration = 60, // Default duration 60 minutes
-      location,
-    } = req.body;
-
-    console.log(`Creating calendar event for contact interaction ${interactionId}`);
-
-    // Calculate end time (scheduledDate + duration minutes)
-    const startTime = new Date(scheduledDate);
-    const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
-
-    // Create the calendar event
-    const eventData = {
-      title: subject || `Meeting with ${contactName || 'Contact'}`,
-      description: notes || '',
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      location: location || '',
-      entityType: 'contact_interaction',
-      entityId: interactionId,
-    };
-
-    const calendarEvent = await calendarHelper.createEvent(req.googleClient, eventData);
-
-    // TODO: Store the event ID in your database for future reference
-    console.log('Created calendar event with ID:', calendarEvent.id);
-
-    res.json({
-      success: true,
-      event: calendarEvent,
-      eventId: calendarEvent.id,
-      message: 'Meeting added to Google Calendar',
-    });
-  } catch (error) {
-    console.error('Error creating calendar event for contact meeting:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'contact_meeting_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Update an existing calendar event
-app.put('/api/calendar/events/:eventId', requireAuth, async (req, res) => {
-  try {
-    const { eventId } = req.params;
-    const { calendarId = 'primary', ...eventData } = req.body;
-
-    console.log(`Updating calendar event ${eventId}`);
-
-    const updatedEvent = await calendarHelper.updateEvent(
-      req.googleClient,
-      eventId,
-      eventData,
-      calendarId
-    );
-
-    res.json({
-      success: true,
-      event: updatedEvent,
-      eventId: updatedEvent.id,
-      message: 'Calendar event updated',
-    });
-  } catch (error) {
-    console.error('Error updating calendar event:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'update_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Delete a calendar event
-app.delete('/api/calendar/events/:eventId', requireAuth, async (req, res) => {
-  try {
-    const { eventId } = req.params;
-    const calendarId = req.query.calendarId || 'primary';
-
-    // Delete the event
-    await calendarHelper.deleteEvent(req.googleClient, eventId, calendarId);
-
-    res.json({
-      success: true,
-      message: 'Calendar event deleted successfully',
-    });
-  } catch (error) {
-    console.error('Error deleting calendar event:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'delete_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Time entry calendar integration
-app.post('/api/calendar/timeentries/:timeEntryId', requireAuth, async (req, res) => {
-  try {
-    const { timeEntryId } = req.params;
-    const { title, description, workDate, startTime, endTime, employeeName, projectId } = req.body;
-
-    if (!title || !startTime || !endTime) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: title, startTime, and endTime are required',
-        errorDetails: {
-          type: 'validation_error',
-          status: 400,
-        },
-      });
-    }
-
-    // Create a calendar event for the time entry
-    const eventData = {
-      title,
-      description: description || `Work logged: ${employeeName || 'Employee'}`,
-      startTime,
-      endTime,
-      location: '',
-      entityType: 'time_entry',
-      entityId: timeEntryId,
-      // Add additional metadata for the event
-      extendedProperties: {
-        private: {
-          timeEntryId,
-          projectId: projectId || '',
-          employeeName: employeeName || '',
-        },
-      },
-    };
-
-    const event = await calendarHelper.createEvent(req.googleClient, eventData);
-
-    // Return the created event
-    res.json({
-      success: true,
-      event,
-      eventId: event.id,
-      message: 'Time entry calendar event created successfully',
-    });
-  } catch (error) {
-    console.error('Error creating time entry calendar event:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'time_entry_event_error',
-        status,
-      },
-    });
-  }
-});
-
-// Get the list of user's calendars
-app.get('/api/calendar/list', requireAuth, async (req, res) => {
-  try {
-    const calendar = google.calendar({ version: 'v3', auth: req.googleClient });
-
-    const response = await calendar.calendarList.list({
-      minAccessRole: 'writer', // Only include calendars where the user can create events
-    });
-
-    const calendars = response.data.items.map(cal => ({
-      id: cal.id,
-      summary: cal.summary,
-      description: cal.description,
-      primary: cal.primary,
-      backgroundColor: cal.backgroundColor,
-      foregroundColor: cal.foregroundColor,
-    }));
-
-    res.json({
-      success: true,
-      calendars,
-    });
-  } catch (error) {
-    console.error('Error fetching calendars:', error);
-    const status = error.response?.status || error.code || 500;
-    const message = error.errors?.[0]?.message || error.message || 'Unknown error';
-    res.status(status).json({
-      success: false,
-      error: message,
-      errorDetails: {
-        type: 'fetch_calendars_error',
-        status,
-      },
-    });
-  }
-});
-
-// Get calendar configuration for frontend
-app.get('/api/calendar/config', requireAuth, async (req, res) => {
-  try {
-    // Return environment-based calendar configuration
-    const config = {
-      GOOGLE_CALENDAR_PROJECT: process.env.GOOGLE_CALENDAR_PROJECT || 'primary',
-      GOOGLE_CALENDAR_WORK_ORDER: process.env.GOOGLE_CALENDAR_WORK_ORDER || 'primary',
-      GOOGLE_CALENDAR_ADHOC: 'primary',
-    };
-
-    console.log('Returning calendar config:', {
-      PROJECT: config.GOOGLE_CALENDAR_PROJECT ? 'Set' : 'Missing',
-      WORK_ORDER: config.GOOGLE_CALENDAR_WORK_ORDER ? 'Set' : 'Missing',
-    });
-
-    res.json({
-      success: true,
-      ...config,
-    });
-  } catch (error) {
-    console.error('Error fetching calendar config:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch calendar configuration',
-      errorDetails: {
-        type: 'config_error',
-      },
-    });
-  }
-});
-
-// Generic calendar event creation endpoint
-app.post('/api/calendar/events', requireAuth, async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      startTime,
-      endTime,
-      location,
-      calendarId = 'primary',
-      entityType,
-      entityId,
-      sendNotifications = false,
-      timezone = 'America/New_York',
-    } = req.body;
-
-    // Validation
-    if (!title || !startTime || !endTime) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: title, startTime, endTime',
-      });
-    }
-
-    // Create event data
-    const eventData = {
-      title,
-      description: description || '',
-      startTime,
-      endTime,
-      location: location || '',
-      targetCalendarId: calendarId,
-      entityType: entityType || 'generic',
-      entityId: entityId || '',
-      sendNotifications,
-      timezone,
-    };
-
-    // Use service account for group calendars, user auth for personal
-    const authClient =
-      calendarId !== 'primary' && serviceAccountAuth
-        ? await serviceAccountAuth.getClient()
-        : req.googleClient;
-
-    console.log(`[Calendar API] Creating event on calendar: ${calendarId}`);
-    console.log(
-      `[Calendar API] Using ${calendarId !== 'primary' && serviceAccountAuth ? 'service account' : 'user OAuth'} authentication`
-    );
-
-    const event = await calendarHelper.createEvent(authClient, eventData);
-
-    res.json({
-      success: true,
-      event,
-      eventId: event.id,
-      message: 'Calendar event created successfully',
-    });
-  } catch (error) {
-    console.error('Error creating calendar event:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to create calendar event',
-    });
-  }
-});
-
-// Individual calendar invite endpoint
-app.post('/api/calendar/invites', requireAuth, async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      startTime,
-      endTime,
-      location,
-      attendeeEmail,
-      attendeeRole = 'attendee',
-      attendeeType = 'employee',
-      primaryEventId,
-      entityType,
-      entityId,
-      sendNotifications = true,
-      timezone = 'America/New_York',
-    } = req.body;
-
-    // Validation
-    if (!title || !startTime || !endTime || !attendeeEmail) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: title, startTime, endTime, attendeeEmail',
-      });
-    }
-
-    // Create invite event data
-    const eventData = {
-      title: `${title} (Invite)`,
-      description: `${description || ''}\n\nRelated to event: ${primaryEventId || 'N/A'}`,
-      startTime,
-      endTime,
-      location: location || '',
-      attendees: [{ email: attendeeEmail }],
-      targetCalendarId: 'primary', // Send to attendee's personal calendar
-      entityType: entityType || 'invite',
-      entityId: entityId || '',
-      sendNotifications,
-      timezone,
-    };
-
-    // Use user's auth client for personal calendar invites
-    const event = await calendarHelper.createEvent(req.googleClient, eventData);
-
-    res.json({
-      success: true,
-      event,
-      eventId: event.id,
-      attendeeEmail,
-      message: 'Calendar invite sent successfully',
-    });
-  } catch (error) {
-    console.error('Error sending calendar invite:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to send calendar invite',
-    });
-  }
-});
-
 // Email lookup endpoints for assignees
 app.get('/api/assignees/employee/:id/email', requireAuth, async (req, res) => {
   try {
@@ -1681,6 +1174,137 @@ app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, r
 });
 
 // ------ END NEW SCHEDULE ITEM CALENDAR SYNC ENDPOINT -------
+
+// ------ GOOGLE CALENDAR API ENDPOINTS -------
+
+// Create a new Google Calendar
+app.post('/api/google/create-calendar', requireAuth, async (req, res) => {
+  console.log('[Google Calendar API] Creating new calendar');
+
+  try {
+    const { summary, description } = req.body;
+
+    if (!summary) {
+      return res.status(400).json({
+        success: false,
+        error: 'Calendar summary (name) is required',
+      });
+    }
+
+    // Use service account for creating calendars
+    if (!serviceAccountAuth) {
+      throw new Error('Service account authentication not configured');
+    }
+
+    const authClient = await serviceAccountAuth.getClient();
+    const calendar = google.calendar({ version: 'v3', auth: authClient });
+
+    // Create the calendar
+    const calendarResponse = await calendar.calendars.insert({
+      requestBody: {
+        summary,
+        description: description || `Calendar created by AKC CRM`,
+        timeZone: 'America/New_York',
+      },
+    });
+
+    const calendarId = calendarResponse.data.id;
+    console.log(`[Google Calendar API] Created calendar with ID: ${calendarId}`);
+
+    // Share the calendar with the service account (ensure it has full access)
+    try {
+      await calendar.acl.insert({
+        calendarId: calendarId,
+        requestBody: {
+          role: 'owner',
+          scope: {
+            type: 'user',
+            value: process.env.GOOGLE_CLIENT_EMAIL, // Service account email
+          },
+        },
+      });
+      console.log('[Google Calendar API] Granted service account owner access');
+    } catch (aclError) {
+      console.warn('[Google Calendar API] Warning: Failed to set ACL:', aclError.message);
+      // Continue anyway - calendar was created
+    }
+
+    res.json({
+      success: true,
+      calendarId,
+      message: 'Calendar created successfully',
+    });
+  } catch (error) {
+    console.error('[Google Calendar API] Error creating calendar:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create calendar',
+    });
+  }
+});
+
+// Create a Google Calendar event
+app.post('/api/google/create-event', requireAuth, async (req, res) => {
+  console.log('[Google Calendar API] Creating new event');
+
+  try {
+    const { calendarId, summary, description, start, end } = req.body;
+
+    if (!calendarId || !summary || !start || !end) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: calendarId, summary, start, end',
+      });
+    }
+
+    console.log(`[Google Calendar API] Creating event in calendar: ${calendarId}`);
+    console.log('[Google Calendar API] Event details:', { summary, start, end });
+
+    // Use service account for project calendars, user auth for personal calendar
+    const authClient =
+      calendarId !== 'primary' && serviceAccountAuth
+        ? await serviceAccountAuth.getClient()
+        : req.googleClient;
+
+    if (!authClient) {
+      throw new Error('No authentication client available');
+    }
+
+    const calendar = google.calendar({ version: 'v3', auth: authClient });
+
+    // Create the event
+    const eventResponse = await calendar.events.insert({
+      calendarId: calendarId,
+      requestBody: {
+        summary,
+        description: description || '',
+        start,
+        end,
+        reminders: {
+          useDefault: true,
+        },
+      },
+    });
+
+    const eventId = eventResponse.data.id;
+    console.log(`[Google Calendar API] Created event with ID: ${eventId}`);
+
+    res.json({
+      success: true,
+      eventId,
+      message: 'Event created successfully',
+    });
+  } catch (error) {
+    console.error('[Google Calendar API] Error creating event:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create event',
+      details: error.response?.data || null,
+    });
+  }
+});
+
+// ------ END GOOGLE CALENDAR API ENDPOINTS -------
 
 // Add this function to completely clear authentication state
 app.get('/auth/clear', (req, res) => {

@@ -66,10 +66,12 @@ export const useWorkOrderSubmit = ({
 
       // Automatically create calendar event for work orders with scheduled dates
       if (scheduledDate && workOrder && workOrder.length > 0) {
-        const workOrderId = workOrder[0].work_order_id;
+        const workOrderData = workOrder[0];
 
         try {
-          // Use intelligent calendar service for automatic work order calendar integration
+          console.log('Creating calendar event for work order...');
+
+          // Use EnhancedCalendarService which now redirects to our new calendar service
           const calendarResult = await EnhancedCalendarService.createEvent({
             title: values.title,
             description: values.description || '',
@@ -77,13 +79,13 @@ export const useWorkOrderSubmit = ({
             endTime: dueByDate || undefined,
             location: '', // Could potentially fetch and format location details
             entityType: 'work_order',
-            entityId: workOrderId,
+            entityId: workOrderData.work_order_id,
             assignees: values.assigned_to
               ? [
                   {
-                    type: 'employee', // Assume employee for now - could be enhanced to detect type
+                    type: 'employee', // Assume employee for now
                     id: values.assigned_to,
-                    email: undefined, // Will be fetched automatically by EnhancedCalendarService
+                    email: undefined,
                   },
                 ]
               : [],
@@ -91,19 +93,17 @@ export const useWorkOrderSubmit = ({
             sendNotifications: true,
           });
 
-          // Log calendar result for debugging (since we can't store event ID yet)
           if (calendarResult.success && calendarResult.primaryEventId) {
             console.log('Calendar event created successfully:', {
-              workOrderId,
+              workOrderId: workOrderData.work_order_id,
               eventId: calendarResult.primaryEventId,
               calendar: calendarResult.calendarSelection?.primaryCalendar.name,
-              invitesSent: calendarResult.invitesSent?.length || 0,
             });
 
-            // Show success message with calendar details
+            // Show success message
             toast({
               title: 'Work Order Created',
-              description: `Work order created and added to ${calendarResult.calendarSelection?.primaryCalendar.name}. ${calendarResult.invitesSent?.length || 0} invite(s) sent.`,
+              description: `Work order created and added to ${calendarResult.calendarSelection?.primaryCalendar.name || 'calendar'}. Event ID: ${calendarResult.primaryEventId}`,
             });
           } else {
             // Work order created but calendar sync failed
