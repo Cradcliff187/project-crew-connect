@@ -14,52 +14,23 @@ export interface ScheduleItem {
   created_at?: string;
 }
 
-async function getProjectCalendarId(projectId: string): Promise<string> {
-  console.group('🔍 PROJECT CALENDAR RESOLUTION');
-  console.log('Project ID:', projectId);
+async function getSharedProjectCalendarId(): Promise<string> {
+  console.group('🔍 SHARED PROJECT CALENDAR RESOLUTION');
 
-  // 1. Fetch project from Supabase
-  console.log('📊 Fetching project from Supabase...');
-  const { data: project, error } = await supabase
-    .from('projects')
-    .select('calendar_id, projectname')
-    .eq('projectid', projectId)
-    .single();
+  // Use the shared projects calendar from environment
+  const sharedProjectCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS;
 
-  console.log('📊 Project Query Result:', { data: project, error });
-
-  if (error) {
-    console.error('❌ Project fetch error:', error);
+  if (!sharedProjectCalendarId) {
+    console.error('❌ No shared projects calendar ID configured');
+    console.warn('⚠️ Falling back to primary calendar - THIS SHOULD BE FIXED');
     console.groupEnd();
-    throw new Error(`Failed to fetch project: ${error.message}`);
+    // TODO: Remove this fallback once environment is properly configured
+    return 'primary';
   }
 
-  if (project?.calendar_id) {
-    console.log('✅ Found existing calendar:', project.calendar_id);
-    console.groupEnd();
-    return project.calendar_id;
-  }
-
-  // 2. If no calendar_id, use primary calendar for now
-  // TODO: Implement calendar creation when needed
-  console.log('🔄 No calendar_id found, using primary calendar');
-  const primaryCalendarId = 'primary';
-
-  // 3. Save primary calendar_id to the project in Supabase
-  console.log('💾 Saving calendar_id to project...');
-  const { error: updateError } = await supabase
-    .from('projects')
-    .update({ calendar_id: primaryCalendarId })
-    .eq('projectid', projectId);
-
-  if (updateError) {
-    console.error('⚠️ Failed to save calendar_id to project:', updateError.message);
-  } else {
-    console.log('✅ Calendar ID saved to project');
-  }
-
+  console.log('✅ Using shared projects calendar:', sharedProjectCalendarId);
   console.groupEnd();
-  return primaryCalendarId;
+  return sharedProjectCalendarId;
 }
 
 async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promise<string> {
@@ -121,10 +92,10 @@ export async function createScheduleItem(item: ScheduleItem): Promise<ScheduleIt
   console.log('📥 Input Data:', item);
 
   try {
-    // Get or create project calendar
-    console.log('🔍 Resolving project calendar for project:', item.project_id);
-    const calendarId = await getProjectCalendarId(item.project_id);
-    console.log('📅 Resolved calendar ID:', calendarId);
+    // Get the shared projects calendar
+    console.log('🔍 Getting shared projects calendar...');
+    const calendarId = await getSharedProjectCalendarId();
+    console.log('📅 Using calendar ID:', calendarId);
 
     // Create Google Calendar event
     console.log('🌐 Creating Google Calendar event...');
@@ -245,13 +216,13 @@ export async function createWorkOrderEvent(workOrder: WorkOrderEvent): Promise<s
   console.log('📥 Work Order Data:', workOrder);
 
   try {
-    // Use the work orders calendar from environment
-    // Note: This runs in the browser, so we need to use import.meta.env for Vite
+    // Use the shared work orders calendar from environment
     const workOrderCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER;
 
     if (!workOrderCalendarId) {
-      console.warn('⚠️ No work order calendar ID configured, using primary calendar');
-      // Fall back to primary calendar if no work order calendar is configured
+      console.error('❌ No shared work orders calendar ID configured');
+      console.warn('⚠️ Falling back to primary calendar - THIS SHOULD BE FIXED');
+      // TODO: Remove this fallback once environment is properly configured
     }
 
     const targetCalendarId = workOrderCalendarId || 'primary';

@@ -59,22 +59,57 @@ export class EnhancedCalendarService {
           primaryEventId: googleEventId,
           calendarSelection: {
             primaryCalendar: {
-              id: 'primary',
-              name: 'Primary Calendar',
+              id: import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER || 'work-orders',
+              name: 'Work Orders Calendar',
             },
           },
         };
       }
 
-      // For all other entity types, use the real Google Calendar API
-      console.log('Using real Google Calendar API for entity type:', eventData.entityType);
+      // Determine which shared calendar to use based on entity type
+      let targetCalendarId: string;
+      let calendarName: string;
+
+      switch (eventData.entityType) {
+        case 'schedule_item':
+        case 'project_milestone':
+        case 'project_task':
+          // All project-related items go to the shared projects calendar
+          targetCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS || 'primary';
+          calendarName = 'Projects Calendar';
+          if (!import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS) {
+            console.warn('⚠️ VITE_GOOGLE_CALENDAR_PROJECTS not configured, using primary calendar');
+          }
+          break;
+
+        case 'work_order':
+          // Work orders go to the shared work orders calendar
+          targetCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER || 'primary';
+          calendarName = 'Work Orders Calendar';
+          if (!import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER) {
+            console.warn(
+              '⚠️ VITE_GOOGLE_CALENDAR_WORK_ORDER not configured, using primary calendar'
+            );
+          }
+          break;
+
+        default:
+          // Other entity types might need their own calendars in the future
+          console.warn(
+            `⚠️ No specific calendar configured for entity type: ${eventData.entityType}`
+          );
+          targetCalendarId = 'primary';
+          calendarName = 'Primary Calendar';
+      }
+
+      console.log(`📅 Using ${calendarName} (${targetCalendarId}) for ${eventData.entityType}`);
 
       const response = await fetch('/api/calendar/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          calendarId: 'primary', // TODO: Determine calendar based on entity type
+          calendarId: targetCalendarId,
           title: eventData.title,
           description: eventData.description,
           startTime: eventData.startTime,
@@ -115,8 +150,8 @@ export class EnhancedCalendarService {
         primaryEventId: result.event?.id,
         calendarSelection: {
           primaryCalendar: {
-            id: result.calendarId || 'primary',
-            name: 'Primary Calendar',
+            id: targetCalendarId,
+            name: calendarName,
           },
         },
       };
