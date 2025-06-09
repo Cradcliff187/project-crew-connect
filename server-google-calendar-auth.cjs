@@ -393,23 +393,155 @@ function setupGoogleCalendarAuth(app) {
     }
   });
 
-  // Create calendar event
+  // Phase 1: Email resolution service functions
+  async function resolveAssigneeEmail(assigneeType, assigneeId) {
+    try {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+      if (assigneeType === 'employee') {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('email, first_name, last_name')
+          .eq('id', assigneeId)
+          .single();
+
+        if (error || !data?.email) {
+          console.warn(`[Calendar] Employee ${assigneeId} email not found:`, error);
+          return null;
+        }
+
+        return {
+          email: data.email,
+          displayName: `${data.first_name} ${data.last_name}`,
+        };
+      } else if (assigneeType === 'subcontractor') {
+        const { data, error } = await supabase
+          .from('subcontractors')
+          .select('email, company_name, contact_name')
+          .eq('id', assigneeId)
+          .single();
+
+        if (error || !data?.email) {
+          console.warn(`[Calendar] Subcontractor ${assigneeId} email not found:`, error);
+          return null;
+        }
+
+        return {
+          email: data.email,
+          displayName: data.contact_name || data.company_name,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('[Calendar] Error resolving assignee email:', error);
+      return null;
+    }
+  }
+
+  async function resolveAssigneesToAttendees(assignees) {
+    if (!assignees || assignees.length === 0) {
+      return [];
+    }
+
+    const attendees = [];
+
+    for (const assignee of assignees) {
+      const resolved = await resolveAssigneeEmail(assignee.type, assignee.id);
+
+      if (resolved) {
+        attendees.push({
+          email: resolved.email,
+          displayName: resolved.displayName,
+          responseStatus: 'needsAction',
+          optional: false,
+        });
+        console.log(`[Calendar] ✅ Resolved assignee: ${resolved.email}`);
+      } else {
+        console.warn(`[Calendar] ⚠️ Could not resolve assignee: ${assignee.type} ${assignee.id}`);
+      }
+    }
+
+    return attendees;
+  }
+
+  // Phase 1: Event color mapping
+  function mapEventTypeToColor(entityType) {
+    const colorMap = {
+      project_milestone: '5', // Yellow - Milestones
+      work_order: '6', // Orange - Work orders
+      contact_interaction: '4', // Blue - Client meetings
+      estimate: '2', // Green - Estimates
+      time_entry: '1', // Lavender - Time tracking
+      schedule_item: '8', // Gray - General schedule
+      default: '1', // Lavender - Default
+    };
+
+    return colorMap[entityType] || colorMap['default'];
+  }
+
+  // Phase 1: Enhanced validation
+  function validateEventData(eventData) {
+    const errors = [];
+
+    if (!eventData.title || eventData.title.trim() === '') {
+      errors.push('Event title is required');
+    }
+
+    if (!eventData.startTime) {
+      errors.push('Start time is required');
+    }
+
+    if (!eventData.endTime) {
+      errors.push('End time is required');
+    }
+
+    if (eventData.startTime && eventData.endTime) {
+      const start = new Date(eventData.startTime);
+      const end = new Date(eventData.endTime);
+
+      if (end <= start) {
+        errors.push('End time must be after start time');
+      }
+    }
+
+    return errors;
+  }
+
+  // Enhanced calendar event creation with Phase 1 improvements
   app.post('/api/calendar/events', async (req, res) => {
     if (!req.session) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
-      const oauth2Client = getOauth2Client(); // Create client just-in-time
+      const { calendarId = 'primary', assignees, ...rawEventData } = req.body;
+
+      console.log('[Calendar] === 🚀 ENHANCED EVENT CREATION (Phase 1) ===');
+      console.log('[Calendar] Received event data:', JSON.stringify(rawEventData, null, 2));
+      console.log('[Calendar] Assignees:', JSON.stringify(assignees, null, 2));
+
+      // Phase 1: Enhanced validation
+      const validationErrors = validateEventData(rawEventData);
+      if (validationErrors.length > 0) {
+        console.error('[Calendar] ❌ Validation errors:', validationErrors);
+        return res.status(400).json({ errors: validationErrors });
+      }
+
+      // Phase 1: Email resolution for attendees
+      const resolvedAttendees = await resolveAssigneesToAttendees(assignees || []);
+      console.log(`[Calendar] 📧 Resolved ${resolvedAttendees.length} attendees`);
+
+      const oauth2Client = getOauth2Client();
       oauth2Client.setCredentials(req.session.tokens);
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-      const { calendarId = 'primary', ...rawEventData } = req.body;
-
-      // Transform the event data to match Google Calendar API format
+      // Enhanced event transformation with Phase 1 improvements
       const eventData = {
         summary: rawEventData.title || rawEventData.summary,
         description: rawEventData.description || '',
+        location: rawEventData.location || '',
         start: {
           dateTime: rawEventData.startTime || rawEventData.start?.dateTime,
           timeZone: rawEventData.timezone || rawEventData.start?.timeZone || 'America/New_York',
@@ -418,43 +550,71 @@ function setupGoogleCalendarAuth(app) {
           dateTime: rawEventData.endTime || rawEventData.end?.dateTime,
           timeZone: rawEventData.timezone || rawEventData.end?.timeZone || 'America/New_York',
         },
-      };
 
-      // Add optional fields if present
-      if (rawEventData.location) {
-        eventData.location = rawEventData.location;
-      }
+        // Phase 1: Enhanced features
+        attendees: resolvedAttendees,
+        colorId: mapEventTypeToColor(rawEventData.entityType),
 
-      if (rawEventData.attendees && Array.isArray(rawEventData.attendees)) {
-        eventData.attendees = rawEventData.attendees.map(attendee => ({
-          email: typeof attendee === 'string' ? attendee : attendee.email,
-        }));
-      }
+        // Enhanced reminders
+        reminders: {
+          useDefault: false,
+          overrides: [
+            { method: 'email', minutes: 1440 }, // 24 hours
+            { method: 'popup', minutes: 30 }, // 30 minutes
+          ],
+        },
 
-      // Add extended properties for tracking
-      if (rawEventData.entityType && rawEventData.entityId) {
-        eventData.extendedProperties = {
+        // Extended properties for tracking
+        extendedProperties: {
           private: {
-            appSource: 'construction_management',
+            appSource: 'akc_crm',
             entityType: rawEventData.entityType,
             entityId: rawEventData.entityId,
+            projectId: rawEventData.projectId,
+          },
+        },
+      };
+
+      // Auto-create Google Meet for multi-attendee events
+      if (resolvedAttendees.length > 1) {
+        eventData.conferenceData = {
+          createRequest: {
+            requestId: `akc-${Date.now()}`,
+            conferenceSolutionKey: {
+              type: 'hangoutsMeet',
+            },
           },
         };
+        console.log('[Calendar] 📹 Auto-creating Google Meet for multi-attendee event');
       }
 
-      console.log('[Calendar] Creating event with data:', JSON.stringify(eventData, null, 2));
+      console.log('[Calendar] 📝 Final event data:', JSON.stringify(eventData, null, 2));
 
       const { data } = await calendar.events.insert({
         calendarId,
-        requestBody: eventData,
-        sendNotifications: rawEventData.sendNotifications || false,
+        resource: eventData,
+        sendUpdates: resolvedAttendees.length > 0 ? 'all' : 'none',
+        conferenceDataVersion: eventData.conferenceData ? 1 : 0,
       });
 
-      console.log('[Calendar] Event created successfully:', data.id);
-      res.json(data);
+      console.log('[Calendar] ✅ Event created successfully!');
+      console.log('[Calendar] Event ID:', data.id);
+      console.log('[Calendar] Event URL:', data.htmlLink);
+      console.log('[Calendar] Attendees invited:', resolvedAttendees.length);
+      if (data.conferenceData?.entryPoints?.[0]?.uri) {
+        console.log('[Calendar] Meeting link:', data.conferenceData.entryPoints[0].uri);
+      }
+
+      res.json({
+        success: true,
+        event: data,
+        attendeesInvited: resolvedAttendees.length,
+        meetingLink: data.conferenceData?.entryPoints?.[0]?.uri,
+        colorId: eventData.colorId,
+      });
     } catch (error) {
-      console.error('Create event error:', error);
-      console.error('Error details:', JSON.stringify(error.response?.data, null, 2));
+      console.error('[Calendar] ❌ Create event error:', error);
+      console.error('[Calendar] Error details:', JSON.stringify(error.response?.data, null, 2));
       res.status(500).json({
         error: 'Failed to create event',
         details: error.response?.data?.error?.message || error.message,
