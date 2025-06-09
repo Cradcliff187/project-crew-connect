@@ -23,48 +23,80 @@ export default function ProjectScheduleTab({ projectId, projectName }: ProjectSc
 
   const handleScheduleNew = async (eventData: EnhancedCalendarEventData): Promise<boolean> => {
     try {
-      // Use the enhanced calendar service to create the event
-      const result = await EnhancedCalendarService.createEvent({
-        ...eventData,
-        entityId: `project-schedule-${Date.now()}`, // Generate temporary ID
-        projectId,
+      console.log('Creating schedule item in database...', eventData);
+
+      // Step 1: Create schedule item in database FIRST
+      const scheduleItemData = {
+        project_id: projectId,
+        title: eventData.title,
+        description: eventData.description || null,
+        start_datetime: eventData.startTime,
+        end_datetime: eventData.endTime,
+        assignee_type: eventData.assignees?.[0]?.type || null,
+        assignee_id: eventData.assignees?.[0]?.id || null,
+        send_invite: eventData.assignees && eventData.assignees.length > 0,
+        calendar_integration_enabled: true,
+        is_all_day: false,
+      };
+
+      const response = await fetch('/api/schedule-items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(scheduleItemData),
       });
 
-      if (result.success) {
-        toast({
-          title: 'Event Scheduled Successfully',
-          description: `Created event on ${result.calendarSelection?.primaryCalendar.name}${
-            result.invitesSent && result.invitesSent.length > 0
-              ? ` and sent invites to ${result.invitesSent.length} attendee(s)`
-              : ''
-          }`,
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create schedule item');
+      }
 
-        // Log the intelligent calendar selection for demo purposes
-        console.log('Calendar Selection Result:', {
-          primary: result.calendarSelection?.primaryCalendar,
-          additional: result.calendarSelection?.additionalCalendars,
-          invites: result.calendarSelection?.individualInvites,
-          eventIds: {
-            primary: result.primaryEventId,
-            additional: result.additionalEventIds,
+      const { data: createdItem } = await response.json();
+      console.log('Schedule item created successfully:', createdItem);
+
+      // Step 2: Sync with Google Calendar
+      try {
+        const syncResponse = await fetch(`/api/schedule-items/${createdItem.id}/sync-calendar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          credentials: 'include',
         });
 
-        return true;
-      } else {
+        const syncResult = await syncResponse.json();
+
+        if (syncResult.success) {
+          toast({
+            title: 'Event Created Successfully! 📅',
+            description: `Schedule item saved and synced to Google Calendar. Event ID: ${syncResult.eventId}`,
+          });
+        } else {
+          toast({
+            title: 'Event Created (Calendar Sync Failed)',
+            description:
+              'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
+            variant: 'destructive',
+          });
+        }
+      } catch (syncError) {
+        console.warn('Calendar sync failed:', syncError);
         toast({
-          title: 'Scheduling Failed',
-          description: result.errors?.join(', ') || 'Unknown error occurred',
+          title: 'Event Created (Calendar Sync Failed)',
+          description:
+            'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
           variant: 'destructive',
         });
-        return false;
       }
+
+      return true;
     } catch (error) {
-      console.error('Error scheduling event:', error);
+      console.error('Error creating schedule item:', error);
       toast({
-        title: 'Scheduling Error',
-        description: error instanceof Error ? error.message : 'Failed to schedule event',
+        title: 'Failed to Create Event',
+        description: error instanceof Error ? error.message : 'Failed to create schedule item',
         variant: 'destructive',
       });
       return false;

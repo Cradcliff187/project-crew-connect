@@ -1390,6 +1390,124 @@ app.post('/api/organization-calendar/update', requireAuth, async (req, res) => {
   }
 });
 
+// ------ SCHEDULE ITEMS CRUD ENDPOINTS -------
+
+// CREATE new schedule item in database
+app.post('/api/schedule-items', requireAuth, async (req, res) => {
+  try {
+    console.log('[Schedule Items API] Creating new schedule item');
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const {
+      project_id,
+      title,
+      description,
+      start_datetime,
+      end_datetime,
+      assignee_type,
+      assignee_id,
+      send_invite,
+      calendar_integration_enabled,
+      is_all_day,
+    } = req.body;
+
+    // Validation
+    if (!project_id || !title || !start_datetime || !end_datetime) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: project_id, title, start_datetime, end_datetime',
+      });
+    }
+
+    // Create schedule item in database
+    const { data: scheduleItem, error: insertError } = await supabaseAdmin
+      .from('schedule_items')
+      .insert({
+        project_id,
+        title: title.trim(),
+        description: description || null,
+        start_datetime,
+        end_datetime,
+        assignee_type: assignee_type || null,
+        assignee_id: assignee_id || null,
+        send_invite: send_invite || false,
+        calendar_integration_enabled: calendar_integration_enabled !== false, // Default to true
+        is_all_day: is_all_day || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('[Schedule Items API] Database error:', insertError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create schedule item',
+        details: insertError.message,
+      });
+    }
+
+    console.log(`[Schedule Items API] Created schedule item: ${scheduleItem.id}`);
+
+    res.json({
+      success: true,
+      data: scheduleItem,
+      message: 'Schedule item created successfully',
+    });
+  } catch (error) {
+    console.error('[Schedule Items API] Error creating schedule item:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create schedule item',
+    });
+  }
+});
+
+// GET schedule items for a project
+app.get('/api/schedule-items', requireAuth, async (req, res) => {
+  try {
+    const { project_id } = req.query;
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    let query = supabaseAdmin
+      .from('schedule_items')
+      .select('*')
+      .order('start_datetime', { ascending: true });
+
+    if (project_id) {
+      query = query.eq('project_id', project_id);
+    }
+
+    const { data: scheduleItems, error } = await query;
+
+    if (error) {
+      console.error('Error fetching schedule items:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch schedule items',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: scheduleItems || [],
+    });
+  } catch (error) {
+    console.error('Error in schedule items API:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch schedule items',
+    });
+  }
+});
+
 // ------ NEW SCHEDULE ITEM CALENDAR SYNC ENDPOINT -------
 
 app.post('/api/schedule-items/:itemId/sync-calendar', requireAuth, async (req, res) => {
