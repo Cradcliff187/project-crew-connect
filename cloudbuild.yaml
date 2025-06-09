@@ -52,7 +52,7 @@ steps:
       - '--service-account'
       - '${_SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com'
       - '--set-env-vars'
-      - 'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=${_SERVICE_NAME},CLOUD_RUN_REGION=${_REGION},GOOGLE_REDIRECT_URI=https://project-crew-connect-dbztoro5pq-ul.a.run.app/auth/google/callback'
+      - 'NODE_ENV=production,SERVER_PORT=8080,SERVICE_NAME=${_SERVICE_NAME},CLOUD_RUN_REGION=${_REGION},GOOGLE_REDIRECT_URI=https://project-crew-connect-1061142868787.us-east5.run.app/auth/google/callback'
       - '--update-secrets'
       - 'SUPABASE_URL=supabase-url:latest'
       - '--update-secrets'
