@@ -3,6 +3,7 @@
 
 const { google } = require('googleapis');
 const crypto = require('crypto');
+const serviceAccountAuth = require('./server-service-account.cjs');
 
 // OAuth2 Configuration
 // Support multiple possible redirect URIs
@@ -511,16 +512,13 @@ function setupGoogleCalendarAuth(app) {
 
   // Enhanced calendar event creation with Phase 1 improvements
   app.post('/api/calendar/events', async (req, res) => {
-    if (!req.session) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
     try {
       const { calendarId = 'primary', assignees, ...rawEventData } = req.body;
 
       console.log('[Calendar] === 🚀 ENHANCED EVENT CREATION (Phase 1) ===');
       console.log('[Calendar] Received event data:', JSON.stringify(rawEventData, null, 2));
       console.log('[Calendar] Assignees:', JSON.stringify(assignees, null, 2));
+      console.log('[Calendar] Target calendar:', calendarId);
 
       // Phase 1: Enhanced validation
       const validationErrors = validateEventData(rawEventData);
@@ -533,9 +531,40 @@ function setupGoogleCalendarAuth(app) {
       const resolvedAttendees = await resolveAssigneesToAttendees(assignees || []);
       console.log(`[Calendar] 📧 Resolved ${resolvedAttendees.length} attendees`);
 
-      const oauth2Client = getOauth2Client();
-      oauth2Client.setCredentials(req.session.tokens);
-      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      // Determine which auth to use
+      const sharedCalendarIds = [
+        process.env.VITE_GOOGLE_CALENDAR_PROJECTS,
+        process.env.VITE_GOOGLE_CALENDAR_WORK_ORDER,
+      ].filter(Boolean);
+
+      let authClient;
+      let authType;
+
+      // Use service account for shared calendars
+      if (sharedCalendarIds.includes(calendarId) && serviceAccountAuth.isInitialized()) {
+        try {
+          authClient = await serviceAccountAuth.getClient();
+          authType = 'service-account';
+          console.log(`[Calendar] ✓ Using service account for shared calendar: ${calendarId}`);
+        } catch (error) {
+          console.error('[Calendar] Service account error:', error.message);
+          // Fall through to user auth
+        }
+      }
+
+      // Fall back to user OAuth if service account not used
+      if (!authClient) {
+        if (!req.session) {
+          return res.status(401).json({ error: 'Authentication required' });
+        }
+        const oauth2Client = getOauth2Client();
+        oauth2Client.setCredentials(req.session.tokens);
+        authClient = oauth2Client;
+        authType = 'user-oauth';
+        console.log(`[Calendar] Using user OAuth for calendar: ${calendarId}`);
+      }
+
+      const calendar = google.calendar({ version: 'v3', auth: authClient });
 
       // Enhanced event transformation with Phase 1 improvements
       const eventData = {
@@ -692,5 +721,17 @@ function setupGoogleCalendarAuth(app) {
     });
   });
 }
+
+// Initialize service account on startup
+async function initializeCalendarServices() {
+  const serviceAccountReady = await serviceAccountAuth.initialize();
+  if (serviceAccountReady) {
+    console.log('[Calendar] Service account ready for calendar operations');
+  }
+  return serviceAccountReady;
+}
+
+// Call initialization on module load
+initializeCalendarServices().catch(console.error);
 
 module.exports = { setupGoogleCalendarAuth };
