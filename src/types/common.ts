@@ -25,7 +25,8 @@ export type EntityType =
   | 'CONTACT'
   | 'CUSTOMER'
   | 'EXPENSE'
-  | 'ESTIMATE_ITEM';
+  | 'ESTIMATE_ITEM'
+  | 'CHANGE_ORDER';
 
 export type DocumentCategory =
   | 'other'

@@ -89,11 +89,11 @@ const EstimateEmailTab: React.FC<EstimateEmailTabProps> = ({ estimate, onEmailSe
       });
 
       // Update estimate status to 'sent' if it's in 'draft'
-      if (estimate.status === 'draft') {
+      if (estimate.status === 'DRAFT') {
         const { error } = await supabase
           .from('estimates')
           .update({
-            status: 'sent',
+            status: 'SENT',
             sentdate: new Date().toISOString(),
           })
           .eq('estimateid', estimate.estimateid);

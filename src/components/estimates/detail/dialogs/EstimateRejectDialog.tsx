@@ -48,7 +48,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
       const { error: updateError } = await supabase
         .from('estimates')
         .update({
-          status: 'rejected',
+          status: 'REJECTED',
           updated_at: new Date().toISOString(),
         })
         .eq('estimateid', estimateId);
@@ -60,8 +60,8 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
         action: 'Rejection',
         moduletype: 'ESTIMATES',
         referenceid: estimateId,
-        status: 'rejected',
-        previousstatus: 'pending',
+        status: 'REJECTED',
+        previousstatus: 'PENDING',
         timestamp: new Date().toISOString(),
         detailsjson: JSON.stringify({ reason: rejectionReason }),
         created_at: new Date().toISOString(),
@@ -90,7 +90,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
           estimate_id: estimateId,
           version: currentVersion + 1,
           is_selected_for_view: true,
-          status: 'draft',
+          status: 'DRAFT',
           notes: `Revision created after rejection. Reason: ${rejectionReason}`,
           revision_date: new Date().toISOString(),
           created_at: new Date().toISOString(),
@@ -103,7 +103,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
         const { error: statusError } = await supabase
           .from('estimates')
           .update({
-            status: 'draft',
+            status: 'DRAFT',
             updated_at: new Date().toISOString(),
           })
           .eq('estimateid', estimateId);

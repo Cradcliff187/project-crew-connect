@@ -1,17 +1,5 @@
 import { ReactNode } from 'react';
-
-// Define the types of entities we can report on
-export type EntityType =
-  | 'projects'
-  | 'customers'
-  | 'vendors'
-  | 'subcontractors'
-  | 'work_orders'
-  | 'estimates'
-  | 'expenses'
-  | 'time_entries'
-  | 'change_orders'
-  | 'employees';
+import { EntityType } from './common';
 
 // Define field type
 export type FieldType =

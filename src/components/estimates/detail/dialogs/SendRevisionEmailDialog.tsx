@@ -184,7 +184,7 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         const { error: revisionError } = await supabase
           .from('estimate_revisions')
           .update({
-            status: 'sent',
+            status: 'SENT',
             sent_date: new Date().toISOString(),
             sent_to: to,
             pdf_document_id: pdfDocumentId,

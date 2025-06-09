@@ -164,8 +164,8 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
                     <TableCell className="font-medium">Version {revision.version}</TableCell>
                     <TableCell>{formatDate(revision.revision_date)}</TableCell>
                     <TableCell>
-                      <Badge variant={revision.status === 'approved' ? 'default' : 'outline'}>
-                        {revision.status || 'draft'}
+                      <Badge variant={revision.status === 'APPROVED' ? 'default' : 'outline'}>
+                        {revision.status || 'DRAFT'}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatCurrency(revision.amount || 0)}</TableCell>

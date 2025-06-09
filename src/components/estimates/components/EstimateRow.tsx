@@ -189,7 +189,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           estimateamount: estimateData.estimateamount || 0,
           projectname: `${estimateData.projectname || 'Estimate'} (Copy)`,
           datecreated: new Date().toISOString(),
-          status: 'draft',
+          status: 'DRAFT',
         })
         .select('estimateid')
         .single();
@@ -205,7 +205,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           estimate_id: newEstimateId,
           version: 1,
           is_selected_for_view: true,
-          status: 'draft',
+          status: 'DRAFT',
           revision_date: new Date().toISOString(),
         })
         .select('id')

@@ -1,16 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-export type EntityType =
-  | 'PROJECT'
-  | 'WORK_ORDER'
-  | 'CHANGE_ORDER'
-  | 'CONTACT'
-  | 'VENDOR'
-  | 'ESTIMATE'
-  | 'CUSTOMER'
-  | 'TIME_ENTRY'
-  | 'EMPLOYEE';
+import { EntityType } from '@/types/common';
 
 interface StatusHistoryOptions {
   entityId: string;

@@ -693,7 +693,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         state: '',
         zip: '',
       },
-      status: 'draft',
+      status: 'DRAFT',
     },
   });
 

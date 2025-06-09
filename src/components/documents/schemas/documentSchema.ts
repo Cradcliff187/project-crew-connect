@@ -37,6 +37,7 @@ export const entityTypes = [
   'EMPLOYEE',
   'ESTIMATE_ITEM',
   'CONTACT',
+  'CHANGE_ORDER',
 ] as const;
 
 // Define vendor types
@@ -90,6 +91,7 @@ export const entityCategoryMap: Record<string, string[]> = {
   EXPENSE: ['receipt', 'invoice', 'other'],
   TIME_ENTRY: ['receipt', 'photo', 'other'],
   ESTIMATE_ITEM: ['receipt', 'invoice', '3rd_party_estimate', 'other'],
+  CHANGE_ORDER: ['contract', 'invoice', 'correspondence', 'other'],
 };
 
 // Define the document metadata schema

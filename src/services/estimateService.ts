@@ -148,7 +148,7 @@ export async function isEstimateConverted(estimateId: string): Promise<boolean> 
     if (error) throw error;
 
     // If the estimate has a projectid or status is 'converted', it's been converted
-    return !!data.projectid || data.status === 'converted';
+    return !!data.projectid || data.status === 'CONVERTED';
   } catch (err) {
     console.error('Error checking if estimate is converted:', err);
     return false;

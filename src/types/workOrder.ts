@@ -1,9 +1,11 @@
+import { StatusType } from './common';
+
 // Extending the types to include the fields we're using
 export interface WorkOrder {
   work_order_id: string;
   title: string;
   description?: string | null;
-  status: 'NEW' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
+  status: StatusType;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   customer_id?: string | null;
   location_id?: string | null;

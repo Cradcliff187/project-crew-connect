@@ -149,7 +149,7 @@ export const useProjectSubmit = (onSuccess: () => void) => {
           .from('estimates')
           .update({
             projectid: project[0]?.projectid,
-            status: 'approved',
+            status: 'APPROVED',
           })
           .eq('estimateid', data.estimateId);
 

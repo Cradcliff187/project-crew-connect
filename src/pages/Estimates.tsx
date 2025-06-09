@@ -29,7 +29,7 @@ const Estimates = () => {
   // Calculate metrics for summary cards
   const totalEstimates = estimates.length;
   const pendingApproval = estimates.filter(
-    est => est.status === 'pending' || est.status === 'draft'
+    est => est.status === 'PENDING' || est.status === 'DRAFT'
   ).length;
   const totalValue = estimates.reduce((sum, est) => sum + (est.amount || 0), 0);
   const thisMonthEstimates = estimates.filter(est => {

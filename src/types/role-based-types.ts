@@ -29,7 +29,7 @@ export interface RoleBasedEmployee {
 }
 
 // Enhanced Time Entry type with overtime and processing fields
-export interface RoleBasedTimeEntry {
+export interface EnhancedTimeEntry {
   id: string;
   entity_type: string;
   entity_id: string;
@@ -58,7 +58,7 @@ export interface RoleBasedTimeEntry {
 }
 
 // Legacy compatibility - alias for existing components
-export type TimeEntry = RoleBasedTimeEntry & {
+export type TimeEntry = EnhancedTimeEntry & {
   employee_name?: string;
   entity_name?: string;
   can_process?: boolean;
@@ -138,7 +138,7 @@ export interface TimeEntryFilters {
   processed?: boolean;
 }
 
-export interface AdminTimeEntryView extends RoleBasedTimeEntry {
+export interface AdminTimeEntryView extends EnhancedTimeEntry {
   employee_name: string;
   entity_name: string;
   can_process: boolean;
@@ -158,12 +158,12 @@ export interface FieldUserAssignment {
 
 // Hook return types
 export interface UseRoleBasedTimeEntriesReturn {
-  timeEntries: RoleBasedTimeEntry[];
+  timeEntries: EnhancedTimeEntry[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
   createTimeEntry: (data: QuickLogFormData) => Promise<void>;
-  updateTimeEntry: (id: string, data: Partial<RoleBasedTimeEntry>) => Promise<void>;
+  updateTimeEntry: (id: string, data: Partial<EnhancedTimeEntry>) => Promise<void>;
   processTimeEntry: (id: string) => Promise<void>;
   unprocessTimeEntry: (id: string) => Promise<void>;
 }
@@ -187,8 +187,8 @@ export interface UseActivityLogReturn {
 
 // Component prop types
 export interface TimeEntryCardProps {
-  timeEntry: RoleBasedTimeEntry;
-  onEdit?: (timeEntry: RoleBasedTimeEntry) => void;
+  timeEntry: EnhancedTimeEntry;
+  onEdit?: (timeEntry: EnhancedTimeEntry) => void;
   onDelete?: (id: string) => void;
   showActions?: boolean;
   variant?: 'field' | 'admin';
@@ -212,7 +212,7 @@ export interface AdminTimeEntryTableProps {
   onFiltersChange: (filters: TimeEntryFilters) => void;
   onProcessEntry: (id: string) => void;
   onUnprocessEntry: (id: string) => void;
-  onEditEntry: (timeEntry: RoleBasedTimeEntry) => void;
+  onEditEntry: (timeEntry: EnhancedTimeEntry) => void;
 }
 
 // Utility types

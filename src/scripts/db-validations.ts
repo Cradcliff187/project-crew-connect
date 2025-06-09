@@ -76,7 +76,7 @@ export const testValidators = async () => {
   const testFunctions = [
     {
       name: 'validate_entity_status_transition',
-      params: { p_entity_type: 'PROJECT', p_current_status: 'draft', p_new_status: 'active' },
+      params: { p_entity_type: 'PROJECT', p_current_status: 'DRAFT', p_new_status: 'ACTIVE' },
     },
     {
       name: 'get_document_count_by_entity',
