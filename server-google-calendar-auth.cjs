@@ -25,10 +25,13 @@ const getOauth2Client = () => {
   console.log('=== CREATING OAUTH2 CLIENT ===');
   console.log('[OAuth] Environment variables check:');
   console.log(`  - GOOGLE_CLIENT_ID exists: ${!!process.env.GOOGLE_CLIENT_ID}`);
+  console.log(
+    `  - GOOGLE_CLIENT_ID raw length: ${process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.length : 0}`
+  );
   console.log(`  - GOOGLE_CLIENT_ID value: ${process.env.GOOGLE_CLIENT_ID || 'UNDEFINED'}`);
   console.log(`  - GOOGLE_CLIENT_SECRET exists: ${!!process.env.GOOGLE_CLIENT_SECRET}`);
   console.log(
-    `  - GOOGLE_CLIENT_SECRET length: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0}`
+    `  - GOOGLE_CLIENT_SECRET raw length: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0}`
   );
   console.log(
     `  - GOOGLE_CLIENT_SECRET first 10 chars: ${process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.substring(0, 10) + '...' : 'UNDEFINED'}`
@@ -47,11 +50,16 @@ const getOauth2Client = () => {
   }
 
   console.log('[OAuth] Creating Google OAuth2 client with above credentials...');
-  const client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri
-  );
+
+  // Trim environment variables to remove any newline characters
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+
+  console.log('[OAuth] After trimming:');
+  console.log(`  - clientId length: ${clientId ? clientId.length : 0}`);
+  console.log(`  - clientSecret length: ${clientSecret ? clientSecret.length : 0}`);
+
+  const client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   console.log('[OAuth] OAuth2 client created successfully');
   console.log('=== OAUTH2 CLIENT CREATED ===');
   return client;
