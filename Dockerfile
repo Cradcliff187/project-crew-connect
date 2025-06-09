@@ -33,6 +33,7 @@ COPY server-google-calendar-auth.cjs ./
 COPY server-body-parser-fix.cjs ./
 COPY server-supabase-session-store.cjs ./
 COPY server-api-endpoints.cjs ./
+COPY server-service-account.cjs ./
 
 # Create a simple test to verify files exist
 RUN ls -la && \
@@ -41,6 +42,7 @@ RUN ls -la && \
     test -f server-body-parser-fix.cjs && \
     test -f server-supabase-session-store.cjs && \
     test -f server-api-endpoints.cjs && \
+    test -f server-service-account.cjs && \
     test -d dist && \
     echo "Files verified"
 
