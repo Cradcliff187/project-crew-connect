@@ -51,13 +51,14 @@ const getOauth2Client = () => {
 
   console.log('[OAuth] Creating Google OAuth2 client with above credentials...');
 
-  // Trim environment variables to remove any newline characters
-  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  // Aggressively clean environment variables to remove ALL whitespace and control characters
+  const clientId = process.env.GOOGLE_CLIENT_ID?.replace(/\s/g, '');
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.replace(/\s/g, '');
 
-  console.log('[OAuth] After trimming:');
+  console.log('[OAuth] After aggressive cleaning:');
   console.log(`  - clientId length: ${clientId ? clientId.length : 0}`);
   console.log(`  - clientSecret length: ${clientSecret ? clientSecret.length : 0}`);
+  console.log(`  - clientId value: ${clientId || 'UNDEFINED'}`);
 
   const client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   console.log('[OAuth] OAuth2 client created successfully');
@@ -288,7 +289,7 @@ function setupGoogleCalendarAuth(app) {
       const cookieOptions = {
         httpOnly: true,
         secure: true,
-        sameSite: 'strict',
+        sameSite: 'lax', // Changed from 'strict' to 'lax' to allow API requests
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       };
       console.log(
