@@ -35,14 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  EnhancedCalendarService,
-  EnhancedCalendarEventData,
-} from '@/services/enhancedCalendarService';
-import {
-  CalendarSelectionService,
-  CalendarSelectionContext,
-} from '@/services/calendarSelectionService';
+import { createScheduleItem, createWorkOrderEvent, type ScheduleItem } from '@/lib/calendarService';
 
 export interface UnifiedSchedulingContext {
   // Context information
@@ -77,7 +70,7 @@ interface UnifiedSchedulingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context?: UnifiedSchedulingContext;
-  onSave: (eventData: EnhancedCalendarEventData) => Promise<boolean>;
+  onSave: (eventData: CalendarEventData) => Promise<boolean>;
   onCancel: () => void;
 }
 
@@ -91,6 +84,22 @@ interface WorkOrder {
   id: string;
   title: string;
   status?: string;
+}
+
+// Define the event data type locally since the old service was deleted
+interface CalendarEventData {
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  entityType: string;
+  entityId: string;
+  projectId?: string;
+  workOrderId?: string;
+  assignees?: UnifiedSchedulingContext['assignees'];
+  userEmail?: string;
+  sendNotifications?: boolean;
 }
 
 const UnifiedSchedulingDialog = ({
@@ -110,9 +119,14 @@ const UnifiedSchedulingDialog = ({
   const [location, setLocation] = useState(context.location || '');
 
   // Entity selection state
-  const [entityType, setEntityType] = useState<CalendarSelectionContext['entityType']>(
-    context.entityType || 'personal_task'
-  );
+  const [entityType, setEntityType] = useState<
+    | 'project_milestone'
+    | 'schedule_item'
+    | 'work_order'
+    | 'contact_interaction'
+    | 'time_entry'
+    | 'personal_task'
+  >(context.entityType || 'personal_task');
   const [selectedProjectId, setSelectedProjectId] = useState(context.projectId || '');
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(context.workOrderId || '');
 
@@ -201,22 +215,18 @@ const UnifiedSchedulingDialog = ({
 
   // Update calendar preview when relevant fields change
   useEffect(() => {
-    const previewContext: CalendarSelectionContext = {
-      entityType,
-      projectId: selectedProjectId || context.projectId,
-      workOrderId: selectedWorkOrderId || context.workOrderId,
-      assignees,
-      userEmail: 'current-user@example.com', // This would come from auth context
-    };
-
-    CalendarSelectionService.selectCalendars(previewContext)
-      .then(selection => {
-        setCalendarPreview(EnhancedCalendarService.getCalendarDisplayInfo(selection));
-      })
-      .catch(error => {
-        console.error('Error generating calendar preview:', error);
-        setCalendarPreview(null);
-      });
+    // Calendar preview functionality removed - services were deleted
+    // TODO: Implement new calendar preview logic if needed
+    setCalendarPreview({
+      primary:
+        entityType === 'work_order'
+          ? 'Work Orders Calendar'
+          : entityType === 'personal_task'
+            ? 'Personal Calendar'
+            : 'Project Calendar',
+      additional: [],
+      invites: assignees?.map(a => a.email || '').filter(Boolean) || [],
+    });
   }, [
     entityType,
     selectedProjectId,
@@ -290,7 +300,7 @@ const UnifiedSchedulingDialog = ({
     }
 
     // Prepare event data - using Google Calendar field names
-    const eventData: EnhancedCalendarEventData = {
+    const eventData: CalendarEventData = {
       title: summary.trim(), // Maps to Google Calendar 'summary'
       description: description || undefined,
       startTime: startDateTime.toISOString(),
@@ -311,7 +321,15 @@ const UnifiedSchedulingDialog = ({
     }
   };
 
-  const getEntityTypeDisplayName = (type: CalendarSelectionContext['entityType']): string => {
+  const getEntityTypeDisplayName = (
+    type:
+      | 'project_milestone'
+      | 'schedule_item'
+      | 'work_order'
+      | 'contact_interaction'
+      | 'time_entry'
+      | 'personal_task'
+  ): string => {
     switch (type) {
       case 'project_milestone':
         return 'Project Milestone';
@@ -690,7 +708,7 @@ const UnifiedSchedulingDialog = ({
                   <div className="text-sm">
                     <strong>Calendar:</strong> {calendarPreview.primary}
                   </div>
-                  {calendarPreview.invites.length > 0 && (
+                  {calendarPreview.invites && calendarPreview.invites.length > 0 && (
                     <div className="text-sm">
                       <strong>Invites:</strong> {calendarPreview.invites.length} attendee(s) will
                       receive calendar invitations
