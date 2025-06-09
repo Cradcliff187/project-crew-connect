@@ -40,54 +40,26 @@ async function getProjectCalendarId(projectId: string): Promise<string> {
     return project.calendar_id;
   }
 
-  // 2. If no calendar_id, create a new Google Calendar
-  console.log('🆕 No calendar_id found, creating new calendar for project...');
-  console.log('📝 Calendar details:', {
-    summary: `Project: ${project.projectname}`,
-    description: `Calendar for project ${projectId}`,
-  });
+  // 2. If no calendar_id, use primary calendar for now
+  // TODO: Implement calendar creation when needed
+  console.log('🔄 No calendar_id found, using primary calendar');
+  const primaryCalendarId = 'primary';
 
-  const response = await fetch('/api/google/create-calendar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      summary: `Project: ${project.projectname}`,
-      description: `Calendar for project ${projectId}`,
-    }),
-  });
-
-  console.log('📡 Create Calendar API Response Status:', response.status);
-  console.log('📡 Response OK:', response.ok);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ Create Calendar API Error:', errorText);
-    console.groupEnd();
-    throw new Error('Failed to create project calendar');
-  }
-
-  const responseData = await response.json();
-  console.log('📋 Create Calendar API Response Data:', responseData);
-  const { calendarId } = responseData;
-  console.log('📅 New calendar ID:', calendarId);
-
-  // 3. Save new calendar_id to the project in Supabase
+  // 3. Save primary calendar_id to the project in Supabase
   console.log('💾 Saving calendar_id to project...');
   const { error: updateError } = await supabase
     .from('projects')
-    .update({ calendar_id: calendarId })
+    .update({ calendar_id: primaryCalendarId })
     .eq('projectid', projectId);
 
   if (updateError) {
-    // Log the error, but proceed since the calendar was created
-    console.error('⚠️ Failed to save new calendar_id to project:', updateError.message);
+    console.error('⚠️ Failed to save calendar_id to project:', updateError.message);
   } else {
     console.log('✅ Calendar ID saved to project');
   }
 
   console.groupEnd();
-  return calendarId;
+  return primaryCalendarId;
 }
 
 async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promise<string> {
@@ -102,15 +74,18 @@ async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promis
 
   const requestBody = {
     calendarId,
-    summary: item.title,
+    title: item.title,
     description: item.description,
-    start: { dateTime: item.start_datetime, timeZone: 'UTC' },
-    end: { dateTime: item.end_datetime, timeZone: 'UTC' },
+    startTime: item.start_datetime,
+    endTime: item.end_datetime,
+    entityType: 'schedule_item',
+    entityId: item.id || '',
+    projectId: item.project_id,
   };
   console.log('📤 Request Body:', requestBody);
 
-  console.log('📞 Calling /api/google/create-event...');
-  const response = await fetch('/api/google/create-event', {
+  console.log('📞 Calling /api/calendar/events...');
+  const response = await fetch('/api/calendar/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -119,7 +94,6 @@ async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promis
 
   console.log('📡 Create Event API Response Status:', response.status);
   console.log('📡 Response OK:', response.ok);
-  console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -130,11 +104,16 @@ async function createGoogleEvent(item: ScheduleItem, calendarId: string): Promis
 
   const responseData = await response.json();
   console.log('📋 Create Event API Response Data:', responseData);
-  const { eventId } = responseData;
-  console.log('🎉 Google Event ID:', eventId);
 
-  console.groupEnd();
-  return eventId;
+  if (responseData.event?.id) {
+    console.log('🎉 Google Event ID:', responseData.event.id);
+    console.groupEnd();
+    return responseData.event.id;
+  } else {
+    console.error('❌ No event ID in response:', responseData);
+    console.groupEnd();
+    throw new Error('No event ID returned from Google Calendar API');
+  }
 }
 
 export async function createScheduleItem(item: ScheduleItem): Promise<ScheduleItem> {
@@ -271,28 +250,28 @@ export async function createWorkOrderEvent(workOrder: WorkOrderEvent): Promise<s
     const workOrderCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER;
 
     if (!workOrderCalendarId) {
-      console.warn('⚠️ No work order calendar ID configured, using project calendar');
-      // Fall back to project calendar if no work order calendar is configured
-      const projectCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT || 'primary';
-      console.log('📅 Using fallback calendar:', projectCalendarId);
+      console.warn('⚠️ No work order calendar ID configured, using primary calendar');
+      // Fall back to primary calendar if no work order calendar is configured
     }
 
-    const targetCalendarId =
-      workOrderCalendarId || import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT || 'primary';
+    const targetCalendarId = workOrderCalendarId || 'primary';
     console.log('📅 Target Calendar ID:', targetCalendarId);
 
-    // Create Google Calendar event directly
+    // Create Google Calendar event using the real API
     console.log('🌐 Creating Google Calendar event for work order...');
-    const response = await fetch('/api/google/create-event', {
+    const response = await fetch('/api/calendar/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         calendarId: targetCalendarId,
-        summary: `WO: ${workOrder.title}`,
+        title: `WO: ${workOrder.title}`,
         description: workOrder.description || '',
-        start: { dateTime: workOrder.scheduled_date, timeZone: 'UTC' },
-        end: { dateTime: workOrder.due_by_date || workOrder.scheduled_date, timeZone: 'UTC' },
+        startTime: workOrder.scheduled_date,
+        endTime: workOrder.due_by_date || workOrder.scheduled_date,
+        entityType: 'work_order',
+        entityId: workOrder.work_order_id,
+        location: workOrder.location,
       }),
     });
 
@@ -306,11 +285,17 @@ export async function createWorkOrderEvent(workOrder: WorkOrderEvent): Promise<s
 
     const responseData = await response.json();
     console.log('📋 Create Event API Response Data:', responseData);
-    const { eventId: googleEventId } = responseData;
-    console.log('✅ Work order event created with ID:', googleEventId);
 
-    console.groupEnd();
-    return googleEventId;
+    if (responseData.event?.id) {
+      const googleEventId = responseData.event.id;
+      console.log('✅ Work order event created with ID:', googleEventId);
+      console.groupEnd();
+      return googleEventId;
+    } else {
+      console.error('❌ No event ID in response:', responseData);
+      console.groupEnd();
+      throw new Error('No event ID returned from Google Calendar API');
+    }
   } catch (error) {
     console.error('💥 Work Order Calendar Error:', error);
     console.groupEnd();

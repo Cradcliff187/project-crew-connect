@@ -35,8 +35,7 @@ export interface EnhancedCalendarResult {
   success: boolean;
   primaryEventId?: string;
   calendarSelection?: CalendarSelectionInfo;
-  invitesSent?: string[];
-  errors?: string[];
+  error?: string;
 }
 
 export class EnhancedCalendarService {
@@ -44,14 +43,15 @@ export class EnhancedCalendarService {
     console.log('🗓️ EnhancedCalendarService: Creating event for:', eventData.entityType);
 
     try {
-      // For work orders, use the existing calendar service
-      if (eventData.entityType === 'work_order') {
+      // For work orders, use the existing work order calendar function
+      if (eventData.entityType === 'work_order' && eventData.workOrderId) {
         const googleEventId = await createWorkOrderEvent({
-          work_order_id: eventData.entityId,
+          work_order_id: eventData.workOrderId,
           title: eventData.title,
           description: eventData.description,
           scheduled_date: eventData.startTime,
           due_by_date: eventData.endTime,
+          location: eventData.location,
         });
 
         return {
@@ -59,84 +59,72 @@ export class EnhancedCalendarService {
           primaryEventId: googleEventId,
           calendarSelection: {
             primaryCalendar: {
-              id: 'work-orders',
-              name: 'Work Orders Calendar',
+              id: 'primary',
+              name: 'Primary Calendar',
             },
           },
-          invitesSent: [],
         };
       }
 
-      // For schedule items, use the API endpoint
-      if (eventData.entityType === 'schedule_item' && eventData.projectId) {
-        console.log('Creating schedule item via API...');
+      // For all other entity types, use the real Google Calendar API
+      console.log('Using real Google Calendar API for entity type:', eventData.entityType);
 
-        const response = await fetch('/api/schedule-items', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            project_id: eventData.projectId,
-            title: eventData.title,
-            description: eventData.description,
-            start_datetime: eventData.startTime,
-            end_datetime: eventData.endTime || eventData.startTime,
-            location: eventData.location,
-            assignee_type: eventData.assignees?.[0]?.type || null,
-            assignee_id: eventData.assignees?.[0]?.id || null,
-            send_invite: eventData.sendNotifications || false,
-            calendar_integration_enabled: true,
-          }),
-        });
+      const response = await fetch('/api/calendar/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          calendarId: 'primary', // TODO: Determine calendar based on entity type
+          title: eventData.title,
+          description: eventData.description,
+          startTime: eventData.startTime,
+          endTime: eventData.endTime || eventData.startTime,
+          location: eventData.location,
+          entityType: eventData.entityType,
+          entityId: eventData.entityId,
+          projectId: eventData.projectId,
+          assignees: eventData.assignees,
+        }),
+      });
 
-        if (!response.ok) {
-          const error = await response.text();
-          throw new Error(`Failed to create schedule item: ${error}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to create calendar event:', errorText);
+
+        // Parse error message if possible
+        let errorMessage = 'Failed to create calendar event';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // Use raw error text if not JSON
+          errorMessage = errorText || errorMessage;
         }
 
-        const result = await response.json();
-
         return {
-          success: true,
-          primaryEventId: result.data?.google_event_id || result.data?.id,
-          calendarSelection: {
-            primaryCalendar: {
-              id: 'project-calendar',
-              name: 'Project Calendar',
-            },
-          },
-          invitesSent: eventData.assignees?.map(a => a.email || '').filter(Boolean) || [],
+          success: false,
+          error: errorMessage,
         };
       }
 
-      // For other entity types, return appropriate result
-      console.log('Creating event for entity type:', eventData.entityType);
-
-      const calendarNames: Record<string, string> = {
-        project_milestone: 'Project Calendar',
-        contact_interaction: 'Contacts Calendar',
-        time_entry: 'Time Tracking Calendar',
-        personal_task: 'Personal Calendar',
-      };
+      const result = await response.json();
+      console.log('Calendar event created successfully:', result);
 
       return {
         success: true,
-        primaryEventId: `event-${Date.now()}`,
+        primaryEventId: result.event?.id,
         calendarSelection: {
           primaryCalendar: {
-            id: eventData.entityType,
-            name: calendarNames[eventData.entityType] || 'Primary Calendar',
+            id: result.calendarId || 'primary',
+            name: 'Primary Calendar',
           },
         },
-        invitesSent: eventData.assignees?.map(a => a.email || '').filter(Boolean) || [],
       };
     } catch (error) {
       console.error('Error in EnhancedCalendarService:', error);
       return {
         success: false,
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }

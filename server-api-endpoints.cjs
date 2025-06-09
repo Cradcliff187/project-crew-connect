@@ -345,57 +345,6 @@ function setupAdditionalEndpoints(app) {
     }
   });
 
-  // Google Calendar Create Event endpoint
-  app.post('/api/google/create-event', requireAuth, async (req, res) => {
-    try {
-      const { calendarId, summary, description, start, end, attendees } = req.body;
-
-      // For now, return a mock response
-      // TODO: Implement actual Google Calendar integration
-      const mockEventId = `mock-event-${Date.now()}`;
-
-      console.log('[Google Calendar API] Creating event:', {
-        calendarId,
-        summary,
-        eventId: mockEventId,
-      });
-
-      res.json({
-        success: true,
-        eventId: mockEventId,
-        message: 'Mock Google Calendar event created',
-      });
-    } catch (error) {
-      console.error('Failed to create Google Calendar event:', error);
-      res.status(500).json({ error: 'Failed to create calendar event' });
-    }
-  });
-
-  // Google Calendar Create Calendar endpoint
-  app.post('/api/google/create-calendar', requireAuth, async (req, res) => {
-    try {
-      const { summary, description } = req.body;
-
-      // For now, return a mock response
-      // TODO: Implement actual Google Calendar creation
-      const mockCalendarId = `mock-calendar-${Date.now()}`;
-
-      console.log('[Google Calendar API] Creating calendar:', {
-        summary,
-        calendarId: mockCalendarId,
-      });
-
-      res.json({
-        success: true,
-        calendarId: mockCalendarId,
-        message: 'Mock Google Calendar created',
-      });
-    } catch (error) {
-      console.error('Failed to create Google Calendar:', error);
-      res.status(500).json({ error: 'Failed to create calendar' });
-    }
-  });
-
   app.post('/api/calendar/workorders/:workOrderId', async (req, res) => {
     try {
       const { workOrderId } = req.params;
