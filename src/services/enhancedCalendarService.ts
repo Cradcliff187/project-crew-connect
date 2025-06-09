@@ -72,13 +72,22 @@ export class EnhancedCalendarService {
 
       switch (eventData.entityType) {
         case 'schedule_item':
+        case 'project':
         case 'project_milestone':
         case 'project_task':
           // All project-related items go to the shared projects calendar
-          targetCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS || 'primary';
+          targetCalendarId =
+            import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS ||
+            import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT ||
+            'primary';
           calendarName = 'Projects Calendar';
-          if (!import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS) {
-            console.warn('⚠️ VITE_GOOGLE_CALENDAR_PROJECTS not configured, using primary calendar');
+          if (
+            !import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS &&
+            !import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT
+          ) {
+            console.warn(
+              '⚠️ VITE_GOOGLE_CALENDAR_PROJECTS/PROJECT not configured, using primary calendar'
+            );
           }
           break;
 

@@ -54,4 +54,13 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    // Pass backend env vars to frontend during build
+    'import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT': JSON.stringify(
+      process.env.GOOGLE_CALENDAR_PROJECT
+    ),
+    'import.meta.env.VITE_GOOGLE_CALENDAR_WORK_ORDER': JSON.stringify(
+      process.env.GOOGLE_CALENDAR_WORK_ORDER
+    ),
+  },
 }));

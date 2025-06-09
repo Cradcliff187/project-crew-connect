@@ -17,8 +17,9 @@ export interface ScheduleItem {
 async function getSharedProjectCalendarId(): Promise<string> {
   console.group('🔍 SHARED PROJECT CALENDAR RESOLUTION');
 
-  // Use the shared projects calendar from environment
-  const sharedProjectCalendarId = import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS;
+  // Get calendar IDs from environment variables - support both naming conventions
+  const sharedProjectCalendarId =
+    import.meta.env.VITE_GOOGLE_CALENDAR_PROJECTS || import.meta.env.VITE_GOOGLE_CALENDAR_PROJECT;
 
   if (!sharedProjectCalendarId) {
     console.error('❌ No shared projects calendar ID configured');

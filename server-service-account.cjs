@@ -30,6 +30,19 @@ class ServiceAccountAuth {
           ],
         });
       }
+      // Option 1.5: From raw JSON env var (for backward compatibility)
+      else if (process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS) {
+        console.log('[Service Account] Initializing from JSON environment variable');
+        const key = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS);
+
+        this.auth = new google.auth.GoogleAuth({
+          credentials: key,
+          scopes: [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events',
+          ],
+        });
+      }
       // Option 2: From file path (for local development)
       else if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE) {
         console.log('[Service Account] Initializing from file path');
