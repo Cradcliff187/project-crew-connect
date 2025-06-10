@@ -240,24 +240,30 @@ For detailed Supabase integration documentation, see:
 - `docs/supabase_guide_for_agents.md`
 - `docs/supabase_connection.md`
 
-## Google Calendar Integration
+## 📅 Google Calendar Integration
 
-The application integrates with Google Calendar for project scheduling. You'll need to:
+The application uses **shared Google Calendars** for project and work order scheduling. Events are created by a service account, not individual users.
 
-1. Configure Google OAuth credentials
-2. Set the proper redirect URIs to match your development environment
-3. Use the Settings > Google Calendar page to connect your account
+### Key Features:
+
+- **Shared Calendars**: Separate calendars for Projects and Work Orders
+- **Service Account**: All events created by `project-crew-connect@crm-live-458710.iam.gserviceaccount.com`
+- **Automatic Sync**: Events created when projects/work orders are scheduled
+
+### Critical Documentation:
+
+**⚠️ IMPORTANT**: See [CALENDAR_INTEGRATION_FINAL_DOCUMENTATION.md](./CALENDAR_INTEGRATION_FINAL_DOCUMENTATION.md) for complete setup and configuration details.
 
 ### Environment Variables
 
 For calendar sync to work properly, the following environment variables must be set:
 
 ```
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
-GOOGLE_CALENDAR_PROJECT=your_calendar_id
-GOOGLE_SERVICE_ACCOUNT_KEY_FILE=path/to/service-account.json
+GOOGLE_CLIENT_ID=1061142868787-n4u3sjcg99s5b4hr112ncd62ql2b3e4c.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+GOOGLE_SERVICE_ACCOUNT_EMAIL=project-crew-connect@crm-live-458710.iam.gserviceaccount.com
+VITE_GOOGLE_CALENDAR_PROJECTS=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com
+VITE_GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```

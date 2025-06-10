@@ -10,6 +10,7 @@ import {
   EnhancedCalendarService,
   EnhancedCalendarEventData,
 } from '@/services/enhancedCalendarService';
+import { createScheduleItem, ScheduleItem } from '@/lib/calendarService';
 
 interface ProjectScheduleTabProps {
   projectId: string;
@@ -23,80 +24,35 @@ export default function ProjectScheduleTab({ projectId, projectName }: ProjectSc
 
   const handleScheduleNew = async (eventData: EnhancedCalendarEventData): Promise<boolean> => {
     try {
-      console.log('Creating schedule item in database...', eventData);
-
-      // Step 1: Create schedule item in database FIRST
-      const scheduleItemData = {
+      const scheduleItemData: ScheduleItem = {
         project_id: projectId,
         title: eventData.title,
-        description: eventData.description || null,
+        description: eventData.description,
         start_datetime: eventData.startTime,
         end_datetime: eventData.endTime,
-        assignee_type: eventData.assignees?.[0]?.type || null,
-        assignee_id: eventData.assignees?.[0]?.id || null,
-        send_invite: eventData.assignees && eventData.assignees.length > 0,
-        calendar_integration_enabled: true,
-        is_all_day: false,
       };
 
-      const response = await fetch('/api/schedule-items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(scheduleItemData),
-      });
+      const result = await createScheduleItem(scheduleItemData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create schedule item');
-      }
-
-      const { data: createdItem } = await response.json();
-      console.log('Schedule item created successfully:', createdItem);
-
-      // Step 2: Sync with Google Calendar
-      try {
-        const syncResponse = await fetch(`/api/schedule-items/${createdItem.id}/sync-calendar`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        const syncResult = await syncResponse.json();
-
-        if (syncResult.success) {
-          toast({
-            title: 'Event Created Successfully! 📅',
-            description: `Schedule item saved and synced to Google Calendar. Event ID: ${syncResult.eventId}`,
-          });
-        } else {
-          toast({
-            title: 'Event Created (Calendar Sync Failed)',
-            description:
-              'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
-            variant: 'destructive',
-          });
-        }
-      } catch (syncError) {
-        console.warn('Calendar sync failed:', syncError);
+      if (result.id) {
         toast({
-          title: 'Event Created (Calendar Sync Failed)',
-          description:
-            'Schedule item saved but Google Calendar sync failed. You can retry sync later.',
+          title: 'Event Scheduled Successfully',
+          description: `Added to project calendar. Event ID: ${result.google_event_id}`,
+        });
+        return true;
+      } else {
+        toast({
+          title: 'Scheduling Failed',
+          description: 'Failed to schedule event',
           variant: 'destructive',
         });
+        return false;
       }
-
-      return true;
     } catch (error) {
       console.error('Error creating schedule item:', error);
       toast({
         title: 'Failed to Create Event',
-        description: error instanceof Error ? error.message : 'Failed to create schedule item',
+        description: error.message || 'An unexpected error occurred while scheduling',
         variant: 'destructive',
       });
       return false;

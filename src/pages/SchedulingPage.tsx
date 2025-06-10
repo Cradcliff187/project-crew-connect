@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import UnifiedSchedulingDialog from '@/components/scheduling/UnifiedSchedulingDialog';
-import { EnhancedCalendarService } from '@/services/enhancedCalendarService';
+import { createScheduleItem } from '@/lib/calendarService';
 import { useToast } from '@/hooks/use-toast';
 
 const SchedulingPage = () => {
@@ -86,21 +86,18 @@ const SchedulingPage = () => {
 
   const handleScheduleSave = async (eventData: any) => {
     try {
-      const result = await EnhancedCalendarService.createEvent({
-        ...eventData,
-        entityId: `scheduled-${Date.now()}`, // Generate unique ID
-      });
+      const result = await createScheduleItem(eventData);
 
-      if (result.success) {
+      if (result.id) {
         toast({
           title: 'Event Scheduled Successfully',
-          description: `Added to ${result.calendarSelection?.primaryCalendar.name}. ${result.invitesSent?.length || 0} invite(s) sent.`,
+          description: `Added to project calendar. Event ID: ${result.google_event_id}`,
         });
         return true;
       } else {
         toast({
           title: 'Scheduling Failed',
-          description: result.errors?.join(', ') || 'Failed to schedule event',
+          description: 'Failed to schedule event',
           variant: 'destructive',
         });
         return false;
@@ -109,7 +106,7 @@ const SchedulingPage = () => {
       console.error('Error scheduling event:', error);
       toast({
         title: 'Scheduling Error',
-        description: 'An unexpected error occurred while scheduling',
+        description: error.message || 'An unexpected error occurred while scheduling',
         variant: 'destructive',
       });
       return false;

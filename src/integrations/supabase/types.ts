@@ -2043,6 +2043,7 @@ export type Database = {
         Row: {
           actual_revenue: number | null;
           budget_status: string | null;
+          calendar_id: string | null;
           change_order_cost_impact: number | null;
           change_order_selling_price_impact: number | null;
           contract_value: number | null;
@@ -2051,6 +2052,8 @@ export type Database = {
           current_expenses: number | null;
           customerid: string | null;
           description: string | null;
+          id: string;
+          name: string | null;
           original_base_cost: number | null;
           original_contingency_amount: number | null;
           original_selling_price: number | null;
@@ -2069,6 +2072,7 @@ export type Database = {
         Insert: {
           actual_revenue?: number | null;
           budget_status?: string | null;
+          calendar_id?: string | null;
           change_order_cost_impact?: number | null;
           change_order_selling_price_impact?: number | null;
           contract_value?: number | null;
@@ -2077,6 +2081,8 @@ export type Database = {
           current_expenses?: number | null;
           customerid?: string | null;
           description?: string | null;
+          id: string;
+          name?: string | null;
           original_base_cost?: number | null;
           original_contingency_amount?: number | null;
           original_selling_price?: number | null;
@@ -2095,6 +2101,7 @@ export type Database = {
         Update: {
           actual_revenue?: number | null;
           budget_status?: string | null;
+          calendar_id?: string | null;
           change_order_cost_impact?: number | null;
           change_order_selling_price_impact?: number | null;
           contract_value?: number | null;
@@ -2103,6 +2110,8 @@ export type Database = {
           current_expenses?: number | null;
           customerid?: string | null;
           description?: string | null;
+          id?: string;
+          name?: string | null;
           original_base_cost?: number | null;
           original_contingency_amount?: number | null;
           original_selling_price?: number | null;

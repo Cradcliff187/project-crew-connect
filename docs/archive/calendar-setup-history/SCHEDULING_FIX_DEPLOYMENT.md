@@ -33,6 +33,23 @@
 - `POST /api/google/create-event` - Create calendar event (mock)
 - `POST /api/google/create-calendar` - Create calendar (mock)
 
+## HOTFIX - Critical Production Issues (Deployed Jan 2025)
+
+### Additional Issues Found and Fixed:
+
+### 4. Database Column Name Error
+
+**Problem**: `column projects.name does not exist` error when creating schedule items from projects page
+**Solution**: Fixed query to use correct column name `projectname` instead of `name` in `src/lib/calendarService.ts`
+
+### 5. Authentication Errors (401)
+
+**Problem**: API calls returning 401 "Authentication required" errors
+**Solution**: Added `credentials: 'include'` to all fetch requests in:
+
+- `src/lib/calendarService.ts` - for project calendar and event creation
+- Already present in `src/services/enhancedCalendarService.ts`
+
 ## Current State
 
 ### What Works Now:
@@ -40,7 +57,9 @@
 1. ✅ Schedule items can be created from both the scheduling page and projects page
 2. ✅ Schedule items are saved to the database with all fields
 3. ✅ The UI no longer shows 404 errors
-4. ✅ Mock calendar event IDs are generated
+4. ✅ No more database column errors
+5. ✅ Authentication works properly with session cookies
+6. ✅ Mock calendar event IDs are generated
 
 ### What Still Needs Implementation:
 
@@ -93,37 +112,31 @@ GOOGLE_CALENDAR_WORK_ORDER=work-order-calendar-id
 
 Replace the mock implementations in `server-api-endpoints.cjs` with actual Google Calendar API calls once OAuth is properly configured.
 
-## Deployment Instructions
+## Deployment History
 
-1. **Deploy the updated files**:
+1. **Initial Fix** (Commit: 3edbb15b)
 
-   - `server-api-endpoints.cjs` (backend endpoints)
-   - `src/services/enhancedCalendarService.ts` (frontend service)
+   - Added missing API endpoints
+   - Updated calendar service
 
-2. **Rebuild and deploy**:
-
-   ```bash
-   npm run build
-   gcloud run deploy project-crew-connect --source .
-   ```
-
-3. **Verify in production**:
-   - Test creating schedule items from the scheduling page
-   - Test creating schedule items from the projects page schedule tab
-   - Verify items are saved to the database
-   - Check browser console for any remaining errors
+2. **Hotfix** (Commit: e35087a5)
+   - Fixed database column name error
+   - Added authentication credentials to fetch requests
 
 ## Testing Checklist
 
-- [ ] Create schedule item from main scheduling page
-- [ ] Create schedule item from project schedule tab
-- [ ] Verify schedule items appear in the database
-- [ ] Check that mock event IDs are generated
-- [ ] No 404 errors in browser console
-- [ ] No "stub calendar service" warnings
+- [x] Create schedule item from main scheduling page
+- [x] Create schedule item from project schedule tab
+- [x] Verify schedule items appear in the database
+- [x] Check that mock event IDs are generated
+- [x] No 404 errors in browser console
+- [x] No "stub calendar service" warnings
+- [x] No database column errors
+- [x] No authentication 401 errors
 
 ## Notes
 
 - The current implementation uses mock calendar IDs until full Google Calendar OAuth is implemented
 - Schedule items will be created in the database but won't appear in actual Google Calendar yet
 - Email invitations are not sent until Google Calendar API is fully integrated
+- All critical production errors have been resolved
