@@ -12,6 +12,10 @@ RUN npm install --frozen-lockfile
 # Copy all source files
 COPY . .
 
+# Set calendar IDs as build-time environment variables
+ENV VITE_GOOGLE_CALENDAR_PROJECTS=c_9922ed38fd075f4e7f24561de50df694acadd8df4f8a73026ca4448aa85e55c5@group.calendar.google.com
+ENV VITE_GOOGLE_CALENDAR_WORK_ORDER=c_ad5019e5b89334560b5bff86d2f7f7dfa0ae4dda8c0684c40d7737cf29b46be3@group.calendar.google.com
+
 # Build the application
 RUN npm run build
 
